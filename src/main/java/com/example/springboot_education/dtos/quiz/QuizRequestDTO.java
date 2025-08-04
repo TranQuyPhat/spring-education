@@ -20,7 +20,7 @@ public class QuizRequestDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer classId;
-    private Long createdBy;
+    private Integer createdBy;
 
     @Valid
     @NotEmpty

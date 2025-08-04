@@ -39,7 +39,7 @@ public class AssignmentService {
         return assignments.stream().map(this::convertToDto).toList();
     }
 
-    public AssignmentResponseDto getAssignmentById(Long id) {
+    public AssignmentResponseDto getAssignmentById(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id).orElseThrow();
         return convertToDto(assignment);
     }
@@ -62,7 +62,7 @@ public class AssignmentService {
         return convertToDto(savedAssignment);
     }
 
-    public AssignmentResponseDto updateAssignment(Long id, UpdateAssignmentRequestDto dto) {
+    public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
 
@@ -81,7 +81,7 @@ public class AssignmentService {
         return convertToDto(updatedAssignment);
     }
 
-    public void deleteAssignment(Long id) {
+    public void deleteAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id).orElseThrow();
         assignmentJpaRepository.delete(assignment);
     }

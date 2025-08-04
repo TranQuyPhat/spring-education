@@ -33,7 +33,7 @@ public class AssignmentController {
     }
 
     @GetMapping("/{id}")
-    public AssignmentResponseDto getAssignmentById(@PathVariable("id") Long id) {
+    public AssignmentResponseDto getAssignmentById(@PathVariable("id") Integer id) {
         return assignmentService.getAssignmentById(id);
     }
 
@@ -43,12 +43,12 @@ public class AssignmentController {
     }
 
     @PatchMapping("/{id}")
-    public AssignmentResponseDto updateAssignment(@PathVariable("id") Long id, @RequestBody @Valid UpdateAssignmentRequestDto updateAssignmentRequestDto) {
+    public AssignmentResponseDto updateAssignment(@PathVariable("id") Integer id, @RequestBody @Valid UpdateAssignmentRequestDto updateAssignmentRequestDto) {
         return assignmentService.updateAssignment(id, updateAssignmentRequestDto);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteAssignment(@PathVariable("id") Long id) {
+    public void deleteAssignment(@PathVariable("id") Integer id) {
         assignmentService.deleteAssignment(id);
     }
 

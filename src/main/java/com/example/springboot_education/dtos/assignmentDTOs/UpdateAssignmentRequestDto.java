@@ -20,6 +20,6 @@ public class UpdateAssignmentRequestDto {
 
     private BigDecimal maxScore;
 
-    private Long classId;
+    private Integer classId;
 }
 
