@@ -10,5 +10,4 @@ public interface QuizService {
     QuizResponseDTO getQuizById(Integer id);
     List<QuizResponseDTO> getAllQuizzes();
     QuizSubmitResDTO submitQuiz(QuizSubmitReqDTO request);
-     List<QuizReportDTO> getReportByQuizId(Integer quizId);
 }

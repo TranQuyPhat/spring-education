@@ -18,7 +18,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class QuizServiceImpl implements QuizService {
-    private final QuizReportRepository quizReportRepository;
     private final QuizRepository quizRepository;
     private final QuizQuestionRepository questionRepository;
     private final QuizOptionRepository optionRepository;
@@ -125,11 +124,6 @@ public class QuizServiceImpl implements QuizService {
         res.setEndAt(saved.getEndAt());
         res.setGradedAt(saved.getGradedAt());
         return res;
-    }
-
-    @Override
-    public List<QuizReportDTO> getReportByQuizId(Integer quizId) {
-        return quizReportRepository.getQuizSubmissionReport(quizId);
     }
 
 }

@@ -29,10 +29,7 @@ public class QuizController {
     public ResponseEntity<List<QuizResponseDTO>> getAllQuizzes() {
         return ResponseEntity.ok(quizService.getAllQuizzes());
     }
-    @GetMapping("/{quizId}/submissions")
-    public List<QuizReportDTO> getQuizReport(@PathVariable Integer quizId) {
-        return quizService.getReportByQuizId(quizId);
-    }
+   
     @PostMapping("/submission")
     public QuizSubmitResDTO submitQuiz(@RequestBody QuizSubmitReqDTO dto) {
         return quizService.submitQuiz(dto);
