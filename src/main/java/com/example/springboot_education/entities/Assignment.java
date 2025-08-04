@@ -10,7 +10,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -18,6 +20,7 @@ import java.time.Instant;
 @Table(name = "assignments")
 public class Assignment {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -38,26 +41,36 @@ public class Assignment {
 
     @NotNull
     @Column(name = "due_date", nullable = false)
-    private Instant dueDate;
+    private Date dueDate;
 
     @NotNull
     @Column(name = "max_score", nullable = false, precision = 5, scale = 2)
     private BigDecimal maxScore;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
-    private Instant createdAt;
-
     @Size(max = 500)
     @Column(name = "file_path", length = 500)
     private String filePath;
 
-    @Size(max = 50)
-    @Column(name = "file_type", length = 50)
+    @Size(max = 255)
+    @Column(name = "file_type", length = 255)
     private String fileType;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "created_at")
+    private Timestamp createdAt;
+
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
-    private Instant updatedAt;
+    private Timestamp updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = new Timestamp(System.currentTimeMillis());
+        updatedAt = createdAt;
+    }
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = new Timestamp(System.currentTimeMillis());
+    }
 
 }
