@@ -1,13 +1,16 @@
 package com.example.springboot_education.dtos.assignmentDTOs;
 
+import lombok.*;
+
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.sql.Timestamp;
+import java.util.Date;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+@Getter
+@Setter
 @Data
+@AllArgsConstructor
 @Builder
 @NoArgsConstructor
 public class AssignmentResponseDto {
@@ -15,23 +18,11 @@ public class AssignmentResponseDto {
     private String title;
     private String description;
     private Integer classId;
-    private Instant dueDate;
+    private Date dueDate;
     private BigDecimal maxScore;
-    private Instant createdAt;
-    private Instant updatedAt;
     private String filePath;
     private String fileType;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 
-    public AssignmentResponseDto(Integer id, String title, String description, Integer classId, Instant dueDate, BigDecimal maxScore, Instant createdAt, Instant updatedAt, String filePath, String fileType) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.classId = classId;
-        this.dueDate = dueDate;
-        this.maxScore = maxScore;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.filePath = filePath;
-        this.fileType = fileType;
-    }
 }
