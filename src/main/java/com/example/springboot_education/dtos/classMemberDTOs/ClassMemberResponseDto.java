@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClassMemberResponseDto {
-    private Long class_id;
-    private Long student_id;
+    private Integer class_id;
+    private Integer student_id;
     private Timestamp joined_at;
 }
