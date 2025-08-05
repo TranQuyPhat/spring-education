@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ClassJpaRepository extends JpaRepository<ClassEntity, Long> {
+public interface ClassJpaRepository extends JpaRepository<ClassEntity, Integer> {
     // List<Class> findByTeacher_Id(Integer teacherId);
     
 }
