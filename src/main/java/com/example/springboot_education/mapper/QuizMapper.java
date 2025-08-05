@@ -3,7 +3,7 @@ package com.example.springboot_education.mapper;
 import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionResponseDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
-import com.example.springboot_education.dtos.quiz.QuizResponseDTO;
+import com.example.springboot_education.dtos.quiz.QuizBaseDTO;
 import com.example.springboot_education.entities.*;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
@@ -44,30 +44,17 @@ public class QuizMapper {
         return quiz;
     }
 
-    public QuizResponseDTO toDto(Quiz quiz, List<QuestionResponseDTO> questions) {
-        QuizResponseDTO dto = new QuizResponseDTO();
+    public QuizBaseDTO toDto(Quiz quiz, List<QuestionResponseDTO> questions) {
+        QuizBaseDTO dto = new QuizBaseDTO();
         dto.setId(quiz.getId());
         dto.setTitle(quiz.getTitle());
         dto.setDescription(quiz.getDescription());
         dto.setTimeLimit(quiz.getTimeLimit());
         dto.setStartDate(quiz.getStartDate());
         dto.setEndDate(quiz.getEndDate());
-        dto.setCreatedBy(quiz.getCreatedBy().getId());
         dto.setGrade(quiz.getGrade());
         dto.setSubject(quiz.getSubject());
-        dto.setQuestions(questions);
-        dto.setClassName(quiz.getClassField().getClassName());
-        if (quiz.getClassField() != null) {
-            dto.setClassId(quiz.getClassField().getId());
-            dto.setClassName(quiz.getClassField().getClassName());
-            int totalStudents = classUserRepository.countByClassField_Id(quiz.getClassField().getId());
-            dto.setTotalStudents(totalStudents);
-        } else {
-            dto.setClassName(null);
-            dto.setTotalStudents(0);
-        }
-        int submittedCount = quizSubmissionRepository.countByQuiz_Id(quiz.getId());
-        dto.setStudentsSubmitted(submittedCount);
+
         return dto;
     }
 
