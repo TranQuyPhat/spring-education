@@ -12,10 +12,10 @@ import lombok.*;
 @AllArgsConstructor
 public class UpdateClassMemberRequestDto {
   @NotNull(message = "student_id is required")
-    private Long student_id;
+    private Integer student_id;
 
     @NotNull(message = "class_id is required")
-    private Long class_id;
+    private Integer class_id;
 
     private Timestamp joined_at;
 

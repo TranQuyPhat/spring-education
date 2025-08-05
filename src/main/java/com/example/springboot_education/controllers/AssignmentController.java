@@ -1,16 +1,11 @@
 package com.example.springboot_education.controllers;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Date;
-import java.util.List;
-
+import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
+import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
+import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.services.assignment.AssignmentService;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,13 +13,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
-import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
-
-import jakarta.validation.Valid;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
@@ -50,7 +48,7 @@ public class AssignmentController {
             @RequestParam Integer classId,
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dueDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Timestamp dueDate,
             @RequestParam BigDecimal maxScore,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
