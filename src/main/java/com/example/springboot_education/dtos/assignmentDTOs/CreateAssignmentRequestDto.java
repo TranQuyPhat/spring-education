@@ -20,7 +20,7 @@ public class CreateAssignmentRequestDto {
     private String description;
 
     @NotNull(message = "Class ID is required")
-
+    private Integer classId;
     @NotNull(message = "Due date is required")
     private Date dueDate;
 

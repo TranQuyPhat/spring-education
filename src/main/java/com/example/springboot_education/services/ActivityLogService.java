@@ -1,13 +1,12 @@
 package com.example.springboot_education.services;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.activitylogs.ActivityLogResponseDTO;
 import com.example.springboot_education.entities.ActivityLog;
 import com.example.springboot_education.repositories.ActivityLogRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityLogService {
