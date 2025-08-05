@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.util.Date;
 
 @Data
 @Builder
@@ -19,7 +19,7 @@ public class CreateAssignmentRequestDto {
     private String description;
 
     @NotNull(message = "Class ID is required")
-
+    private Integer classId;
     @NotNull(message = "Due date is required")
     private Date dueDate;
 
