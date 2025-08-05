@@ -1,4 +1,4 @@
-package com.example.springboot_education.entities;
+package com.example.springboot_education;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
