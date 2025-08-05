@@ -10,6 +10,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Instant;
 
 @Getter
@@ -17,7 +18,15 @@ import java.time.Instant;
 @Entity
 @Table(name = "submissions")
 public class Submission {
+    public enum SubmissionStatus {
+        SUBMITTED,
+        GRADED,
+        LATE,
+        MISSING
+    }
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -35,26 +44,44 @@ public class Submission {
 
     @NotNull
     @Column(name = "submitted_at", nullable = false)
-    private Instant submittedAt;
+    private Timestamp submittedAt;
 
     @Size(max = 255)
     @NotNull
     @Column(name = "file_path", nullable = false)
     private String filePath;
 
-    @Size(max = 20)
-    @ColumnDefault("'pending'")
-    @Column(name = "status", length = 20)
-    private String status;
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "file_type", nullable = false)
+    private String fileType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private SubmissionStatus status;
 
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
     @Column(name = "graded_at")
-    private Instant gradedAt;
+    private Timestamp gradedAt;
 
     @Lob
     @Column(name = "teacher_comment")
     private String teacherComment;
+
+    @PrePersist
+    protected void onSubmit() {
+        submittedAt = new Timestamp(System.currentTimeMillis());
+    }
+
+    public boolean isGraded() {
+        return score != null;
+    }
+
+    public boolean isLate() {
+        if (assignment == null || assignment.getDueDate() == null || submittedAt == null) return false;
+        return submittedAt.after(assignment.getDueDate());
+    }
 
 }
