@@ -1,10 +1,18 @@
 package com.example.springboot_education.services.quiz.impl;
 
 import com.example.springboot_education.dtos.quiz.*;
+import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
+import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
+import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
+import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 import com.example.springboot_education.entities.*;
 import com.example.springboot_education.mapper.QuizMapper;
+import com.example.springboot_education.mapper.QuizMapper2;
 import com.example.springboot_education.repositories.UserRepository;
-import com.example.springboot_education.repositories.quiz.*;
+import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
+import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
+import com.example.springboot_education.repositories.quiz.QuizRepository;
+import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.quiz.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +30,12 @@ public class QuizServiceImpl implements QuizService {
     private final QuizQuestionRepository questionRepository;
     private final QuizOptionRepository optionRepository;
     private final QuizMapper quizMapper;
+    private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final UserRepository userRepository;
 
     @Override
-    public QuizResponseDTO createQuiz(QuizRequestDTO quizDTO) {
+    public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
         Quiz quiz = quizMapper.toEntity(quizDTO);
         quiz = quizRepository.save(quiz);
 
@@ -55,7 +64,7 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public QuizResponseDTO getQuizById(Integer id) {
+    public QuizBaseDTO getQuizById(Integer id) {
         Quiz quiz = quizRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
@@ -71,7 +80,7 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public List<QuizResponseDTO> getAllQuizzes() {
+    public List<QuizBaseDTO> getAllQuizzes() {
         return quizRepository.findAll().stream()
                 .map(q -> getQuizById(q.getId()))
                 .toList();
@@ -125,5 +134,43 @@ public class QuizServiceImpl implements QuizService {
         res.setGradedAt(saved.getGradedAt());
         return res;
     }
+    @Override
+    public QuizResponseTeacherDTO getQuizForTeacher(Integer quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
 
+        List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
+
+        List<QuestionTeacherDTO> questionDTOs = questions.stream()
+                .map(question -> {
+                    List<QuizOption> options = optionRepository.findByQuestion_Id(question.getId());
+                    List<OptionDTO> optionDTOs = options.stream()
+                            .map(quizMapper2::toOptionDto)
+                            .toList();
+                    return quizMapper2.toTeacherQuestionDto(question, optionDTOs);
+                })
+                .toList();
+
+        return quizMapper2.toTeacherDto(quiz, questionDTOs);
+    }
+
+    @Override
+    public QuizResponseStudentDTO getQuizForStudent(Integer quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+
+        List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
+
+        List<QuestionStudentDTO> questionDTOs = questions.stream()
+                .map(question -> {
+                    List<QuizOption> options = optionRepository.findByQuestion_Id(question.getId());
+                    List<OptionDTO> optionDTOs = options.stream()
+                            .map(quizMapper2::toOptionDto)
+                            .toList();
+                    return quizMapper2.toStudentQuestionDto(question, optionDTOs);
+                })
+                .toList();
+
+        return quizMapper2.toStudentDto(quiz, questionDTOs);
+    }
 }

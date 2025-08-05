@@ -19,10 +19,9 @@ public class CreateAssignmentRequestDto {
     private String description;
 
     @NotNull(message = "Class ID is required")
-    private Integer classId;
 
     @NotNull(message = "Due date is required")
-    private Timestamp dueDate;
+    private Date dueDate;
 
     @NotNull(message = "Max score is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Max score must be positive")
