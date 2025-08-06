@@ -19,21 +19,20 @@ public class ActivityLogService {
 
     public List<ActivityLogResponseDTO> getAllLogs() {
         return repository.findAll().stream()
-                .map(this::mapToDTO)
+                .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    private ActivityLogResponseDTO mapToDTO(ActivityLog log) {
+    private ActivityLogResponseDTO toDTO(ActivityLog activity) {
         ActivityLogResponseDTO dto = new ActivityLogResponseDTO();
-        dto.setId(log.getId());
-
-        // Nếu ActivityLog entity có @ManyToOne Users user:
-        dto.setUserId(log.getUser().getId());
-        dto.setActionType(log.getActionType());
-        dto.setTargetTable(log.getTargetTable());
-        dto.setTargetId(log.getTargetId());
-        dto.setDescription(log.getDescription());
-        dto.setCreatedAt(log.getCreatedAt());
+        dto.setId(activity.getId());
+        dto.setActionType(activity.getActionType());
+        dto.setTargetId(activity.getTargetId());
+        dto.setTargetTable(activity.getTargetTable());
+        dto.setDescription(activity.getDescription());
+        dto.setCreatedAt(activity.getCreatedAt());
+        dto.setClassId(activity.getClassRoom().getId());
+        dto.setUserId(activity.getUser().getId());
         return dto;
     }
 }
