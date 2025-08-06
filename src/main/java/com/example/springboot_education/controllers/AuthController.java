@@ -58,4 +58,5 @@ public class AuthController {
         LoginResponseDto result = this.authService.googleLoginWithCredential(request);
         return ResponseEntity.ok(result);
     }
+
 }
