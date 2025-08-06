@@ -9,9 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import com.example.springboot_education.entities.Role;
 
 public interface RoleJpaRepository extends JpaRepository<Role, Integer> {
-    Role save(Role role);
+    // Role save(Role role);
 
-    Role findByName(String name);
+    // Role findByName(String name);
+    Optional<Role> findByName(String name);
+
 
     boolean existsByName(String name);
 

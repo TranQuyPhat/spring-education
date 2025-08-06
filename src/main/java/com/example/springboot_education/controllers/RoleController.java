@@ -1,15 +1,12 @@
 package com.example.springboot_education.controllers;
 
 import com.example.springboot_education.dtos.roleDTOs.CreateRoleRequestDto;
-import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
 import com.example.springboot_education.dtos.roleDTOs.UpdateRoleRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UserIdsRequestDto;
 import com.example.springboot_education.entities.Role;
 import com.example.springboot_education.services.RoleService;
 import jakarta.validation.Valid;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
