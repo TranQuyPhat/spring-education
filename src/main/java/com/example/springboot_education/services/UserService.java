@@ -1,6 +1,7 @@
 package com.example.springboot_education.services;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
@@ -8,6 +9,7 @@ import com.example.springboot_education.dtos.usersDTOs.CreateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UpdateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UserResponseDto;
 import com.example.springboot_education.entities.UserRole;
+import com.example.springboot_education.entities.UserRoleId;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.RoleJpaRepository;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class UserService {
+
+    private final PasswordEncoder passwordEncoder;
 
     private final UsersJpaRepository userJpaRepository;
 
@@ -65,8 +69,7 @@ public class UserService {
         user.setEmail(dto.getEmail());
         user.setFullName(dto.getFullName());
         user.setImageUrl(dto.getImageUrl());
-        user.setPassword(dto.getPassword());
-
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
             for (Integer roleId : dto.getRoles()) {
@@ -75,6 +78,7 @@ public class UserService {
                                 () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
+                userRole.setId(new UserRoleId(user.getId(), role.getId()));
                 userRole.setUser(user);
                 userRole.setRole(role);
 
@@ -103,9 +107,10 @@ public class UserService {
         user.setFullName(dto.getFullName());
         user.setImageUrl(dto.getImageUrl());
 
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            user.setPassword(dto.getPassword());
-        }
+       if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+    user.setPassword(passwordEncoder.encode(dto.getPassword()));
+}
+
 
         if (dto.getRoles() != null) {
             user.getUserRoles().clear();
@@ -116,6 +121,7 @@ public class UserService {
                                 () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
+                userRole.setId(new UserRoleId(user.getId(), role.getId()));
                 userRole.setUser(user);
                 userRole.setRole(role);
 
