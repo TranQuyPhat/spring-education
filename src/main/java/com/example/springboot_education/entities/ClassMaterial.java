@@ -17,6 +17,7 @@ import java.time.Instant;
 @Table(name = "class_materials")
 public class ClassMaterial {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -38,15 +39,19 @@ public class ClassMaterial {
     @Column(name = "file_type", length = 50)
     private String fileType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "subject_id")
-    private Subject subject;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by", nullable = false)
+    private Users createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "created_by")
-    private Users createdBy;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "class_id", nullable = false)
+    private ClassEntity classField;
+
+    @ColumnDefault("0")
+    @Column(name = "download_count", nullable = false)
+    private Integer downloadCount = 0;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
@@ -55,5 +60,17 @@ public class ClassMaterial {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+        this.downloadCount = 0;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
 }
