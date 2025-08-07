@@ -9,11 +9,13 @@ import java.time.Instant;
 public class ClassResponseDTO {
     private Integer id;
     private String className;
-    // private String subject;
     private Integer schoolYear;
     private String semester;
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
-    private Integer teacherId;
+
+    private TeacherDTO teacher;
+    private SubjectDTO subject;
 }
+

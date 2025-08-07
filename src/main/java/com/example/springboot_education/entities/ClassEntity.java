@@ -46,6 +46,10 @@ public class ClassEntity {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Users teacher;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
 
     @OneToMany(mappedBy = "classRoom")
     private List<ActivityLog> activities;
