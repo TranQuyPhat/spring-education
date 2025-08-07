@@ -1,4 +1,4 @@
-package com.example.springboot_education.dtos.quiz;
+package com.example.springboot_education.dtos.quiz.base;
 
 import lombok.Getter;
 import lombok.Setter;
