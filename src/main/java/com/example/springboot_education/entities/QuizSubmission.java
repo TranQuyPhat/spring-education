@@ -41,11 +41,9 @@ public class QuizSubmission {
     @Column(name = "graded_at")
     private Instant gradedAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "start_at")
     private Instant startAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "end_at")
     private Instant endAt;
 

@@ -56,7 +56,7 @@ public class AssignmentController {
         dto.setClassId(classId);
         dto.setTitle(title);
         dto.setDescription(description);
-        dto.setDueDate(dueDate);
+        dto.setDueDate(dueDate.toInstant());
         dto.setMaxScore(maxScore);
 
         return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));

@@ -5,14 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -41,7 +39,7 @@ public class Assignment {
 
     @NotNull
     @Column(name = "due_date", nullable = false)
-    private Date dueDate;
+    private Instant dueDate;
 
     @NotNull
     @Column(name = "max_score", nullable = false, precision = 5, scale = 2)
@@ -55,11 +53,9 @@ public class Assignment {
     @Column(name = "file_type", length = 255)
     private String fileType;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
