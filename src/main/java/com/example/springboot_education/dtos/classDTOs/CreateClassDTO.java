@@ -10,4 +10,5 @@ public class CreateClassDTO {
     private String semester;
     private String description;
     private Integer teacherId;
+    private Integer subjectId;
 }
