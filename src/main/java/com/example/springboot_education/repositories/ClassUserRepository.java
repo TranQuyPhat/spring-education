@@ -5,6 +5,8 @@ import com.example.springboot_education.entities.ClassUserId;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +17,10 @@ public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserI
 
     // Lấy danh sách class theo student
     List<ClassUser> findByStudent_Id(Integer studentId);
+    Page<ClassUser> findByStudent_Id(Integer studentId, Pageable pageable);
 
     // Kiểm tra xem student đã thuộc class chưa
     boolean existsByClassField_IdAndStudent_Id(Integer classId, Integer studentId);
+
+
 }

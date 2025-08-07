@@ -12,6 +12,7 @@ import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
+import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.services.classes.ClassService;
 
 import java.util.List;
@@ -62,5 +63,22 @@ public class ClassController {
         classService.addStudentToClass(dto);
         return ResponseEntity.ok("Thêm học sinh vào lớp thành công");
     }
+    @GetMapping("/teacher/{teacherId}")
+    public PaginatedClassResponseDto getClassesOfTeacher(
+            @PathVariable("teacherId") Integer teacherId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "6") int size
+    ) {
+        return classService.getClassesOfTeacher(teacherId, page, size);
+    }
 
+    @GetMapping("/student/{studentId}/classesPaginated")
+    public ResponseEntity<PaginatedClassResponseDto> getStudentClasses(
+            @PathVariable("studentId") Integer studentId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "6") int size
+    ) {
+        PaginatedClassResponseDto response = classService.getClassesOfStudent(studentId, page, size);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -6,6 +6,7 @@ import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
+import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
 import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
 import com.example.springboot_education.entities.ClassEntity;
@@ -20,6 +21,10 @@ import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 // import java.sql.Timestamp;
@@ -111,30 +116,78 @@ public class ClassService {
             dto.setSubject(subjectDTO);
         }
         return dto;
-}
+    }   
 
-public List<ClassMemberDTO> getStudentsInClass(Integer classId) {
-    List<ClassUser> members = classUserRepository.findByClassField_Id(classId);
+    public List<ClassMemberDTO> getStudentsInClass(Integer classId) {
+        List<ClassUser> members = classUserRepository.findByClassField_Id(classId);
 
-    return members.stream()
-            .map(member -> {
-                Users student = member.getStudent();
-                ClassMemberDTO dto = new ClassMemberDTO();
-                dto.setId(student.getId());
-                dto.setFullName(student.getFullName());
-                dto.setUsername(student.getUsername());
-                dto.setEmail(student.getEmail());
-                return dto;
-            })
+        return members.stream()
+                .map(member -> {
+                    Users student = member.getStudent();
+                    ClassMemberDTO dto = new ClassMemberDTO();
+                    dto.setId(student.getId());
+                    dto.setFullName(student.getFullName());
+                    dto.setUsername(student.getUsername());
+                    dto.setEmail(student.getEmail());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+    public List<ClassResponseDTO> getClassesOfStudent(Integer studentId) {
+        List<ClassUser> members = classUserRepository.findByStudent_Id(studentId);
+
+        return members.stream()
+                .map(member -> toDTO(member.getClassField())) // tái sử dụng toDTO
+                .collect(Collectors.toList());
+    }
+
+
+    public PaginatedClassResponseDto getClassesOfStudent(Integer studentId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ClassUser> membersPage = classUserRepository.findByStudent_Id(studentId, pageable);
+
+        List<ClassResponseDTO> classDTOs = membersPage.getContent().stream()
+                .map(member -> toDTO(member.getClassField()))
+                .collect(Collectors.toList());
+
+        PaginatedClassResponseDto response = new PaginatedClassResponseDto();
+        response.setData(classDTOs);
+        response.setPageNumber(membersPage.getNumber());
+        response.setPageSize(membersPage.getSize());
+        response.setTotalRecords(membersPage.getTotalElements());
+        response.setTotalPages(membersPage.getTotalPages());
+        response.setHasNext(membersPage.hasNext());
+        response.setHasPrevious(membersPage.hasPrevious());
+
+        return response;
+    }
+    public List<ClassResponseDTO> getClassesOfTeacher(Integer teacherId) {
+        List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
+
+        return classes.stream()
+                .map(this::toDTO) // truyền clazz (ClassEntity) vào toDTO
+                .collect(Collectors.toList());
+    }
+    public PaginatedClassResponseDto getClassesOfTeacher(Integer teacherId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ClassEntity> pageResult = classRepository.findByTeacher_Id(teacherId, pageable);
+
+        List<ClassResponseDTO> classDtos = pageResult.getContent()
+            .stream()
+            .map(this::toDTO)
             .collect(Collectors.toList());
-}
-public List<ClassResponseDTO> getClassesOfStudent(Integer studentId) {
-    List<ClassUser> members = classUserRepository.findByStudent_Id(studentId);
 
-    return members.stream()
-            .map(member -> toDTO(member.getClassField())) // tái sử dụng toDTO
-            .collect(Collectors.toList());
-}
+        PaginatedClassResponseDto response = new PaginatedClassResponseDto();
+        response.setData(classDtos);
+        response.setPageNumber(pageResult.getNumber());
+        response.setPageSize(pageResult.getSize());
+        response.setTotalRecords(pageResult.getTotalElements());
+        response.setTotalPages(pageResult.getTotalPages());
+        response.setHasNext(pageResult.hasNext());
+        response.setHasPrevious(pageResult.hasPrevious());
+
+        return response;
+    }
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Kiểm tra xem đã tồn tại chưa
         if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
