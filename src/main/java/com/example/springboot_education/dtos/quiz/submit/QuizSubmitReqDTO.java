@@ -1,4 +1,4 @@
-package com.example.springboot_education.dtos.quiz;
+package com.example.springboot_education.dtos.quiz.submit;
 
 import lombok.Data;
 

@@ -1,6 +1,6 @@
 package com.example.springboot_education.dtos.quiz.student;
 
-import com.example.springboot_education.dtos.quiz.QuizBaseDTO;
+import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import lombok.Getter;
 import lombok.Setter;
 
