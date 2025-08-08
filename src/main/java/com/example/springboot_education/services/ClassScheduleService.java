@@ -45,7 +45,9 @@ public class ClassScheduleService {
         log.setActionType("CREATE");
         log.setTargetId(saved.getId());
         log.setTargetTable("class_schedules");
-        log.setDescription("Tạo lịch hoc mới " );
+
+        log.setDescription("Tạo lịch trình mới " );
+        log.setClassId(saved.getClassEntity().getId());
         log.setUserId(saved.getClassEntity().getTeacher().getId());
         activityLogService.log(log);
 
@@ -80,7 +82,9 @@ public class ClassScheduleService {
         log.setActionType("UPDATE");
         log.setTargetId(updated.getId());
         log.setTargetTable("class_schedules");
-        log.setDescription("Cập nhật lịch học ");
+
+        log.setDescription("Cập nhật lịch trình ");
+        log.setClassId(updated.getClassEntity().getId());
         log.setUserId(updated.getClassEntity().getTeacher().getId());
         activityLogService.log(log);
 
