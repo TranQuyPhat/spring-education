@@ -1,8 +1,8 @@
 package com.example.springboot_education.mapper;
 
 import com.example.springboot_education.dtos.quiz.OptionDTO;
-import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
+import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
@@ -10,7 +10,7 @@ import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO
 import com.example.springboot_education.entities.*;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class QuizMapper2 {
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
     private final ClassRepository classRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizSubmissionRepository quizSubmissionRepository;
