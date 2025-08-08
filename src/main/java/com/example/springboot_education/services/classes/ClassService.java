@@ -16,10 +16,7 @@ import com.example.springboot_education.entities.Subject;
 // import com.example.springboot_education.entities.ClassMember;
 import com.example.springboot_education.entities.Users;
 // import com.example.springboot_education.repositories.ClassMemberRepository;
-import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.ClassUserRepository;
-import com.example.springboot_education.repositories.SubjectRepository;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -37,7 +34,7 @@ import java.util.stream.Collectors;
 public class ClassService {
 
     private final ClassRepository classRepository;
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
 

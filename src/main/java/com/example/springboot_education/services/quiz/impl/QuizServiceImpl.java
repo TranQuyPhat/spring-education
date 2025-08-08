@@ -12,7 +12,7 @@ import com.example.springboot_education.entities.Quiz;
 import com.example.springboot_education.entities.QuizOption;
 import com.example.springboot_education.entities.QuizQuestion;
 import com.example.springboot_education.mapper.QuizMapper2;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
@@ -34,7 +34,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
 
     @Override
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
