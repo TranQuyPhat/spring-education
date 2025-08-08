@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Date;
 
 
@@ -18,7 +19,7 @@ public class AssignmentResponseDto {
     private String title;
     private String description;
     private Integer classId;
-    private Date dueDate;
+    private Instant dueDate;
     private BigDecimal maxScore;
     private String filePath;
     private String fileType;

@@ -38,11 +38,9 @@ public class QuizQuestion {
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
 

@@ -9,7 +9,9 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,6 +19,7 @@ import java.time.Instant;
 @Table(name = "classes")
 public class ClassEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -44,11 +47,17 @@ public class ClassEntity {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Users teacher;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
+
+    @OneToMany(mappedBy = "classRoom")
+    private List<ActivityLog> activities;
+
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
 

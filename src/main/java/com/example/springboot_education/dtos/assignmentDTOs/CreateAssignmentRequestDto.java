@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -21,7 +21,7 @@ public class CreateAssignmentRequestDto {
     @NotNull(message = "Class ID is required")
     private Integer classId;
     @NotNull(message = "Due date is required")
-    private Date dueDate;
+    private Instant dueDate;
 
     @NotNull(message = "Max score is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Max score must be positive")

@@ -11,9 +11,6 @@ public class UpdateClassRequest {
     @NotBlank
     private String className;
 
-    // @NotBlank
-    // private String subject;
-
     @NotNull
     private Integer schoolYear;
 
@@ -21,6 +18,8 @@ public class UpdateClassRequest {
     private String semester;
 
     private String description;
+
+    private Integer subjectId;
 
     @NotNull
     private Instant updatedAt;
