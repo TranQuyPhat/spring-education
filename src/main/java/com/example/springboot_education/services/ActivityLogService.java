@@ -1,30 +1,29 @@
 package com.example.springboot_education.services;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogResponseDTO;
 import com.example.springboot_education.entities.ActivityLog;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ActivityLogRepository;
-import com.example.springboot_education.repositories.ClassJpaRepository;
+import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityLogService {
 
     private final ActivityLogRepository repository;
-    private final ClassJpaRepository classRepository;
+    private final ClassRepository classRepository;
     private final UsersJpaRepository usersRepository;
 
     public ActivityLogService(
             ActivityLogRepository repository,
-            ClassJpaRepository classRepository,
+            ClassRepository classRepository,
             UsersJpaRepository usersRepository
     ) {
         this.repository = repository;
