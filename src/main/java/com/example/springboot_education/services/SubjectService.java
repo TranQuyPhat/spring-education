@@ -13,6 +13,8 @@ import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -21,8 +23,9 @@ import lombok.RequiredArgsConstructor;
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
-    private final UsersJpaRepository userRepository;
     private final ActivityLogService activityLogService;
+
+    private final UsersJpaRepository userRepository;
 
     public List<SubjectResponseDTO> findAll() {
         return subjectRepository.findAll()

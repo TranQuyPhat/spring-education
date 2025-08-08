@@ -16,12 +16,16 @@ import com.example.springboot_education.entities.Subject;
 // import com.example.springboot_education.entities.ClassMember;
 import com.example.springboot_education.entities.Users;
 // import com.example.springboot_education.repositories.ClassMemberRepository;
+<<<<<<< HEAD
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
 
+=======
+import com.example.springboot_education.repositories.*;
+>>>>>>> 2580b71 (review v1)
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
