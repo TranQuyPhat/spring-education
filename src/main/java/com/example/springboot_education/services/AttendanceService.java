@@ -1,5 +1,6 @@
 package com.example.springboot_education.services;
 
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceUpdateDTO;
@@ -21,11 +22,14 @@ public class AttendanceService {
     private final AttendanceRepository repository;
     private final UsersJpaRepository userRepository;
     private final ClassScheduleRepository scheduleRepository;
+    private final ActivityLogService activityLogService;
 
-    public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository, ClassScheduleRepository scheduleRepository) {
+    public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
+                             ClassScheduleRepository scheduleRepository, ActivityLogService activityLogService) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.scheduleRepository = scheduleRepository;
+        this.activityLogService = activityLogService;
     }
 
     public AttendanceResponseDTO create(AttendanceCreateDTO dto) {
@@ -42,6 +46,17 @@ public class AttendanceService {
         attendance.setMarkedAt(Instant.now());
 
         Attendance saved = repository.save(attendance);
+
+        // Ghi log CREATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "CREATE",
+                saved.getId(),
+                "attendances",
+                "Tạo mới điểm danh",
+                schedule.getClassEntity().getId(),
+                student.getId()
+        ));
+
         return mapToDTO(saved);
     }
 
@@ -58,6 +73,17 @@ public class AttendanceService {
 
         attendance.setStatus(dto.getStatus());
         Attendance updated = repository.save(attendance);
+
+        // Ghi log UPDATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "UPDATE",
+                updated.getId(),
+                "attendances",
+                "Cập nhật trạng thái điểm danh",
+                updated.getSchedule().getClassEntity().getId(),
+                updated.getStudent().getId()
+        ));
+
         return mapToDTO(updated);
     }
 
