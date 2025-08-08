@@ -3,10 +3,9 @@ package com.example.springboot_education.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleUpdateDTO;
@@ -20,10 +19,12 @@ public class ClassScheduleService {
 
     private final ClassScheduleRepository repository;
     private final ClassRepository classRepository;
+    private final ActivityLogService activityLogService;
 
-    public ClassScheduleService(ClassScheduleRepository repository, ClassRepository classRepository) {
+    public ClassScheduleService(ClassScheduleRepository repository, ClassRepository classRepository, ActivityLogService activityLogService) {
         this.repository = repository;
         this.classRepository = classRepository;
+        this.activityLogService = activityLogService;
     }
 
     public ClassScheduleResponseDTO create(ClassScheduleCreateDTO dto) {
@@ -38,6 +39,17 @@ public class ClassScheduleService {
         schedule.setLocation(dto.getLocation());
 
         ClassSchedule saved = repository.save(schedule);
+
+        // Ghi log CREATE
+        ActivityLogCreateDTO log = new ActivityLogCreateDTO();
+        log.setActionType("CREATE");
+        log.setTargetId(saved.getId());
+        log.setTargetTable("class_schedules");
+        log.setDescription("Tạo lịch trình mới " );
+        log.setClassId(saved.getClassEntity().getId());
+        log.setUserId(saved.getClassEntity().getTeacher().getId());
+        activityLogService.log(log);
+
         return mapToDTO(saved);
     }
 
@@ -48,7 +60,7 @@ public class ClassScheduleService {
                 .collect(Collectors.toList());
     }
 
-    public Page<ClassScheduleResponseDTO> getAll(Pageable pageable) {
+    public org.springframework.data.domain.Page<ClassScheduleResponseDTO> getAll(org.springframework.data.domain.Pageable pageable) {
         return repository.findAll(pageable)
                 .map(this::mapToDTO);
     }
@@ -63,6 +75,17 @@ public class ClassScheduleService {
         schedule.setLocation(dto.getLocation());
 
         ClassSchedule updated = repository.save(schedule);
+
+        // Ghi log UPDATE
+        ActivityLogCreateDTO log = new ActivityLogCreateDTO();
+        log.setActionType("UPDATE");
+        log.setTargetId(updated.getId());
+        log.setTargetTable("class_schedules");
+        log.setDescription("Cập nhật lịch trình ");
+        log.setClassId(updated.getClassEntity().getId());
+        log.setUserId(updated.getClassEntity().getTeacher().getId());
+        activityLogService.log(log);
+
         return mapToDTO(updated);
     }
 
