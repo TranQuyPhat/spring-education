@@ -1,13 +1,9 @@
 package com.example.springboot_education.services.quiz.impl;
 
-import java.time.Instant;
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionDTO;
+import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
@@ -25,9 +21,14 @@ import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.ActivityLogService;
 import com.example.springboot_education.services.quiz.QuizService;
-
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -66,18 +67,9 @@ public class QuizServiceImpl implements QuizService {
             }
         }
 
-        // 📌 Ghi log CREATE quiz
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                quiz.getId(),
-                "quizzes",
-                "Tạo quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                quizDTO.getCreatedBy() // cần đảm bảo QuizRequestDTO có field này
-        ));
-
         return getQuizForTeacher(quiz.getId());
     }
+
 
     @Override
     public List<QuizResponseTeacherDTO> getAllQuizzes() {
@@ -126,44 +118,127 @@ public class QuizServiceImpl implements QuizService {
         return quizMapper2.toStudentDto(quiz, questionDTOs);
     }
 
-    // 📌 Thêm hàm UPDATE quiz (nếu bạn muốn log UPDATE)
-    public QuizBaseDTO updateQuiz(Integer quizId, QuizRequestDTO quizDTO) {
+    @Override
+    @Transactional
+    public QuizResponseTeacherDTO updateQuizMeta(Integer quizId, QuizBaseDTO dto) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        quiz.setTitle(quizDTO.getTitle());
-        quiz.setDescription(quizDTO.getDescription());
+        if (dto.getTitle() != null) quiz.setTitle(dto.getTitle());
+        if (dto.getDescription() != null) quiz.setDescription(dto.getDescription());
+        if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());
+        if (dto.getStartDate() != null) quiz.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null) quiz.setEndDate(dto.getEndDate());
+        if (dto.getGrade() != null) quiz.setGrade(dto.getGrade());
+        if (dto.getSubject() != null) quiz.setSubject(dto.getSubject());
+
         quiz.setUpdatedAt(Instant.now());
-        quiz = quizRepository.save(quiz);
+        quizRepository.save(quiz);
+        return getQuizForTeacher(quizId);
+    }
+    @Override
+    @Transactional
+    public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        // 📌 Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                quiz.getId(),
-                "quizzes",
-                "Cập nhật quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                quizDTO.getCreatedBy()
-        ));
+        // Map các question/option hiện có để tiện tra cứu
+        List<QuizQuestion> existedQuestions = questionRepository.findByQuiz_Id(quizId);
+        Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
+                .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
 
-        return getQuizForTeacher(quiz.getId());
+        Set<Integer> seenQuestionIds = new HashSet<>();
+
+        for (QuestionTeacherDTO qdto : body.getQuestions()) {
+            QuizQuestion q;
+            if (qdto.getId() == null) {
+                q = new QuizQuestion();
+                q.setQuiz(quiz);
+                q.setCreatedAt(Instant.now());
+            } else {
+                q = qMap.get(qdto.getId());
+                if (q == null) throw new RuntimeException("Question not found: " + qdto.getId());
+                seenQuestionIds.add(q.getId());
+            }
+            q.setQuestionText(qdto.getQuestionText());
+            q.setCorrectOption(qdto.getCorrectOption());
+            q.setScore(qdto.getScore());
+            q.setUpdatedAt(Instant.now());
+            q = questionRepository.save(q);
+
+            // --- xử lý options ---
+            List<QuizOption> existedOpts = optionRepository.findByQuestion_Id(q.getId());
+            Map<Integer, QuizOption> oMap = existedOpts.stream()
+                    .collect(Collectors.toMap(QuizOption::getId, o -> o));
+            Set<Integer> seenOptIds = new HashSet<>();
+
+            for (OptionDTO odto : qdto.getOptions()) {
+                QuizOption opt;
+                if (odto.getId() == null) {
+                    opt = new QuizOption();
+                    opt.setQuestion(q);
+                    opt.setCreatedAt(Instant.now());
+                } else {
+                    opt = oMap.get(odto.getId());
+                    if (opt == null) throw new RuntimeException("Option not found: " + odto.getId());
+                    seenOptIds.add(opt.getId());
+                }
+                opt.setOptionLabel(odto.getOptionLabel());
+                opt.setOptionText(odto.getOptionText());
+                opt.setUpdatedAt(Instant.now());
+                optionRepository.save(opt);
+            }
+
+            // Xóa option thừa nếu replaceAll
+            if (body.isReplaceAll()) {
+                existedOpts.stream()
+                        .filter(o -> !seenOptIds.contains(o.getId()))
+                        .forEach(optionRepository::delete);
+            }
+        }
+
+        // Xóa question thừa nếu replaceAll
+        if (body.isReplaceAll()) {
+            existedQuestions.stream()
+                    .filter(q -> !seenQuestionIds.contains(q.getId())
+                            && body.getQuestions().stream().noneMatch(dto -> Objects.equals(dto.getId(), q.getId())))
+                    .forEach(questionRepository::delete);
+        }
+
+        quiz.setUpdatedAt(Instant.now());
+        quizRepository.save(quiz);
+
+        return getQuizForTeacher(quizId);
+    }
+    @Override
+    @Transactional
+    public void deleteQuestion(Integer quizId, Integer questionId) {
+        QuizQuestion q = questionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+        if (!q.getQuiz().getId().equals(quizId)) {
+            throw new RuntimeException("Question does not belong to quiz");
+        }
+        // orphanRemoval + OnDelete CASCADE ở options sẽ lo phần con
+        questionRepository.delete(q);
     }
 
-    // 📌 Thêm hàm DELETE quiz (nếu bạn muốn log DELETE)
-    public void deleteQuiz(Integer quizId, Integer userId) {
+    @Override
+    @Transactional
+    public void deleteQuiz(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+
+        quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
 
         quizRepository.delete(quiz);
-
-        // 📌 Ghi log DELETE
         activityLogService.log(new ActivityLogCreateDTO(
                 "DELETE",
                 quiz.getId(),
                 "quizzes",
                 "Xóa quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                userId
+                quiz.getClassField() != null ? quiz.getClassField().getId() : null,null
         ));
     }
+
+
 }

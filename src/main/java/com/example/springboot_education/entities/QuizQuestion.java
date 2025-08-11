@@ -43,7 +43,11 @@ public class QuizQuestion {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
-
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "question",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,      // cần để khi remove khỏi collection sẽ xóa row con
+            fetch = FetchType.LAZY
+    )
     private List<QuizOption> options;
 }
