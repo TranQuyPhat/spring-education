@@ -2,6 +2,7 @@
 package com.example.springboot_education.services.classes;
 
 
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
@@ -20,6 +21,8 @@ import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.services.ActivityLogService;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -40,6 +43,7 @@ public class ClassService {
     private final UserRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
+    private final ActivityLogService activityLogService;
 
     public List<ClassResponseDTO> getAllClasses() {
         return classRepository.findAll()
@@ -66,7 +70,18 @@ public class ClassService {
         clazz.setSubject(subject);
         clazz.setCreatedAt(Instant.now());
 
-        return toDTO(classRepository.save(clazz));
+         ClassEntity saved = classRepository.save(clazz);
+
+        // Ghi log CREATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "CREATE",
+                saved.getId(),
+                "classes",
+                "Tạo lớp học: " + saved.getClassName(),
+                teacher.getId()
+        ));
+
+        return toDTO(saved);
     }
 
     public ClassResponseDTO updateClass(Integer id, CreateClassDTO dto) {
@@ -81,10 +96,33 @@ public class ClassService {
         clazz.setSubject(subject);
         clazz.setUpdatedAt(Instant.now());
 
-        return toDTO(classRepository.save(clazz));
+        ClassEntity updated = classRepository.save(clazz);
+
+        // Ghi log UPDATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "UPDATE",
+                updated.getId(),
+                "classes",
+                "Cập nhật lớp học: " + updated.getClassName(),
+                updated.getTeacher() != null ? updated.getTeacher().getId() : null
+        ));
+
+        return toDTO(updated);
     }
 
     public void deleteClass(Integer id) {
+        ClassEntity clazz = classRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
+
+        // Ghi log DELETE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "DELETE",
+                clazz.getId(),
+                "classes",
+                "Xóa lớp học: " + clazz.getClassName(),
+                clazz.getTeacher() != null ? clazz.getTeacher().getId() : null
+        ));
+
         classRepository.deleteById(id);
     }
 
@@ -211,5 +249,14 @@ public class ClassService {
         member.setJoinedAt(Instant.now()); // không cần Timestamp.from()
 
         classUserRepository.save(member);
+
+        // Ghi log ADD STUDENT
+        activityLogService.log(new ActivityLogCreateDTO(
+                "CREATE",
+                dto.getClassId(),
+                "class_users",
+                "Thêm học sinh " + student.getFullName() + " vào lớp " + clazz.getClassName(),
+                student.getId()
+        ));
     }
 }

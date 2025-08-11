@@ -1,9 +1,14 @@
 package com.example.springboot_education.services;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
 import com.example.springboot_education.dtos.usersDTOs.CreateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UpdateUserRequestDto;
@@ -18,24 +23,23 @@ import com.example.springboot_education.repositories.UsersJpaRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @RequiredArgsConstructor
 @Service
 public class UserService {
 
     private final PasswordEncoder passwordEncoder;
-
     private final UsersJpaRepository userJpaRepository;
-
     private final RoleJpaRepository roleJpaRepository;
+    private final ActivityLogService activityLogService;
 
     private UserResponseDto convertToDto(Users user) {
         List<RoleResponseDto> roles = user.getUserRoles().stream()
-                .map(userRole -> new RoleResponseDto(userRole.getRole().getId(), userRole.getRole().getName(),
-                        userRole.getRole().getCreatedAt(), userRole.getRole().getUpdatedAt()))
+                .map(userRole -> new RoleResponseDto(
+                        userRole.getRole().getId(),
+                        userRole.getRole().getName(),
+                        userRole.getRole().getCreatedAt(),
+                        userRole.getRole().getUpdatedAt()
+                ))
                 .collect(Collectors.toList());
 
         return UserResponseDto.builder()
@@ -51,10 +55,8 @@ public class UserService {
     }
 
     // Lấy toàn bộ user
-
     public List<UserResponseDto> getUsers() {
         List<Users> users = userJpaRepository.findAllUsersWithRoles();
-
         return users.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
@@ -74,8 +76,7 @@ public class UserService {
         if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
             for (Integer roleId : dto.getRoles()) {
                 var role = roleJpaRepository.findById(roleId)
-                        .orElseThrow(
-                                () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
+                        .orElseThrow(() -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
                 userRole.setId(new UserRoleId(user.getId(), role.getId()));
@@ -87,6 +88,16 @@ public class UserService {
         }
 
         Users savedUser = userJpaRepository.save(user);
+
+        // Ghi log CREATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "CREATE",
+                savedUser.getId(),
+                "users",
+                "Tạo user mới: " + savedUser.getUsername(),
+                savedUser.getId()
+        ));
+
         return convertToDto(savedUser);
     }
 
@@ -97,7 +108,7 @@ public class UserService {
         return convertToDto(user);
     }
 
-    // Cập nhật
+    // Cập nhật user
     public UserResponseDto updateUser(Integer id, UpdateUserRequestDto dto) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
@@ -107,18 +118,15 @@ public class UserService {
         user.setFullName(dto.getFullName());
         user.setImageUrl(dto.getImageUrl());
 
-       if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-    user.setPassword(passwordEncoder.encode(dto.getPassword()));
-}
-
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
 
         if (dto.getRoles() != null) {
             user.getUserRoles().clear();
-
             for (Integer roleId : dto.getRoles()) {
                 var role = roleJpaRepository.findById(roleId)
-                        .orElseThrow(
-                                () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
+                        .orElseThrow(() -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
                 userRole.setId(new UserRoleId(user.getId(), role.getId()));
@@ -129,17 +137,35 @@ public class UserService {
             }
         }
 
-        // Lưu user và role liên kết
         Users updatedUser = userJpaRepository.save(user);
-        return convertToDto(updatedUser);
 
+        // Ghi log UPDATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "UPDATE",
+                updatedUser.getId(),
+                "users",
+                "Cập nhật thông tin user: " + updatedUser.getUsername(),
+                updatedUser.getId()
+        ));
+
+        return convertToDto(updatedUser);
     }
 
-    // Xoá
+    // Xoá user
     @Transactional
     public void deleteUser(Integer id) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Ghi log DELETE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "DELETE",
+                user.getId(),
+                "users",
+                "Xóa user: " + user.getUsername(),
+                user.getId()
+        ));
+
         userJpaRepository.delete(user);
     }
 
@@ -147,5 +173,4 @@ public class UserService {
         Optional<Users> user = userJpaRepository.findById(userId);
         return user.isPresent() && user.get().getEmail().equals(currentUserEmail);
     }
-
 }

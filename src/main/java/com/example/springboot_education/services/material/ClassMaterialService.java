@@ -1,5 +1,6 @@
 package com.example.springboot_education.services.material;
 
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseDto;
 import com.example.springboot_education.entities.ClassEntity;
@@ -8,6 +9,7 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassJpaRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
+import com.example.springboot_education.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +19,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClassMaterialService {
+
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassJpaRepository classJpaRepository;
+    private final ActivityLogService activityLogService;
 
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto) {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
@@ -37,6 +41,16 @@ public class ClassMaterialService {
         material.setClassField(classEntity);
 
         ClassMaterial saved = classMaterialJpaRepository.save(material);
+
+        // Ghi log CREATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "CREATE",
+                saved.getId(),
+                "class_materials",
+                "Tạo tài liệu: " + saved.getTitle(),
+                user.getId()
+        ));
+
         return toResponseDto(saved);
     }
 
@@ -44,6 +58,45 @@ public class ClassMaterialService {
         return classMaterialJpaRepository.findByClassField_Id(classId)
                 .stream().map(this::toResponseDto)
                 .collect(Collectors.toList());
+    }
+
+    public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
+        ClassMaterial material = classMaterialJpaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Material not found"));
+
+        material.setTitle(dto.getTitle());
+        material.setDescription(dto.getDescription());
+        material.setFilePath(dto.getFilePath());
+        material.setFileType(dto.getFileType());
+
+        ClassMaterial updated = classMaterialJpaRepository.save(material);
+
+        // Ghi log UPDATE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "UPDATE",
+                updated.getId(),
+                "class_materials",
+                "Cập nhật tài liệu: " + updated.getTitle(),
+                updated.getCreatedBy() != null ? updated.getCreatedBy().getId() : null
+        ));
+
+        return toResponseDto(updated);
+    }
+
+    public void deleteMaterial(Integer id) {
+        ClassMaterial material = classMaterialJpaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Material not found"));
+
+        // Ghi log DELETE
+        activityLogService.log(new ActivityLogCreateDTO(
+                "DELETE",
+                material.getId(),
+                "class_materials",
+                "Xóa tài liệu: " + material.getTitle(),
+                material.getCreatedBy() != null ? material.getCreatedBy().getId() : null
+        ));
+
+        classMaterialJpaRepository.delete(material);
     }
 
     public void increaseDownloadCount(Integer materialId) {

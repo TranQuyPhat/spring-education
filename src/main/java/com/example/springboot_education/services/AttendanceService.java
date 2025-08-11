@@ -54,7 +54,6 @@ public class AttendanceService {
                 saved.getId(),
                 "attendances",
                 "Tạo mới điểm danh",
-                schedule.getClassEntity().getId(),
                 student.getId()
         ));
 
@@ -81,7 +80,6 @@ public class AttendanceService {
                 updated.getId(),
                 "attendances",
                 "Cập nhật trạng thái điểm danh",
-                updated.getSchedule().getClassEntity().getId(),
                 updated.getStudent().getId()
         ));
 

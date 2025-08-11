@@ -36,11 +36,6 @@ public class ActivityLog {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    @ManyToOne
-    @JoinColumn(name = "class_id")
-    private ClassEntity classRoom;
-
-
     @Column(name = "action_type", nullable = false, length = 100)
     private String actionType;
 

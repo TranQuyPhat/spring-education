@@ -12,7 +12,7 @@ public class ActivityLogResponseDTO {
     private String targetTable;
     private String description;
     private Instant createdAt;
-    private Integer classId;
     private Integer userId;
+    private Integer classId;
 }
 
