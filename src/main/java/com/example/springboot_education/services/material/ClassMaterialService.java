@@ -6,7 +6,7 @@ import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseD
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassMaterial;
 import com.example.springboot_education.entities.Users;
-import com.example.springboot_education.repositories.ClassJpaRepository;
+import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
@@ -22,14 +22,14 @@ public class ClassMaterialService {
 
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
-    private final ClassJpaRepository classJpaRepository;
+    private final ClassRepository classRepository;
     private final ActivityLogService activityLogService;
 
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto) {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        ClassEntity classEntity = classJpaRepository.findById(dto.getClassId())
+        ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
         ClassMaterial material = new ClassMaterial();
