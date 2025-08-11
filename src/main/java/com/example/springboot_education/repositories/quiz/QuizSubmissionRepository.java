@@ -15,5 +15,6 @@ public interface QuizSubmissionRepository extends JpaRepository<QuizSubmission, 
             "LEFT JOIN FETCH q.classField " +
             "WHERE q.id = :quizId")
     List<QuizSubmission> findAllByQuizIdWithDetails(@Param("quizId") Integer quizId);
+    List<QuizSubmission> findByQuiz_Id(Integer quizId);
 
 }
