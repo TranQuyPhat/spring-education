@@ -20,7 +20,7 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class ClassService {
 
     private final ClassRepository classRepository;
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
     private final ActivityLogService activityLogService;

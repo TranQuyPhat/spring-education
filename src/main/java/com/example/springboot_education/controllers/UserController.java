@@ -4,13 +4,11 @@ import com.example.springboot_education.dtos.usersDTOs.CreateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UpdateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UserResponseDto;
 import com.example.springboot_education.services.UserService;
-
 import jakarta.validation.Valid;
-
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")

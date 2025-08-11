@@ -1,11 +1,5 @@
 package com.example.springboot_education.services;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
@@ -15,17 +9,22 @@ import com.example.springboot_education.entities.ClassSchedule;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.AttendanceRepository;
 import com.example.springboot_education.repositories.ClassScheduleRepository;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {
 
     private final AttendanceRepository repository;
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
     private final ClassScheduleRepository scheduleRepository;
     private final ActivityLogService activityLogService;
 
-    public AttendanceService(AttendanceRepository repository, UserRepository userRepository,
+    public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
                              ClassScheduleRepository scheduleRepository, ActivityLogService activityLogService) {
         this.repository = repository;
         this.userRepository = userRepository;

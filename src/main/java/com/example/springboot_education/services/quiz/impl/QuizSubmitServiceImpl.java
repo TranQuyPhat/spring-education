@@ -4,7 +4,7 @@ import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.*;
 import com.example.springboot_education.exceptions.ResourceNotFoundException;
-import com.example.springboot_education.repositories.UserRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
@@ -31,7 +31,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final QuizAnswerRepository quizAnswerRepository;
     private final QuizRepository quizRepository;
-    private final UserRepository userRepository;
+    private final UsersJpaRepository userRepository;
     private final ActivityLogService activityLogService;
     @Override
     public List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId) {
