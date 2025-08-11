@@ -23,9 +23,12 @@ import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
 
+<<<<<<< HEAD
 =======
 import com.example.springboot_education.repositories.*;
 >>>>>>> 2580b71 (review v1)
+=======
+>>>>>>> f9de70d (feat: hoàn thành activity_logs_v2)
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;

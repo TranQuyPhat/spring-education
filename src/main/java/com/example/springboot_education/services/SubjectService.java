@@ -12,8 +12,8 @@ import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
 import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.SubjectRepository;
-import com.example.springboot_education.repositories.UsersJpaRepository;
 
+import com.example.springboot_education.repositories.UsersJpaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

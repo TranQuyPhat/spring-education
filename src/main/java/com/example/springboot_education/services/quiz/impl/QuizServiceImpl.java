@@ -39,7 +39,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private final UsersJpaRepository userRepository;
+
     private final ActivityLogService activityLogService;
     @Override
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
