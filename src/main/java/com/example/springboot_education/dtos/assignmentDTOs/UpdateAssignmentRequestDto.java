@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Date;
 
 @Data
 @Builder
@@ -16,7 +17,7 @@ public class UpdateAssignmentRequestDto {
     private Integer classId;
     private String title;
     private String description;
-    private Instant dueDate;
+    private Date dueDate;
     private BigDecimal maxScore;
     private String filePath;
     private String fileType;

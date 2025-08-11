@@ -78,7 +78,7 @@ public class Submission {
 
     public boolean isLate() {
         if (assignment == null || assignment.getDueDate() == null || submittedAt == null) return false;
-        return submittedAt.after(Timestamp.from(assignment.getDueDate()));
+        return submittedAt.after(assignment.getDueDate());
     }
 
 }
