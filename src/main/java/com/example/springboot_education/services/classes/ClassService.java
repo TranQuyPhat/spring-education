@@ -1,7 +1,7 @@
 // ClassService.java
 package com.example.springboot_education.services.classes;
 
-
+import org.springframework.transaction.annotation.Transactional;
 import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
@@ -52,12 +52,27 @@ public class ClassService {
         return toDTO(clazz);
     }
 
+    @Transactional
     public ClassResponseDTO createClass(CreateClassDTO dto) {
-        Users teacher = userRepository.findById(dto.getTeacherId()).orElseThrow();
+        Users teacher = userRepository.findById(dto.getTeacherId())
+                .orElseThrow();
         Subject subject = subjectRepository.findById(dto.getSubjectId())
-        .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
-        
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+
+        String yearPart = String.valueOf(dto.getSchoolYear());
+        String semesterPart = "01";
+        if ("Học kỳ 2".equalsIgnoreCase(dto.getSemester())) {
+            semesterPart = "02";
+        }
+        String prefix = yearPart + semesterPart;
+
+        Integer maxId = classRepository.findMaxIdByPrefixForUpdate(Integer.parseInt(prefix + "000"));
+        int nextNumber = (maxId != null) ? (maxId % 1000) + 1 : 1;
+
+        Integer newId = Integer.parseInt(prefix + String.format("%03d", nextNumber));
+
         ClassEntity clazz = new ClassEntity();
+        clazz.setId(newId);
         clazz.setClassName(dto.getClassName());
         clazz.setSchoolYear(dto.getSchoolYear());
         clazz.setSemester(dto.getSemester());
@@ -129,6 +144,7 @@ public class ClassService {
                     dto.setFullName(student.getFullName());
                     dto.setUsername(student.getUsername());
                     dto.setEmail(student.getEmail());
+                    dto.setJoinedAt(member.getJoinedAt());
                     return dto;
                 })
                 .collect(Collectors.toList());
