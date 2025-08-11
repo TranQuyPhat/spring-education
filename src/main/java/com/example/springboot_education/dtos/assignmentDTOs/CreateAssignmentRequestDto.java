@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Date;
 
 @Data
 @Builder
@@ -21,7 +22,7 @@ public class CreateAssignmentRequestDto {
     @NotNull(message = "Class ID is required")
     private Integer classId;
     @NotNull(message = "Due date is required")
-    private Instant dueDate;
+    private Date dueDate;
 
     @NotNull(message = "Max score is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Max score must be positive")

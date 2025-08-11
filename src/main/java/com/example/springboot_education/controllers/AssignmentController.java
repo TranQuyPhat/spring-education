@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -48,7 +49,7 @@ public class AssignmentController {
             @RequestParam Integer classId,
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Timestamp dueDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dueDate,
             @RequestParam BigDecimal maxScore,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
@@ -56,7 +57,7 @@ public class AssignmentController {
         dto.setClassId(classId);
         dto.setTitle(title);
         dto.setDescription(description);
-        dto.setDueDate(dueDate.toInstant());
+        dto.setDueDate(dueDate);
         dto.setMaxScore(maxScore);
 
         return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));

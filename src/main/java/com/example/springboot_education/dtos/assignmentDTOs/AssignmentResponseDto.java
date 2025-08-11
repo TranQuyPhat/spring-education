@@ -19,7 +19,7 @@ public class AssignmentResponseDto {
     private String title;
     private String description;
     private Integer classId;
-    private Instant dueDate;
+    private Date dueDate;
     private BigDecimal maxScore;
     private String filePath;
     private String fileType;

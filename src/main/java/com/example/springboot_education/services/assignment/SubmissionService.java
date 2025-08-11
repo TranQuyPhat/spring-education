@@ -56,7 +56,7 @@ public class SubmissionService {
 
         // Kiểm tra hạn nộp
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        if (assignment.getDueDate() != null && now.after(Timestamp.from(assignment.getDueDate()))) {
+        if (assignment.getDueDate() != null && now.after(assignment.getDueDate())) {
             throw new IllegalStateException("Submission deadline has passed");
         }
 

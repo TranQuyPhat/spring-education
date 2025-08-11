@@ -11,6 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -39,7 +40,8 @@ public class Assignment {
 
     @NotNull
     @Column(name = "due_date", nullable = false)
-    private Instant dueDate;
+    @Temporal(TemporalType.DATE)
+    private Date dueDate;
 
     @NotNull
     @Column(name = "max_score", nullable = false, precision = 5, scale = 2)
