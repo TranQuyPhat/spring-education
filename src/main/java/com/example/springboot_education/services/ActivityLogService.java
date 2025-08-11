@@ -3,7 +3,6 @@ package com.example.springboot_education.services;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogResponseDTO;
 import com.example.springboot_education.entities.ActivityLog;
-import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ActivityLogRepository;
 import com.example.springboot_education.repositories.ClassRepository;
@@ -18,16 +17,13 @@ import java.util.stream.Collectors;
 public class ActivityLogService {
 
     private final ActivityLogRepository repository;
-    private final ClassRepository classRepository;
     private final UsersJpaRepository usersRepository;
 
     public ActivityLogService(
             ActivityLogRepository repository,
-            ClassRepository classRepository,
             UsersJpaRepository usersRepository
     ) {
         this.repository = repository;
-        this.classRepository = classRepository;
         this.usersRepository = usersRepository;
     }
 
@@ -45,11 +41,6 @@ public class ActivityLogService {
         log.setDescription(dto.getDescription());
         log.setCreatedAt(Instant.now());
 
-        // Find and set class
-        ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found with ID: " + dto.getClassId()));
-        log.setClassRoom(classEntity);
-
         // Find and set user
         Users user = usersRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
@@ -66,7 +57,6 @@ public class ActivityLogService {
         dto.setTargetTable(activity.getTargetTable());
         dto.setDescription(activity.getDescription());
         dto.setCreatedAt(activity.getCreatedAt());
-        dto.setClassId(activity.getClassRoom().getId());
         dto.setUserId(activity.getUser().getId());
         return dto;
     }

@@ -52,8 +52,8 @@ public class ClassEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    @OneToMany(mappedBy = "classRoom")
-    private List<ActivityLog> activities;
+    // @OneToMany(mappedBy = "classRoom")
+    // private List<ActivityLog> activities;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
