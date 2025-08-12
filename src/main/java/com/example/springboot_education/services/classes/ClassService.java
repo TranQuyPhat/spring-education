@@ -31,7 +31,6 @@ import com.example.springboot_education.repositories.UsersJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Service
 @RequiredArgsConstructor
 public class ClassService {
@@ -40,8 +39,6 @@ public class ClassService {
     private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
-    // Xóa ActivityLogService khỏi constructor
-    // private final ActivityLogService activityLogService;
 
     public List<ClassResponseDTO> getAllClasses() {
         return classRepository.findAll()
@@ -86,9 +83,6 @@ public class ClassService {
 
         ClassEntity saved = classRepository.save(clazz);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return toDTO(saved);
     }
 
@@ -107,9 +101,6 @@ public class ClassService {
 
         ClassEntity updated = classRepository.save(clazz);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return toDTO(updated);
     }
 
@@ -117,9 +108,6 @@ public class ClassService {
     public void deleteClass(Integer id) {
         ClassEntity clazz = classRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
-
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
 
         classRepository.deleteById(id);
     }
@@ -149,10 +137,7 @@ public class ClassService {
 
         classUserRepository.save(member);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
     }
-
 
     private ClassResponseDTO toDTO(ClassEntity clazz) {
         ClassResponseDTO dto = new ClassResponseDTO();
