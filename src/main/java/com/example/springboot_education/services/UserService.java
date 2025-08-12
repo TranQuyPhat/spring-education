@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
+// Xóa import ActivityLogCreateDTO
+// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
 import com.example.springboot_education.dtos.usersDTOs.CreateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UpdateUserRequestDto;
@@ -30,7 +32,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UsersJpaRepository userJpaRepository;
     private final RoleJpaRepository roleJpaRepository;
-    private final ActivityLogService activityLogService;
 
     private UserResponseDto convertToDto(Users user) {
         List<RoleResponseDto> roles = user.getUserRoles().stream()
@@ -61,6 +62,7 @@ public class UserService {
     }
 
     // Tạo user mới
+    @LoggableAction(value = "CREATE", entity = "users", description = "Tạo user mới")
     public UserResponseDto createUser(CreateUserRequestDto dto) {
         if (this.userJpaRepository.existsByEmail(dto.getEmail())) {
             throw new HttpException("Email already exists: " + dto.getEmail(), HttpStatus.CONFLICT);
@@ -89,14 +91,8 @@ public class UserService {
 
         Users savedUser = userJpaRepository.save(user);
 
-        // Ghi log CREATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                savedUser.getId(),
-                "users",
-                "Tạo user mới: " + savedUser.getUsername(),
-                savedUser.getId()
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         return convertToDto(savedUser);
     }
@@ -109,6 +105,7 @@ public class UserService {
     }
 
     // Cập nhật user
+    @LoggableAction(value = "UPDATE", entity = "users", description = "Cập nhật user")
     public UserResponseDto updateUser(Integer id, UpdateUserRequestDto dto) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
@@ -139,32 +136,21 @@ public class UserService {
 
         Users updatedUser = userJpaRepository.save(user);
 
-        // Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                updatedUser.getId(),
-                "users",
-                "Cập nhật thông tin user: " + updatedUser.getUsername(),
-                updatedUser.getId()
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         return convertToDto(updatedUser);
     }
 
     // Xoá user
     @Transactional
+    @LoggableAction(value = "DELETE", entity = "users", description = "Xóa user")
     public void deleteUser(Integer id) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Ghi log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                user.getId(),
-                "users",
-                "Xóa user: " + user.getUsername(),
-                user.getId()
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         userJpaRepository.delete(user);
     }
