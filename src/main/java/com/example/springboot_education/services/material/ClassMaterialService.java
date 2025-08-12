@@ -1,5 +1,10 @@
 package com.example.springboot_education.services.material;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseDto;
@@ -9,11 +14,8 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
