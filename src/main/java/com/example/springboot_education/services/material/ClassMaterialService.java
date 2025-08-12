@@ -1,8 +1,6 @@
 package com.example.springboot_education.services.material;
 
-// Xóa import ActivityLogCreateDTO
-// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
-import com.example.springboot_education.annotations.LoggableAction; // Import annotation
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseDto;
 import com.example.springboot_education.entities.ClassEntity;
@@ -43,9 +41,6 @@ public class ClassMaterialService {
 
         ClassMaterial saved = classMaterialJpaRepository.save(material);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return toResponseDto(saved);
     }
 
@@ -67,9 +62,6 @@ public class ClassMaterialService {
 
         ClassMaterial updated = classMaterialJpaRepository.save(material);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return toResponseDto(updated);
     }
 
@@ -77,9 +69,6 @@ public class ClassMaterialService {
     public void deleteMaterial(Integer id) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
-
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
 
         classMaterialJpaRepository.delete(material);
     }
