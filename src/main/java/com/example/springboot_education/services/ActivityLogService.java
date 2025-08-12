@@ -21,8 +21,6 @@ public class ActivityLogService {
 
     public ActivityLogService(
             ActivityLogRepository repository,
-
-            ClassRepository classRepository,
             UsersJpaRepository usersRepository
     ) {
         this.repository = repository;
