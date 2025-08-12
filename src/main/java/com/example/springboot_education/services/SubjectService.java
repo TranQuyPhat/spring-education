@@ -5,6 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
+// Xóa import ActivityLogCreateDTO
+// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
 import com.example.springboot_education.dtos.subjects.CreateSubjectDTO;
 import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
@@ -21,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
-
     private final UsersJpaRepository userRepository;
 
     public List<SubjectResponseDTO> findAll() {
@@ -37,7 +39,43 @@ public class SubjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found with id: " + id));
     }
 
-    
+    @LoggableAction(value = "CREATE", entity = "subjects", description = "Tạo môn học mới")
+    public SubjectResponseDTO create(CreateSubjectDTO dto) {
+        Subject subject = new Subject();
+        subject.setSubjectName(dto.getSubjectName());
+        subject.setDescription(dto.getDescription());
+
+        Users creator = null;
+        if (dto.getCreatedById() != null) {
+            creator = userRepository.findById(dto.getCreatedById())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            subject.setCreatedBy(creator);
+        }
+
+        Subject saved = subjectRepository.save(subject);
+        return toDTO(saved);
+    }
+
+    @LoggableAction(value = "UPDATE", entity = "subjects", description = "Cập nhật môn học")
+    public SubjectResponseDTO update(Integer id, UpdateSubjectDTO dto) {
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
+
+        subject.setSubjectName(dto.getSubjectName());
+        subject.setDescription(dto.getDescription());
+
+        Subject updated = subjectRepository.save(subject);
+
+        return toDTO(updated);
+    }
+
+    @LoggableAction(value = "DELETE", entity = "subjects", description = "Xóa môn học")
+    public void delete(Integer id) {
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
+
+        subjectRepository.delete(subject);
+    }
 
     private SubjectResponseDTO toDTO(Subject subject) {
         SubjectResponseDTO dto = new SubjectResponseDTO();

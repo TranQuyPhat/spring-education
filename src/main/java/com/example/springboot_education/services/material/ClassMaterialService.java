@@ -1,6 +1,8 @@
 package com.example.springboot_education.services.material;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+// Xóa import ActivityLogCreateDTO
+// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseDto;
 import com.example.springboot_education.entities.ClassEntity;
@@ -9,7 +11,6 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
-import com.example.springboot_education.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +24,8 @@ public class ClassMaterialService {
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
-    private final ActivityLogService activityLogService;
-
+   
+    @LoggableAction(value = "CREATE", entity = "class_materials", description = "Tạo tài liệu mới")
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto) {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -42,14 +43,8 @@ public class ClassMaterialService {
 
         ClassMaterial saved = classMaterialJpaRepository.save(material);
 
-        // Ghi log CREATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                saved.getId(),
-                "class_materials",
-                "Tạo tài liệu: " + saved.getTitle(),
-                user.getId()
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         return toResponseDto(saved);
     }
@@ -60,6 +55,7 @@ public class ClassMaterialService {
                 .collect(Collectors.toList());
     }
 
+    @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Cập nhật tài liệu")
     public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
@@ -71,30 +67,19 @@ public class ClassMaterialService {
 
         ClassMaterial updated = classMaterialJpaRepository.save(material);
 
-        // Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                updated.getId(),
-                "class_materials",
-                "Cập nhật tài liệu: " + updated.getTitle(),
-                updated.getCreatedBy() != null ? updated.getCreatedBy().getId() : null
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         return toResponseDto(updated);
     }
 
+    @LoggableAction(value = "DELETE", entity = "class_materials", description = "Xóa tài liệu")
     public void deleteMaterial(Integer id) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
 
-        // Ghi log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                material.getId(),
-                "class_materials",
-                "Xóa tài liệu: " + material.getTitle(),
-                material.getCreatedBy() != null ? material.getCreatedBy().getId() : null
-        ));
+        // Xóa code ghi logs thủ công
+        // activityLogService.log(...);
 
         classMaterialJpaRepository.delete(material);
     }

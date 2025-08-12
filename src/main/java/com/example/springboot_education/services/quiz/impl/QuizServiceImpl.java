@@ -1,6 +1,11 @@
 package com.example.springboot_education.services.quiz.impl;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
@@ -19,14 +24,13 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
-import com.example.springboot_education.services.ActivityLogService;
+// Xóa import ActivityLogService
+// import com.example.springboot_education.services.ActivityLogService;
 import com.example.springboot_education.services.quiz.QuizService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,9 +43,10 @@ public class QuizServiceImpl implements QuizService {
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
+    private final UsersJpaRepository usersJpaRepository;
 
-    private final ActivityLogService activityLogService;
     @Override
+    @LoggableAction(value = "CREATE", entity = "quizzes", description = "Tạo quiz mới")
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
         Quiz quiz = quizMapper2.toEntity(quizDTO);
         quiz = quizRepository.save(quiz);
@@ -120,6 +125,8 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
+    @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Cập nhật quiz")
+
     public QuizResponseTeacherDTO updateQuizMeta(Integer quizId, QuizBaseDTO dto) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
@@ -224,6 +231,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
+     @LoggableAction(value = "DELETE", entity = "quizzes", description = "Xóa quiz")
     public void deleteQuiz(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
@@ -231,7 +239,6 @@ public class QuizServiceImpl implements QuizService {
         quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
 
         quizRepository.delete(quiz);
+
     }
-
-
 }
