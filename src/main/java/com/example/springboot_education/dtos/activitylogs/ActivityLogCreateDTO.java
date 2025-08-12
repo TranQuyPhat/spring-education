@@ -26,14 +26,6 @@ public class ActivityLogCreateDTO {
         this.classId = null; // Mặc định null khi không truyền
     }
 
-    // Constructor 6 tham số
-    public ActivityLogCreateDTO(String actionType, Integer targetId, String targetTable, String description, Integer classId, Integer userId) {
-        this.actionType = actionType;
-        this.targetId = targetId;
-        this.targetTable = targetTable;
-        this.description = description;
-        this.classId = classId;
-        this.userId = userId;
-    }
+  
 
 }

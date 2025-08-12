@@ -1,7 +1,7 @@
 // ClassService.java
 package com.example.springboot_education.services.classes;
 
-import java.time.Instant; // Import annotation
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +27,7 @@ import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import lombok.RequiredArgsConstructor;
