@@ -1,9 +1,11 @@
 package com.example.springboot_education.services;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+
 
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
@@ -32,6 +34,7 @@ public class AttendanceService {
 
     public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
                         ClassScheduleRepository scheduleRepository, ActivityLogService activityLogService) {
+
         this.repository = repository;
         this.userRepository = userRepository;
         this.scheduleRepository = scheduleRepository;

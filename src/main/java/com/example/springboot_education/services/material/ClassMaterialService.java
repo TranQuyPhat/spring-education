@@ -22,8 +22,8 @@ public class ClassMaterialService {
 
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
-    private final ActivityLogService activityLogService;
     private final ClassRepository classRepository;
+    private final ActivityLogService activityLogService;
 
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto) {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
