@@ -231,16 +231,6 @@ public class QuizServiceImpl implements QuizService {
         quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
 
         quizRepository.delete(quiz);
-<<<<<<< HEAD
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                quiz.getId(),
-                "quizzes",
-                "Xóa quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,null
-        ));
-=======
->>>>>>> 0ca3d94 (done UDQUIZ)
     }
 
 

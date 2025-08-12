@@ -17,11 +17,6 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.AttendanceRepository;
 import com.example.springboot_education.repositories.ClassScheduleRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {

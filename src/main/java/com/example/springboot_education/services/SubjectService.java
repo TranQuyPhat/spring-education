@@ -5,8 +5,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-// Xóa import ActivityLogCreateDTO
-// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
 import com.example.springboot_education.dtos.subjects.CreateSubjectDTO;
 import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
