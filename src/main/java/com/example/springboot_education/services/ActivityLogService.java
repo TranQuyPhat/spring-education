@@ -21,6 +21,8 @@ public class ActivityLogService {
 
     public ActivityLogService(
             ActivityLogRepository repository,
+
+            ClassRepository classRepository,
             UsersJpaRepository usersRepository
     ) {
         this.repository = repository;
@@ -33,6 +35,7 @@ public class ActivityLogService {
                 .collect(Collectors.toList());
     }
 
+ 
     public void log(ActivityLogCreateDTO dto) {
         ActivityLog log = new ActivityLog();
         log.setActionType(dto.getActionType());
@@ -41,7 +44,6 @@ public class ActivityLogService {
         log.setDescription(dto.getDescription());
         log.setCreatedAt(Instant.now());
 
-        // Find and set user
         Users user = usersRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
         log.setUser(user);

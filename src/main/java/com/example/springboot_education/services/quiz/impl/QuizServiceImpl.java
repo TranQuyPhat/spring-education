@@ -39,7 +39,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private final UsersJpaRepository userRepository;
+
     private final ActivityLogService activityLogService;
     @Override
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
@@ -231,13 +231,6 @@ public class QuizServiceImpl implements QuizService {
         quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
 
         quizRepository.delete(quiz);
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                quiz.getId(),
-                "quizzes",
-                "Xóa quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,null
-        ));
     }
 
 

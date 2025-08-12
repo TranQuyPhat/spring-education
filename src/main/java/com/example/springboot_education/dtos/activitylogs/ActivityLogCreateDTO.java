@@ -1,10 +1,12 @@
 package com.example.springboot_education.dtos.activitylogs;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class ActivityLogCreateDTO {
     private String actionType;
     private Integer targetId;
@@ -12,6 +14,7 @@ public class ActivityLogCreateDTO {
     private String description;
     private Integer classId;
     private Integer userId;
+
 
     // Constructor 5 tham số
     public ActivityLogCreateDTO(String actionType, Integer targetId, String targetTable, String description, Integer userId) {
@@ -32,4 +35,5 @@ public class ActivityLogCreateDTO {
         this.classId = classId;
         this.userId = userId;
     }
+
 }

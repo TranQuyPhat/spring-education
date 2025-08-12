@@ -1,5 +1,12 @@
 package com.example.springboot_education.services;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
@@ -10,11 +17,6 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.AttendanceRepository;
 import com.example.springboot_education.repositories.ClassScheduleRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {
@@ -24,8 +26,10 @@ public class AttendanceService {
     private final ClassScheduleRepository scheduleRepository;
     private final ActivityLogService activityLogService;
 
+
     public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
-                             ClassScheduleRepository scheduleRepository, ActivityLogService activityLogService) {
+                        ClassScheduleRepository scheduleRepository, ActivityLogService activityLogService) {
+
         this.repository = repository;
         this.userRepository = userRepository;
         this.scheduleRepository = scheduleRepository;
@@ -46,6 +50,7 @@ public class AttendanceService {
         attendance.setMarkedAt(Instant.now());
 
         Attendance saved = repository.save(attendance);
+
 
         // Ghi log CREATE
         activityLogService.log(new ActivityLogCreateDTO(
