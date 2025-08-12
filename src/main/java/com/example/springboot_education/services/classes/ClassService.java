@@ -1,35 +1,21 @@
 // ClassService.java
 package com.example.springboot_education.services.classes;
 
-import org.springframework.transaction.annotation.Transactional;
-import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
-import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
-import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
-import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
-import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
-import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
-import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.entities.ClassUser;
-import com.example.springboot_education.entities.ClassUserId;
-import com.example.springboot_education.entities.Subject;
-// import com.example.springboot_education.entities.ClassMember;
-import com.example.springboot_education.entities.Users;
-// import com.example.springboot_education.repositories.ClassMemberRepository;
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.dtos.classDTOs.*;
+import com.example.springboot_education.entities.*;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-// import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;

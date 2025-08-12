@@ -25,19 +25,40 @@ public class QuizController {
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getQuizByRole(
-            @PathVariable Integer id,
-            @RequestParam(defaultValue = "student") String role
-    ) {
-        if ("teacher".equalsIgnoreCase(role)) {
-            return ResponseEntity.ok(quizService.getQuizForTeacher(id));
-        } else if ("student".equalsIgnoreCase(role)) {
-            return ResponseEntity.ok(quizService.getQuizForStudent(id));
-        } else {
-            return ResponseEntity.badRequest().body("Invalid role: " + role);
-        }
+//    @GetMapping("/{id}")
+//    public ResponseEntity<?> getQuizByRole(
+//            @PathVariable Integer id,
+//           Authentication authentication
+//    ) {
+//        String username=authentication.getName();
+//        Collection<?extends GrantedAuthority> authorities=authentication.getAuthorities();
+//        boolean isTeacher = authorities.stream()
+//                .anyMatch(auth -> auth.getAuthority().equals("teacher"));
+//        boolean isStudent = authorities.stream()
+//                .anyMatch(auth -> auth.getAuthority().equals("student"));
+//
+//        if (isTeacher) {
+//            return ResponseEntity.ok(quizService.getQuizForTeacher(id));
+//        } else if (isStudent) {
+//            return ResponseEntity.ok(quizService.getQuizForStudent(id));
+//        } else {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body("You don't have permission to access this quiz");
+//        }
+//    }
+@GetMapping("/{id}")
+public ResponseEntity<?> getQuizByRole(
+        @PathVariable Integer id,
+        @RequestParam(defaultValue = "student") String role
+) {
+    if ("teacher".equalsIgnoreCase(role)) {
+        return ResponseEntity.ok(quizService.getQuizForTeacher(id));
+    } else if ("student".equalsIgnoreCase(role)) {
+        return ResponseEntity.ok(quizService.getQuizForStudent(id));
+    } else {
+        return ResponseEntity.badRequest().body("Invalid role: " + role);
     }
+}
     @GetMapping
     public ResponseEntity<List<QuizResponseTeacherDTO>> getAllQuizzes() {
         return ResponseEntity.ok(quizService.getAllQuizzes());
