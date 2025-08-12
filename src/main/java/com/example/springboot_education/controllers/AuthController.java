@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.springboot_education.dtos.AuthDTOs.GoogleLoginRequestDto;
+import com.example.springboot_education.dtos.AuthDTOs.GoogleLoginWithCredentialRequestDto;
 import com.example.springboot_education.dtos.AuthDTOs.LoginRequestDto;
 import com.example.springboot_education.dtos.AuthDTOs.LoginResponseDto;
 import com.example.springboot_education.dtos.AuthDTOs.RegisterRequestDto;
@@ -15,6 +18,7 @@ import com.example.springboot_education.dtos.AuthDTOs.RegisterResponseDto;
 import com.example.springboot_education.services.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -26,6 +30,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
+          System.out.println("=== LOGIN REQUEST ===");
+    System.out.println("username: " + request.getUsername());
+    System.out.println("email: " + request.getEmail());
+    System.out.println("password: " + request.getPassword());
         LoginResponseDto result = this.authService.login(request);
         return ResponseEntity.ok(result);
     }
@@ -37,5 +45,17 @@ public class AuthController {
      @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         return ResponseEntity.ok().body(Map.of("message", "Logout successful"));
+    }
+
+      @PostMapping("/google-login")
+    public ResponseEntity<LoginResponseDto> googleLogin(@RequestBody @Valid GoogleLoginRequestDto request) throws Exception {
+        LoginResponseDto result = this.authService.googleLogin(request);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/google-login-with-credential")
+    public ResponseEntity<LoginResponseDto> googleLoginWithCredential(@RequestBody @Valid GoogleLoginWithCredentialRequestDto request) throws Exception {
+        LoginResponseDto result = this.authService.googleLoginWithCredential(request);
+        return ResponseEntity.ok(result);
     }
 }
