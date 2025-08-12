@@ -4,11 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-    
-// Xóa import ActivityLogCreateDTO
+
+
 import com.example.springboot_education.annotations.LoggableAction; // Import annotation
-// Xóa import ActivityLogCreateDTO
-// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;  
+
 import com.example.springboot_education.dtos.classschedules.ClassScheduleCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleUpdateDTO;

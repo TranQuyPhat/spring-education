@@ -7,10 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // Dòng này đã được sửa
 
-import com.example.springboot_education.annotations.LoggableAction; // Import annotation
-// Xóa import ActivityLogCreateDTO
-// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
 import com.example.springboot_education.dtos.usersDTOs.CreateUserRequestDto;
 import com.example.springboot_education.dtos.usersDTOs.UpdateUserRequestDto;
@@ -22,7 +21,6 @@ import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.RoleJpaRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -91,9 +89,6 @@ public class UserService {
 
         Users savedUser = userJpaRepository.save(user);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return convertToDto(savedUser);
     }
 
@@ -136,9 +131,6 @@ public class UserService {
 
         Users updatedUser = userJpaRepository.save(user);
 
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
-
         return convertToDto(updatedUser);
     }
 
@@ -148,9 +140,6 @@ public class UserService {
     public void deleteUser(Integer id) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Xóa code ghi logs thủ công
-        // activityLogService.log(...);
 
         userJpaRepository.delete(user);
     }

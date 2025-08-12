@@ -61,7 +61,6 @@ public class ClassMaterialService {
         material.setFileType(dto.getFileType());
 
         ClassMaterial updated = classMaterialJpaRepository.save(material);
-
         return toResponseDto(updated);
     }
 

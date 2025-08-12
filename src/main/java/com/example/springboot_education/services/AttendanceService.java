@@ -25,16 +25,12 @@ public class AttendanceService {
     private final UsersJpaRepository userRepository;
     private final ClassScheduleRepository scheduleRepository;
 
-
     public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
-                        ClassScheduleRepository scheduleRepository) {
-
+                             ClassScheduleRepository scheduleRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.scheduleRepository = scheduleRepository;
     }
-
-    // Phương thức này hiện tại không có @LoggableAction
     public AttendanceResponseDTO create(AttendanceCreateDTO dto) {
         Users student = userRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
