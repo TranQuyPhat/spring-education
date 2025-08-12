@@ -46,17 +46,4 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletRequest request) {
         return ResponseEntity.ok().body(Map.of("message", "Logout successful"));
     }
-
-      @PostMapping("/google-login")
-    public ResponseEntity<LoginResponseDto> googleLogin(@RequestBody @Valid GoogleLoginRequestDto request) throws Exception {
-        LoginResponseDto result = this.authService.googleLogin(request);
-        return ResponseEntity.ok(result);
-    }
-
-    @PostMapping("/google-login-with-credential")
-    public ResponseEntity<LoginResponseDto> googleLoginWithCredential(@RequestBody @Valid GoogleLoginWithCredentialRequestDto request) throws Exception {
-        LoginResponseDto result = this.authService.googleLoginWithCredential(request);
-        return ResponseEntity.ok(result);
-    }
-
 }
