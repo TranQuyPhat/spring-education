@@ -17,4 +17,5 @@ public class LoginResponseDto {
     private String email;
     private String accessToken;
      private List<String> roles; 
+         private boolean requireRoleSelection;
 }
