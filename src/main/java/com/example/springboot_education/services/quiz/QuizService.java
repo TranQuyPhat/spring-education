@@ -1,6 +1,7 @@
 package com.example.springboot_education.services.quiz;
 
 
+import com.example.springboot_education.dtos.quiz.QuestionsPageResponseDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
@@ -18,5 +19,5 @@ public interface QuizService {
     QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body);
     void deleteQuestion(Integer quizId, Integer questionId);
     void deleteQuiz(Integer quizId);
-
-}
+    QuestionsPageResponseDTO getQuizQuestionsPageForTeacher(Integer quizId, int page, int size);
+    QuestionsPageResponseDTO getQuizQuestionsPageForStudent(Integer quizId, int page, int size);}

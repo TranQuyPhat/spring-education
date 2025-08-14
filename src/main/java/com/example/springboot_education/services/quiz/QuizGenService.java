@@ -67,7 +67,6 @@ public class QuizGenService {
                 .propertyOrdering(List.of("quizTitle","questions"))
                 .build();
 
-        // 3) Map aiLevel -> cấu hình sinh
         float temperature = 0.2f, topK = 40f, topP = 0.9f;
         if (settings != null && settings.getAiLevel() != null) {
             switch (settings.getAiLevel().toLowerCase()) {
@@ -91,7 +90,6 @@ public class QuizGenService {
                 .topP(topP)
                 .build();
 
-        // 4) Prompt cuối chỉ chứa yêu cầu + dữ liệu
         String prompt = """
         [YÊU CẦU TỪ UI]
         %s
@@ -104,6 +102,6 @@ public class QuizGenService {
         GenerateContentResponse resp =
                 client.models.generateContent(model, prompt, config);
 
-        return resp.text(); // JSON hợp lệ theo schema
+        return resp.text();
     }
 }
