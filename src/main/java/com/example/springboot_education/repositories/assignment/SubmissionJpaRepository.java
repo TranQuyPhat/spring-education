@@ -1,5 +1,7 @@
 package com.example.springboot_education.repositories.assignment;
 
+import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
+import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.Submission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,9 +17,33 @@ import java.util.Optional;
 
 @Repository
 public interface SubmissionJpaRepository extends JpaRepository<Submission, Integer> {
-    List<Submission> findByAssignmentId(Integer assignmentId);
+    @Query("""
+    SELECT new com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto(
+        s.id,
+        s.assignment.id,
+        s.student.id,
+        s.filePath,
+        s.fileType,
+        s.status,
+        s.score,
+        s.teacherComment,
+        s.submittedAt,
+        s.gradedAt,
+        s.student.fullName,
+        s.student.email,
+        s.student.imageUrl
+    )
+    FROM Submission s
+    WHERE s.assignment.id = :assignmentId
+""")
+    List<SubmissionResponseDto> findByAssignmentId(@Param("assignmentId") Integer assignmentId);
+
     List<Submission> findByStudentId(Integer studentId);
     Optional<Submission> findByAssignmentIdAndStudentId(Integer assignmentId, Integer studentId);
+
+    @Query("SELECT s FROM Submission s WHERE s.assignment.classField.id = :classId")
+    List<Submission> findByClassId(@Param("classId") Integer classId);
+
 
     @Query("""
         SELECT COALESCE(AVG(s.score), 0)

@@ -91,4 +91,9 @@ public class AssignmentController {
                 .body(resource);
     }
 
+    @GetMapping("/class/{classId}")
+    public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(@PathVariable Integer classId) {
+        return ResponseEntity.ok(assignmentService.getAssignmentsByClassId(classId));
+    }
+
 }
