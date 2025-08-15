@@ -36,8 +36,8 @@ public class ClassMaterial {
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
-    @Size(max = 50)
-    @Column(name = "file_type", length = 50)
+    @Size(max = 255)
+    @Column(name = "file_type", length = 255)
     private String fileType;
 
     @NotNull

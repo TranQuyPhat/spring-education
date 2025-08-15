@@ -43,14 +43,14 @@ public class Submission {
     @Column(name = "submitted_at", nullable = false)
     private Timestamp submittedAt;
 
-    @Size(max = 255)
+    @Size(max = 500)
     @NotNull
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path", length = 500)
     private String filePath;
 
     @Size(max = 255)
     @NotNull
-    @Column(name = "file_type", nullable = false)
+    @Column(name = "file_type", length = 255)
     private String fileType;
 
     @Enumerated(EnumType.STRING)

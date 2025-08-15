@@ -127,4 +127,17 @@ public class AssignmentService {
         return assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
     }
+
+    // Get assignment by class
+    public List<AssignmentResponseDto> getAssignmentsByClassId(Integer classId) {
+        ClassEntity classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+
+        return assignmentJpaRepository.findByClassField_Id(classId)
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
 }
+
