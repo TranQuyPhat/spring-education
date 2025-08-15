@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-    
-// Xóa import ActivityLogCreateDTO
-// import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO; 
+
+
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
+
 import com.example.springboot_education.dtos.classschedules.ClassScheduleCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleUpdateDTO;
@@ -26,7 +27,22 @@ public class ClassScheduleService {
         this.classRepository = classRepository;
     }
 
+    @LoggableAction(value = "CREATE", entity = "class_schedules", description = "Tạo lịch học mới")
+    public ClassScheduleResponseDTO create(ClassScheduleCreateDTO dto) {
+        ClassEntity classEntity = classRepository.findById(dto.getClassId())
+                .orElseThrow(() -> new RuntimeException("Class not found"));
 
+        ClassSchedule schedule = new ClassSchedule();
+        schedule.setClassEntity(classEntity);
+        schedule.setDayOfWeek(dto.getDayOfWeek());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+        schedule.setLocation(dto.getLocation());
+
+        ClassSchedule saved = repository.save(schedule);
+
+        return mapToDTO(saved);
+    }
 
     public List<ClassScheduleResponseDTO> getAll() {
         return repository.findAllWithClass()
@@ -40,8 +56,21 @@ public class ClassScheduleService {
                 .map(this::mapToDTO);
     }
 
-   
+    @LoggableAction(value = "UPDATE", entity = "class_schedules", description = "Cập nhật lịch học")
+    public ClassScheduleResponseDTO update(Integer id, ClassScheduleUpdateDTO dto) {
+        ClassSchedule schedule = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Class Schedule not found"));
 
+        schedule.setDayOfWeek(dto.getDayOfWeek());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+        schedule.setLocation(dto.getLocation());
+
+        ClassSchedule updated = repository.save(schedule);
+
+        return mapToDTO(updated);
+    }
+    
     private ClassScheduleResponseDTO mapToDTO(ClassSchedule schedule) {
         ClassScheduleResponseDTO dto = new ClassScheduleResponseDTO();
         dto.setId(schedule.getId());

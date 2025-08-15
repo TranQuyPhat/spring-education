@@ -13,28 +13,30 @@ import com.example.springboot_education.entities.Users;
 @Repository
 public interface UsersJpaRepository extends JpaRepository<Users, Integer> {
 
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByUsername(String username);
+    boolean existsByUsername(String username);
 
-  Optional<Users> findByEmail(String email);
+    Optional<Users> findByEmail(String email);
 
-  @Query("SELECT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role WHERE u.email = :email")
-  Optional<Users> findByEmailWithRoles(@Param("email") String email);
+    Optional<Users> findByUsername(String username); 
 
-  @Query("SELECT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role WHERE u.username = :username")
-  Optional<Users> findByUsernameWithRoles(@Param("username") String username);
+    @Query("SELECT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role WHERE u.email = :email")
+    Optional<Users> findByEmailWithRoles(@Param("email") String email);
 
-  Optional<Users> findById(Integer id);
+    @Query("SELECT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role WHERE u.username = :username")
+    Optional<Users> findByUsernameWithRoles(@Param("username") String username);
 
-  boolean existsById(Integer id);
+    Optional<Users> findById(Integer id);
 
-  Users save(Users user);
+    boolean existsById(Integer id);
 
-  void deleteById(Integer id);
+    Users save(Users user);
 
-  @Query("SELECT DISTINCT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role")
-  List<Users> findAllUsersWithRoles();
+    void deleteById(Integer id);
 
-  List<Users> findByIdIn(List<Integer> ids);
+    @Query("SELECT DISTINCT u FROM Users u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role")
+    List<Users> findAllUsersWithRoles();
+
+    List<Users> findByIdIn(List<Integer> ids);
 }
