@@ -35,9 +35,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     Role role = userRole.getRole();
             // Nếu dùng @PreAuthorize("hasAuthority('Administrators')") thì
             authorities.add(new SimpleGrantedAuthority(role.getName()));
-
-            // Nếu dùng @PreAuthorize("hasRole('Administrators')") thì authorities.add(new
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
         });
 
         return org.springframework.security.core.userdetails.User.builder()
