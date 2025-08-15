@@ -58,7 +58,7 @@ public class QuizMapper2 {
         QuestionTeacherDTO dto = new QuestionTeacherDTO();
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
-        dto.setCorrectOption(question.getCorrectOption().toString());
+        dto.setCorrectOption(question.getCorrectOption());
         dto.setScore(question.getScore());
         dto.setOptions(options);
         return dto;

@@ -1,13 +1,20 @@
 package com.example.springboot_education.services.quiz.impl;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionDTO;
+import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
@@ -23,7 +30,6 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
-import com.example.springboot_education.services.ActivityLogService;
 import com.example.springboot_education.services.quiz.QuizService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,14 +39,17 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class QuizServiceImpl implements QuizService {
+
     private final QuizRepository quizRepository;
     private final QuizQuestionRepository questionRepository;
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private final UsersJpaRepository userRepository;
-    private final ActivityLogService activityLogService;
+    private final UsersJpaRepository usersJpaRepository;
+
     @Override
+    @Transactional
+    @LoggableAction(value = "CREATE", entity = "quizzes", description = "Tạo quiz mới")
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
         Quiz quiz = quizMapper2.toEntity(quizDTO);
         quiz = quizRepository.save(quiz);
@@ -65,17 +74,6 @@ public class QuizServiceImpl implements QuizService {
                 optionRepository.save(option);
             }
         }
-
-        // 📌 Ghi log CREATE quiz
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                quiz.getId(),
-                "quizzes",
-                "Tạo quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                quizDTO.getCreatedBy() // cần đảm bảo QuizRequestDTO có field này
-        ));
-
         return getQuizForTeacher(quiz.getId());
     }
 
@@ -126,44 +124,119 @@ public class QuizServiceImpl implements QuizService {
         return quizMapper2.toStudentDto(quiz, questionDTOs);
     }
 
-    // 📌 Thêm hàm UPDATE quiz (nếu bạn muốn log UPDATE)
-    public QuizBaseDTO updateQuiz(Integer quizId, QuizRequestDTO quizDTO) {
+    @Override
+    @Transactional
+    @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Cập nhật quiz")
+    public QuizResponseTeacherDTO updateQuizMeta(Integer quizId, QuizBaseDTO dto) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        quiz.setTitle(quizDTO.getTitle());
-        quiz.setDescription(quizDTO.getDescription());
+        if (dto.getTitle() != null) quiz.setTitle(dto.getTitle());
+        if (dto.getDescription() != null) quiz.setDescription(dto.getDescription());
+        if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());
+        if (dto.getStartDate() != null) quiz.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null) quiz.setEndDate(dto.getEndDate());
+        if (dto.getGrade() != null) quiz.setGrade(dto.getGrade());
+        if (dto.getSubject() != null) quiz.setSubject(dto.getSubject());
+
         quiz.setUpdatedAt(Instant.now());
-        quiz = quizRepository.save(quiz);
-
-        // 📌 Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                quiz.getId(),
-                "quizzes",
-                "Cập nhật quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                quizDTO.getCreatedBy()
-        ));
-
-        return getQuizForTeacher(quiz.getId());
+        quizRepository.save(quiz);
+        return getQuizForTeacher(quizId);
     }
 
-    // 📌 Thêm hàm DELETE quiz (nếu bạn muốn log DELETE)
-    public void deleteQuiz(Integer quizId, Integer userId) {
+    @Override
+    @Transactional
+    public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
+        // Map các question/option hiện có để tiện tra cứu
+        List<QuizQuestion> existedQuestions = questionRepository.findByQuiz_Id(quizId);
+        Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
+                .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
+
+        Set<Integer> seenQuestionIds = new HashSet<>();
+
+        for (QuestionTeacherDTO qdto : body.getQuestions()) {
+            QuizQuestion q;
+            if (qdto.getId() == null) {
+                q = new QuizQuestion();
+                q.setQuiz(quiz);
+                q.setCreatedAt(Instant.now());
+            } else {
+                q = qMap.get(qdto.getId());
+                if (q == null) throw new RuntimeException("Question not found: " + qdto.getId());
+                seenQuestionIds.add(q.getId());
+            }
+            q.setQuestionText(qdto.getQuestionText());
+            q.setCorrectOption(qdto.getCorrectOption());
+            q.setScore(qdto.getScore());
+            q.setUpdatedAt(Instant.now());
+            q = questionRepository.save(q);
+
+            // --- xử lý options ---
+            List<QuizOption> existedOpts = optionRepository.findByQuestion_Id(q.getId());
+            Map<Integer, QuizOption> oMap = existedOpts.stream()
+                    .collect(Collectors.toMap(QuizOption::getId, o -> o));
+            Set<Integer> seenOptIds = new HashSet<>();
+
+            for (OptionDTO odto : qdto.getOptions()) {
+                QuizOption opt;
+                if (odto.getId() == null) {
+                    opt = new QuizOption();
+                    opt.setQuestion(q);
+                    opt.setCreatedAt(Instant.now());
+                } else {
+                    opt = oMap.get(odto.getId());
+                    if (opt == null) throw new RuntimeException("Option not found: " + odto.getId());
+                    seenOptIds.add(opt.getId());
+                }
+                opt.setOptionLabel(odto.getOptionLabel());
+                opt.setOptionText(odto.getOptionText());
+                opt.setUpdatedAt(Instant.now());
+                optionRepository.save(opt);
+            }
+
+            // Xóa option thừa nếu replaceAll
+            if (body.isReplaceAll()) {
+                existedOpts.stream()
+                        .filter(o -> !seenOptIds.contains(o.getId()))
+                        .forEach(optionRepository::delete);
+            }
+        }
+
+        // Xóa question thừa nếu replaceAll
+        if (body.isReplaceAll()) {
+            existedQuestions.stream()
+                    .filter(q -> !seenQuestionIds.contains(q.getId()))
+                    .forEach(questionRepository::delete);
+        }
+
+        quiz.setUpdatedAt(Instant.now());
+        quizRepository.save(quiz);
+
+        return getQuizForTeacher(quizId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteQuestion(Integer quizId, Integer questionId) {
+        QuizQuestion q = questionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+        if (!q.getQuiz().getId().equals(quizId)) {
+            throw new RuntimeException("Question does not belong to quiz");
+        }
+        questionRepository.delete(q);
+    }
+
+    @Override
+    @LoggableAction(value = "DELETE", entity = "quizzes", description = "Xóa quiz")
+    @Transactional
+    public void deleteQuiz(Integer quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+
+        quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
         quizRepository.delete(quiz);
-
-        // 📌 Ghi log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                quiz.getId(),
-                "quizzes",
-                "Xóa quiz: " + quiz.getTitle(),
-                quiz.getClassField() != null ? quiz.getClassField().getId() : null,
-                userId
-        ));
     }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 public class QuestionDTO {
+    private int id;
     private String questionText;
     private String questionType; // MULTIPLE_CHOICE, TRUE_FALSE, etc.
     private String correctOption;

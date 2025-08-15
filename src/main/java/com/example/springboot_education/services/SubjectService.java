@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.annotations.LoggableAction; 
 import com.example.springboot_education.dtos.subjects.CreateSubjectDTO;
 import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
@@ -13,6 +13,7 @@ import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +23,6 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final UsersJpaRepository userRepository;
-    private final ActivityLogService activityLogService;
 
     public List<SubjectResponseDTO> findAll() {
         return subjectRepository.findAll()
@@ -37,6 +37,7 @@ public class SubjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found with id: " + id));
     }
 
+    @LoggableAction(value = "CREATE", entity = "subjects", description = "Tạo môn học mới")
     public SubjectResponseDTO create(CreateSubjectDTO dto) {
         Subject subject = new Subject();
         subject.setSubjectName(dto.getSubjectName());
@@ -50,19 +51,10 @@ public class SubjectService {
         }
 
         Subject saved = subjectRepository.save(subject);
-
-        // Ghi log CREATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                saved.getId(),
-                "subjects",
-                "Tạo môn học mới: " + saved.getSubjectName(),
-                creator != null ? creator.getId() : null
-        ));
-
         return toDTO(saved);
     }
 
+    @LoggableAction(value = "UPDATE", entity = "subjects", description = "Cập nhật môn học")
     public SubjectResponseDTO update(Integer id, UpdateSubjectDTO dto) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
@@ -72,30 +64,13 @@ public class SubjectService {
 
         Subject updated = subjectRepository.save(subject);
 
-        // Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                updated.getId(),
-                "subjects",
-                "Cập nhật môn học: " + updated.getSubjectName(),
-                updated.getCreatedBy() != null ? updated.getCreatedBy().getId() : null
-        ));
-
         return toDTO(updated);
     }
 
+    @LoggableAction(value = "DELETE", entity = "subjects", description = "Xóa môn học")
     public void delete(Integer id) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
-
-        // Ghi log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                subject.getId(),
-                "subjects",
-                "Xóa môn học: " + subject.getSubjectName(),
-                subject.getCreatedBy() != null ? subject.getCreatedBy().getId() : null
-        ));
 
         subjectRepository.delete(subject);
     }
