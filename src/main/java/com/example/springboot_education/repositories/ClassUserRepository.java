@@ -1,8 +1,5 @@
 package com.example.springboot_education.repositories;
 
-import com.example.springboot_education.entities.ClassUser;
-import com.example.springboot_education.entities.ClassUserId;
-
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -11,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.example.springboot_education.entities.ClassUser;
+import com.example.springboot_education.entities.ClassUserId;
 
 @Repository
 public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserId> {
@@ -38,7 +38,7 @@ public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserI
             AND (:subjectId IS NULL OR c.subject_id = :subjectId)
           GROUP BY student_id
         ) AS asg
-        FULL OUTER JOIN (
+        FULL JOIN (
           SELECT student_id,
                  AVG(score) as avg_quiz
           FROM quiz_submissions qs
