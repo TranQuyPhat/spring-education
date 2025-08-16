@@ -1,15 +1,42 @@
 // ClassService.java
 package com.example.springboot_education.services.classes;
 
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classDTOs.*;
 import com.example.springboot_education.entities.*;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
+import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
+import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
+import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
+import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
+import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.entities.ClassUser;
+import com.example.springboot_education.entities.ClassUserId;
+import com.example.springboot_education.entities.Subject;
+import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+
 import com.example.springboot_education.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +55,6 @@ public class ClassService {
     private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
-    private final ActivityLogService activityLogService;
 
     public List<ClassResponseDTO> getAllClasses() {
         return classRepository.findAll()
@@ -70,24 +96,16 @@ public class ClassService {
         clazz.setSubject(subject);
         clazz.setCreatedAt(Instant.now());
 
-         ClassEntity saved = classRepository.save(clazz);
-
-        // Ghi log CREATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                saved.getId(),
-                "classes",
-                "Tạo lớp học: " + saved.getClassName(),
-                teacher.getId()
-        ));
+        ClassEntity saved = classRepository.save(clazz);
 
         return toDTO(saved);
     }
 
+    @LoggableAction(value = "UPDATE", entity = "classes", description = "Cập nhật lớp học")
     public ClassResponseDTO updateClass(Integer id, CreateClassDTO dto) {
         ClassEntity clazz = classRepository.findById(id).orElseThrow();
         Subject subject = subjectRepository.findById(dto.getSubjectId())
-        .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
 
         clazz.setClassName(dto.getClassName());
         clazz.setSchoolYear(dto.getSchoolYear());
@@ -98,32 +116,42 @@ public class ClassService {
 
         ClassEntity updated = classRepository.save(clazz);
 
-        // Ghi log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                updated.getId(),
-                "classes",
-                "Cập nhật lớp học: " + updated.getClassName(),
-                updated.getTeacher() != null ? updated.getTeacher().getId() : null
-        ));
-
         return toDTO(updated);
     }
 
+    @LoggableAction(value = "DELETE", entity = "classes", description = "Xóa lớp học")
     public void deleteClass(Integer id) {
         ClassEntity clazz = classRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
 
-        // Ghi log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                clazz.getId(),
-                "classes",
-                "Xóa lớp học: " + clazz.getClassName(),
-                clazz.getTeacher() != null ? clazz.getTeacher().getId() : null
-        ));
-
         classRepository.deleteById(id);
+    }
+
+    @LoggableAction(value = "CREATE", entity = "class_users", description = "Thêm học sinh vào lớp học")
+    public void addStudentToClass(AddStudentToClassDTO dto) {
+        // Kiểm tra xem đã tồn tại chưa
+        if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
+            throw new RuntimeException("Học sinh đã có trong lớp này!");
+        }
+
+        ClassEntity clazz = classRepository.findById(dto.getClassId())
+                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
+
+        Users student = userRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Học sinh không tồn tại"));
+
+        ClassUser member = new ClassUser();
+        ClassUserId id = new ClassUserId();
+        id.setClassId(dto.getClassId());
+        id.setStudentId(dto.getStudentId());
+
+        member.setId(id);
+        member.setClassField(clazz);
+        member.setStudent(student);
+        member.setJoinedAt(Instant.now());
+
+        classUserRepository.save(member);
+
     }
 
     private ClassResponseDTO toDTO(ClassEntity clazz) {
@@ -135,9 +163,6 @@ public class ClassService {
         dto.setDescription(clazz.getDescription());
         dto.setCreatedAt(clazz.getCreatedAt());
         dto.setUpdatedAt(clazz.getUpdatedAt());
-        // dto.setTeacherName(clazz.getTeacher() != null ? clazz.getTeacher().getFullName() : null);
-        // dto.setSubjectName(clazz.getSubject() != null ? clazz.getSubject().getSubjectName() : null);
-
 
         if (clazz.getTeacher() != null) {
             TeacherDTO teacherDTO = new TeacherDTO();
@@ -146,7 +171,6 @@ public class ClassService {
             dto.setTeacher(teacherDTO);
         }
 
-    // Gán subject
         if (clazz.getSubject() != null) {
             SubjectDTO subjectDTO = new SubjectDTO();
             subjectDTO.setId(clazz.getSubject().getId());
@@ -154,7 +178,7 @@ public class ClassService {
             dto.setSubject(subjectDTO);
         }
         return dto;
-    }   
+    }
 
     public List<ClassMemberDTO> getStudentsInClass(Integer classId) {
         List<ClassUser> members = classUserRepository.findByClassField_Id(classId);
@@ -176,10 +200,9 @@ public class ClassService {
         List<ClassUser> members = classUserRepository.findByStudent_Id(studentId);
 
         return members.stream()
-                .map(member -> toDTO(member.getClassField())) // tái sử dụng toDTO
+                .map(member -> toDTO(member.getClassField()))
                 .collect(Collectors.toList());
     }
-
 
     public PaginatedClassResponseDto getClassesOfStudent(Integer studentId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -204,7 +227,7 @@ public class ClassService {
         List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
 
         return classes.stream()
-                .map(this::toDTO) // truyền clazz (ClassEntity) vào toDTO
+                .map(this::toDTO)
                 .collect(Collectors.toList());
     }
     public PaginatedClassResponseDto getClassesOfTeacher(Integer teacherId, int page, int size) {
@@ -212,9 +235,9 @@ public class ClassService {
         Page<ClassEntity> pageResult = classRepository.findByTeacher_Id(teacherId, pageable);
 
         List<ClassResponseDTO> classDtos = pageResult.getContent()
-            .stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
 
         PaginatedClassResponseDto response = new PaginatedClassResponseDto();
         response.setData(classDtos);
@@ -226,38 +249,5 @@ public class ClassService {
         response.setHasPrevious(pageResult.hasPrevious());
 
         return response;
-    }
-    public void addStudentToClass(AddStudentToClassDTO dto) {
-        // Kiểm tra xem đã tồn tại chưa
-        if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
-            throw new RuntimeException("Học sinh đã có trong lớp này!");
-        }
-
-        ClassEntity clazz = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
-
-        Users student = userRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Học sinh không tồn tại"));
-
-        ClassUser member = new ClassUser();
-        ClassUserId id = new ClassUserId();
-        id.setClassId(dto.getClassId());
-        id.setStudentId(dto.getStudentId());
-
-        member.setId(id); // gán EmbeddedId
-        member.setClassField(clazz);
-        member.setStudent(student);
-        member.setJoinedAt(Instant.now()); // không cần Timestamp.from()
-
-        classUserRepository.save(member);
-
-        // Ghi log ADD STUDENT
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                dto.getClassId(),
-                "class_users",
-                "Thêm học sinh " + student.getFullName() + " vào lớp " + clazz.getClassName(),
-                student.getId()
-        ));
     }
 }

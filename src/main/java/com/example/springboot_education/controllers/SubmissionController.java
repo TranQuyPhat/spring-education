@@ -38,18 +38,14 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDto> submitAssignment(
             @RequestParam("assignmentId") Integer assignmentId,
             @RequestParam("studentId") Integer studentId,
-            @RequestPart("file") MultipartFile file) throws IOException {
-
-        String filePath = submissionService.storeFile(file); // lưu file thực tế
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
         SubmissionRequestDto requestDto = new SubmissionRequestDto();
         requestDto.setAssignmentId(assignmentId);
         requestDto.setStudentId(studentId);
-        requestDto.setFilePath(filePath);
-        requestDto.setFileType(file.getContentType());
 
-        SubmissionResponseDto response = submissionService.submitAssignment(requestDto);
-        return ResponseEntity.ok(response);
+//        SubmissionResponseDto response = submissionService.submitAssignment(requestDto);
+        return ResponseEntity.ok(submissionService.submitAssignment(requestDto, file));
     }
 
     // Chấm điểm
@@ -82,6 +78,12 @@ public class SubmissionController {
         return submissionService.getSubmission(assignmentId, studentId);
     }
 
+    // Lấy bài nộp theo lớp
+    @GetMapping("/class/{classId}")
+    public List<SubmissionResponseDto> getAssignmentsByClassId(@PathVariable Integer classId) {
+        return submissionService.getSubmissionsByClassId(classId);
+    }
+
     // Tải file nộp bài về
     @GetMapping("/{submissionId}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Integer submissionId) throws IOException {
@@ -101,14 +103,12 @@ public class SubmissionController {
                 .body(fileResource);
     }
 
-    // Xóa file nộp bài
+    // Xóa nộp bài
     @DeleteMapping("/{submissionId}")
     public ResponseEntity<Void> deleteSubmission(@PathVariable Integer submissionId) {
         submissionService.deleteSubmission(submissionId);
         return ResponseEntity.noContent().build();
     }
-
-
 }
 
 

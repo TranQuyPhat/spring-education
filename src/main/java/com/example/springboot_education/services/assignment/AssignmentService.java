@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
@@ -18,7 +18,6 @@ import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
-import com.example.springboot_education.services.ActivityLogService;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,8 @@ public class AssignmentService {
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
-    private final ActivityLogService activityLogService;
+    // Xóa ActivityLogService khỏi đây
+    // private final ActivityLogService activityLogService;
 
     private AssignmentResponseDto convertToDto(Assignment assignment) {
         AssignmentResponseDto dto = new AssignmentResponseDto();
@@ -59,6 +59,7 @@ public class AssignmentService {
         return convertToDto(assignment);
     }
 
+    @LoggableAction(value = "CREATE", entity = "assignments", description = "Tạo bài tập mới")
     public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file) throws IOException {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
@@ -80,20 +81,14 @@ public class AssignmentService {
         assignment.setFileType(file.getContentType());
 
         Assignment saved = assignmentJpaRepository.save(assignment);
-
-        // Log CREATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "CREATE",
-                saved.getId(),
-                "assignments",
-                "Tạo bài tập: " + saved.getTitle(),
-                classEntity.getId(),
-                classEntity.getTeacher() != null ? classEntity.getTeacher().getId() : null
-        ));
+        
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
 
         return convertToDto(saved);
     }
 
+    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Cập nhật bài tập")
     public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
@@ -111,32 +106,19 @@ public class AssignmentService {
 
         Assignment updated = assignmentJpaRepository.save(assignment);
 
-        // Log UPDATE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "UPDATE",
-                updated.getId(),
-                "assignments",
-                "Cập nhật bài tập: " + updated.getTitle(),
-                classEntity.getId(),
-                classEntity.getTeacher() != null ? classEntity.getTeacher().getId() : null
-        ));
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
 
         return convertToDto(updated);
     }
 
+    @LoggableAction(value = "DELETE", entity = "assignments", description = "Xóa bài tập")
     public void deleteAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
 
-        // Log DELETE
-        activityLogService.log(new ActivityLogCreateDTO(
-                "DELETE",
-                assignment.getId(),
-                "assignments",
-                "Xóa bài tập: " + assignment.getTitle(),
-                assignment.getClassField().getId(),
-                assignment.getClassField().getTeacher() != null ? assignment.getClassField().getTeacher().getId() : null
-        ));
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
 
         assignmentJpaRepository.delete(assignment);
     }
@@ -145,4 +127,16 @@ public class AssignmentService {
         return assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
     }
+
+    // Get assignment by class
+    public List<AssignmentResponseDto> getAssignmentsByClassId(Integer classId) {
+        ClassEntity classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+
+        return assignmentJpaRepository.findByClassField_Id(classId)
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
 }

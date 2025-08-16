@@ -1,4 +1,4 @@
-package com.example.springboot_education;
+package com.example.springboot_education.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +18,8 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Cho phép tất cả endpoint
-                        .allowedOrigins("http://localhost:3000") // Cho phép frontend React truy cập
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:3000", "http://localhost:5173")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
@@ -40,3 +40,4 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
                 .withSockJS();
     }
 }
+
