@@ -38,7 +38,7 @@ public class ClassMaterialController {
     }
 
     @GetMapping("/class/{classId}")
-    public ResponseEntity<List<ClassMaterialResponseDto>> getByClass(@PathVariable Integer classId) {
+    public ResponseEntity<List<ClassMaterialResponseDto>> getByClass(@PathVariable("classId") Integer classId) {
         return ResponseEntity.ok(materialService.getMaterialsByClass(classId));
     }
 
@@ -49,7 +49,7 @@ public class ClassMaterialController {
 //    }
 
     @GetMapping("/download/{id}")
-    public ResponseEntity<?> downloadMaterial(@PathVariable Integer id) throws Exception {
+    public ResponseEntity<?> downloadMaterial(@PathVariable("id") Integer id) throws Exception {
         DownloadFileDTO fileDto = materialService.downloadMaterial(id);
 
         return ResponseEntity.ok()

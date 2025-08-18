@@ -60,7 +60,7 @@ public class SubmissionController {
 
     // Lấy bài nộp theo assignment
     @GetMapping("/assignment/{assignmentId}")
-    public List<SubmissionResponseDto> getByAssignment(@PathVariable Integer assignmentId) {
+    public List<SubmissionResponseDto> getByAssignment(@PathVariable("assignmentId") Integer assignmentId) {
         return submissionService.getSubmissionsByAssignment(assignmentId);
     }
 

@@ -92,7 +92,7 @@ public class AssignmentController {
     }
 
     @GetMapping("/class/{classId}")
-    public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(@PathVariable Integer classId) {
+    public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(@PathVariable("classId") Integer classId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsByClassId(classId));
     }
 
