@@ -1,22 +1,6 @@
 package com.example.springboot_education.services.quiz.impl;
 
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.quiz.OptionDTO;
-import com.example.springboot_education.dtos.quiz.QuestionDTO;
-import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
-import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.quiz.*;
 import com.example.springboot_education.dtos.quiz.base.QuestionBaseDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
@@ -33,7 +17,6 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
-import com.example.springboot_education.services.ActivityLogService;
 import com.example.springboot_education.services.quiz.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +24,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
