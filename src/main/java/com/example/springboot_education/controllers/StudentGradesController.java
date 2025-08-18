@@ -63,12 +63,12 @@ public class StudentGradesController {
     }
 
     // 5. Compare with class
-    @GetMapping("/compare")
-    public CompareDto compare(
-            @RequestParam Integer studentId,
-            @RequestParam Integer classId,
-            @RequestParam(required = false) Integer subjectId
-    ) {
-        return service.compareWithClass(studentId, classId, subjectId);
-    }
+    // @GetMapping("/compare")
+    // public CompareDto compare(
+    //         @RequestParam Integer studentId,
+    //         @RequestParam Integer classId,
+    //         @RequestParam(required = false) Integer subjectId
+    // ) {
+    //     return service.compareWithClass(studentId, classId, subjectId);
+    // }
 }

@@ -1,0 +1,49 @@
+package com.example.springboot_education.controllers.classes;
+
+
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
+// import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
+import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
+import com.example.springboot_education.services.classes.ClassUserService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/auth/classes")
+@RequiredArgsConstructor
+public class ClassUserController {
+    private final ClassUserService classUserService;
+
+    @GetMapping("/{classId}/students")
+    public ResponseEntity<List<ClassMemberDTO>> getStudentsInClass(@PathVariable("classId") Integer classId) {
+        List<ClassMemberDTO> students = classUserService.getStudentsInClass(classId);
+        return ResponseEntity.ok(students);
+    }
+    @GetMapping("/students/{studentId}/classes")
+    public ResponseEntity<List<ClassResponseDTO>> getClassesOfStudent(@PathVariable("studentId") Integer studentId) {
+        List<ClassResponseDTO> classes = classUserService.getClassesOfStudent(studentId);
+        return ResponseEntity.ok(classes);
+    }
+    @PostMapping("/add-student")
+    public ResponseEntity<?> addStudentToClass(@RequestBody AddStudentToClassDTO dto) {
+        classUserService.addStudentToClass(dto);
+        return ResponseEntity.ok("Thêm học sinh vào lớp thành công");
+    }
+    @GetMapping("/student/{studentId}/classesPaginated")
+    public ResponseEntity<PaginatedClassResponseDto> getStudentClasses(
+            @PathVariable("studentId") Integer studentId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "6") int size
+    ) {
+        PaginatedClassResponseDto response = classUserService.getClassesOfStudent(studentId, page, size);
+        return ResponseEntity.ok(response);
+    }
+}

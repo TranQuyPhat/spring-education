@@ -185,11 +185,11 @@ public class StudentGradesService {
     }
 
     // 5. Compare with class average
-    public CompareDto compareWithClass(Integer studentId, Integer classId, Integer subjectId) {
-        BigDecimal studentAvg = calcWeightedAvg(studentId, classId, subjectId, null, null);
-        Double classAvgD = classUserRepository.classWeightedAvg(classId, subjectId); // may be null
-        BigDecimal classAvg = BigDecimal.valueOf(classAvgD != null ? classAvgD : 0.0).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal diff = studentAvg.subtract(classAvg).setScale(2, RoundingMode.HALF_UP);
-        return new CompareDto(studentAvg, classAvg, diff);
-    }
+    // public CompareDto compareWithClass(Integer studentId, Integer classId, Integer subjectId) {
+    //     BigDecimal studentAvg = calcWeightedAvg(studentId, classId, subjectId, null, null);
+    //     Double classAvgD = classUserRepository.classWeightedAvg(classId, subjectId); // may be null
+    //     BigDecimal classAvg = BigDecimal.valueOf(classAvgD != null ? classAvgD : 0.0).setScale(2, RoundingMode.HALF_UP);
+    //     BigDecimal diff = studentAvg.subtract(classAvg).setScale(2, RoundingMode.HALF_UP);
+    //     return new CompareDto(studentAvg, classAvg, diff);
+    // }
 }
