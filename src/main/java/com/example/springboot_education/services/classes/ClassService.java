@@ -5,6 +5,9 @@ import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classDTOs.*;
 import com.example.springboot_education.entities.*;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,18 +37,7 @@ import com.example.springboot_education.repositories.UsersJpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import com.example.springboot_education.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -66,8 +58,12 @@ public class ClassService {
         ClassEntity clazz = classRepository.findById(id).orElseThrow();
         return toDTO(clazz);
     }
-
+    public ClassEntity getClassEntityById(Integer id) {
+    return classRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Class not found with id: " + id));
+}
     @Transactional
+    @LoggableAction(value = "CREATE", entity = "classes", description = "Tạo lớp học mới")
     public ClassResponseDTO createClass(CreateClassDTO dto) {
         Users teacher = userRepository.findById(dto.getTeacherId())
                 .orElseThrow();
@@ -126,7 +122,7 @@ public class ClassService {
 
         classRepository.deleteById(id);
     }
-
+    
     @LoggableAction(value = "CREATE", entity = "class_users", description = "Thêm học sinh vào lớp học")
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Kiểm tra xem đã tồn tại chưa
@@ -180,49 +176,6 @@ public class ClassService {
         return dto;
     }
 
-    public List<ClassMemberDTO> getStudentsInClass(Integer classId) {
-        List<ClassUser> members = classUserRepository.findByClassField_Id(classId);
-
-        return members.stream()
-                .map(member -> {
-                    Users student = member.getStudent();
-                    ClassMemberDTO dto = new ClassMemberDTO();
-                    dto.setId(student.getId());
-                    dto.setFullName(student.getFullName());
-                    dto.setUsername(student.getUsername());
-                    dto.setEmail(student.getEmail());
-                    dto.setJoinedAt(member.getJoinedAt());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-    }
-    public List<ClassResponseDTO> getClassesOfStudent(Integer studentId) {
-        List<ClassUser> members = classUserRepository.findByStudent_Id(studentId);
-
-        return members.stream()
-                .map(member -> toDTO(member.getClassField()))
-                .collect(Collectors.toList());
-    }
-
-    public PaginatedClassResponseDto getClassesOfStudent(Integer studentId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<ClassUser> membersPage = classUserRepository.findByStudent_Id(studentId, pageable);
-
-        List<ClassResponseDTO> classDTOs = membersPage.getContent().stream()
-                .map(member -> toDTO(member.getClassField()))
-                .collect(Collectors.toList());
-
-        PaginatedClassResponseDto response = new PaginatedClassResponseDto();
-        response.setData(classDTOs);
-        response.setPageNumber(membersPage.getNumber());
-        response.setPageSize(membersPage.getSize());
-        response.setTotalRecords(membersPage.getTotalElements());
-        response.setTotalPages(membersPage.getTotalPages());
-        response.setHasNext(membersPage.hasNext());
-        response.setHasPrevious(membersPage.hasPrevious());
-
-        return response;
-    }
     public List<ClassResponseDTO> getClassesOfTeacher(Integer teacherId) {
         List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
 
@@ -250,4 +203,19 @@ public class ClassService {
 
         return response;
     }
+
+
+    //websocket
+    public Integer getTeacherIdOfClass(Integer classId) {
+        return classRepository.findById(classId).map(c -> c.getTeacher().getId()) // lấy id từ quan hệ
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp với ID: " + classId));
+    }
+
+
+    public String getClassName(Integer classId) {
+        return classRepository.findById(classId)
+                .map(ClassEntity::getClassName)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp với ID: " + classId));
+    }
+
 }

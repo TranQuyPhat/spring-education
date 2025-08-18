@@ -98,7 +98,10 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return convertToDto(user);
     }
-
+    public Users getUserEntityById(Integer id) {
+        return userJpaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
     // Cập nhật user
     @LoggableAction(value = "UPDATE", entity = "users", description = "Cập nhật user")
     public UserResponseDto updateUser(Integer id, UpdateUserRequestDto dto) {
@@ -147,5 +150,10 @@ public class UserService {
     public boolean isCurrentUser(Integer userId, String currentUserEmail) {
         Optional<Users> user = userJpaRepository.findById(userId);
         return user.isPresent() && user.get().getEmail().equals(currentUserEmail);
+    }
+    public String getFullName(Integer userId) {
+        return userJpaRepository.findById(userId)
+                .map(Users::getFullName)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với ID: " + userId));
     }
 }
