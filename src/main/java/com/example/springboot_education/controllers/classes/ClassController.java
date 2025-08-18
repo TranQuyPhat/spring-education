@@ -46,6 +46,12 @@ public class ClassController {
     public void deleteClass(@PathVariable("id") Integer id) {
         classService.deleteClass(id);
     }
+    @GetMapping("/teachers/{teacherId}")
+    public List<ClassResponseDTO> getAllClassesOfTeacher(
+            @PathVariable("teacherId") Integer teacherId
+    ) {
+        return classService.getAllClassesOfTeacher(teacherId);
+    }
     
     @GetMapping("/teacher/{teacherId}")
     public PaginatedClassResponseDto getClassesOfTeacher(

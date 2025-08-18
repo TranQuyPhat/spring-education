@@ -176,7 +176,7 @@ public class ClassService {
         return dto;
     }
 
-    public List<ClassResponseDTO> getClassesOfTeacher(Integer teacherId) {
+    public List<ClassResponseDTO> getAllClassesOfTeacher(Integer teacherId) {
         List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
 
         return classes.stream()
