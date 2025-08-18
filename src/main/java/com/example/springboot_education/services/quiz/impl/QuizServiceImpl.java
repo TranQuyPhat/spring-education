@@ -16,6 +16,9 @@ import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import com.example.springboot_education.dtos.quiz.*;
+import com.example.springboot_education.dtos.quiz.base.QuestionBaseDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
@@ -30,16 +33,20 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
+import com.example.springboot_education.services.ActivityLogService;
 import com.example.springboot_education.services.quiz.QuizService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import java.util.function.BiFunction;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuizServiceImpl implements QuizService {
-
     private final QuizRepository quizRepository;
     private final QuizQuestionRepository questionRepository;
     private final QuizOptionRepository optionRepository;
@@ -74,8 +81,10 @@ public class QuizServiceImpl implements QuizService {
                 optionRepository.save(option);
             }
         }
+
         return getQuizForTeacher(quiz.getId());
     }
+
 
     @Override
     public List<QuizResponseTeacherDTO> getAllQuizzes() {
@@ -83,6 +92,34 @@ public class QuizServiceImpl implements QuizService {
                 .map(q -> getQuizForTeacher(q.getId()))
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionsPageResponseDTO<QuestionTeacherDTO> getQuizQuestionsPageForTeacher(Integer quizId, int page, int size) {
+        return getQuizQuestionsPage(
+                quizId,
+                page,
+                size,
+                (q, optsByQid) -> {
+                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
+                    return quizMapper2.toTeacherQuestionDto(q, opts);
+                }
+        );
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(Integer quizId, int page, int size) {
+        return getQuizQuestionsPage(
+                quizId,
+                page,
+                size,
+                (q, optsByQid) -> {
+                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
+                    return quizMapper2.toStudentQuestionDto(q, opts);
+                }
+        );
+    }
+
 
     @Override
     public QuizResponseTeacherDTO getQuizForTeacher(Integer quizId) {
@@ -143,7 +180,6 @@ public class QuizServiceImpl implements QuizService {
         quizRepository.save(quiz);
         return getQuizForTeacher(quizId);
     }
-
     @Override
     @Transactional
     public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
@@ -208,7 +244,8 @@ public class QuizServiceImpl implements QuizService {
         // Xóa question thừa nếu replaceAll
         if (body.isReplaceAll()) {
             existedQuestions.stream()
-                    .filter(q -> !seenQuestionIds.contains(q.getId()))
+                    .filter(q -> !seenQuestionIds.contains(q.getId())
+                            && body.getQuestions().stream().noneMatch(dto -> Objects.equals(dto.getId(), q.getId())))
                     .forEach(questionRepository::delete);
         }
 
@@ -217,7 +254,6 @@ public class QuizServiceImpl implements QuizService {
 
         return getQuizForTeacher(quizId);
     }
-
     @Override
     @Transactional
     public void deleteQuestion(Integer quizId, Integer questionId) {
@@ -226,6 +262,7 @@ public class QuizServiceImpl implements QuizService {
         if (!q.getQuiz().getId().equals(quizId)) {
             throw new RuntimeException("Question does not belong to quiz");
         }
+        // orphanRemoval + OnDelete CASCADE ở options sẽ lo phần con
         questionRepository.delete(q);
     }
 
@@ -239,4 +276,39 @@ public class QuizServiceImpl implements QuizService {
         quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
         quizRepository.delete(quiz);
     }
+
+    private <T extends QuestionBaseDTO> QuestionsPageResponseDTO<T> getQuizQuestionsPage(
+            Integer quizId,
+            int page,
+            int size,
+            BiFunction<QuizQuestion, Map<Integer, List<OptionDTO>>, T> mapper
+    ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort sort = Sort.by("id");
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+
+        Page<QuizQuestion> questionPage = questionRepository.findByQuiz_Id(quizId, pageable);
+
+        List<Integer> qIds = questionPage.getContent().stream()
+                .map(QuizQuestion::getId)
+                .toList();
+
+        List<QuizOption> options = optionRepository.findByQuestion_IdIn(qIds);
+
+        Map<Integer, List<OptionDTO>> optionsByQid = options.stream()
+                .collect(Collectors.groupingBy(
+                        o -> o.getQuestion().getId(),
+                        Collectors.mapping(quizMapper2::toOptionDto, Collectors.toList())
+                ));
+
+        List<T> items = questionPage.getContent().stream()
+                .map(q -> mapper.apply(q, optionsByQid))
+                .toList();
+
+        return new QuestionsPageResponseDTO<>(quizId, page, size, questionPage.getTotalElements(), items);
+    }
+
+
 }
