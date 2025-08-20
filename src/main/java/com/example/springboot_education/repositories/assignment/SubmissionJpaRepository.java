@@ -1,7 +1,8 @@
 package com.example.springboot_education.repositories.assignment;
 
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO;
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
-import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.Submission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -92,31 +92,14 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
 
     // Lấy chi tiết bài tập của 1 học sinh
     @Query("""
-    SELECT s.assignment.id, s.assignment.title, s.score, s.status
+    SELECT s.assignment.id, s.assignment.title, s.score, s.status, s.submittedAt
     FROM Submission s
     WHERE s.student.id = :studentId
 """)
     List<Object[]> findAssignmentsByStudent(@Param("studentId") Integer studentId);
 
-    // Phân tích theo môn
-    @Query("""
-    SELECT s.assignment.classField.subject.id, s.assignment.classField.subject.subjectName, COALESCE(AVG(s.score), 0)
-    FROM Submission s
-    GROUP BY s.assignment.classField.subject.id, s.assignment.classField.subject.subjectName
-""")
-    List<Object[]> avgAssignmentBySubject();
-
-    // Trends theo thời gian
-    @Query("""
-    SELECT FUNCTION('DATE', s.submittedAt), COALESCE(AVG(s.score), 0)
-    FROM Submission s
-    GROUP BY FUNCTION('DATE', s.submittedAt)
-    ORDER BY FUNCTION('DATE', s.submittedAt)
-""")
-    List<Object[]> avgAssignmentByDate();
 
 
-    // average assignment score for a student (optionally filter by subject/class/date)
     @Query("""
       SELECT AVG(s.score)
       FROM Submission s
@@ -134,29 +117,6 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
             @Param("endDate") LocalDateTime endDate
     );
 
-//    @Query("""
-//      SELECT COUNT(s) FROM Submission s WHERE s.student.id = :studentId
-//        AND (:subjectId IS NULL OR s.assignment.classField.subject.id = :subjectId)
-//    """)
-//    Long countAssignmentsTotal(@Param("studentId") Integer studentId,
-//                               @Param("subjectId") Integer subjectId);
-//
-//    @Query("""
-//      SELECT COUNT(s) FROM Submission s WHERE s.student.id = :studentId
-//        AND s.score IS NOT NULL
-//        AND (:subjectId IS NULL OR s.assignment.classField.subject.id = :subjectId)
-//    """)
-//    Long countAssignmentsGraded(@Param("studentId") Integer studentId,
-//                                @Param("subjectId") Integer subjectId);
-//
-//    @Query("""
-//      SELECT s.score FROM Submission s
-//      WHERE s.student.id = :studentId
-//        AND s.score IS NOT NULL
-//        AND (:subjectId IS NULL OR s.assignment.classField.subject.id = :subjectId)
-//    """)
-//    List<Double> findAssignmentScores(@Param("studentId") Integer studentId,
-//                                      @Param("subjectId") Integer subjectId);
 
     @Query("""
       SELECT s.assignment.id, s.assignment.title, s.score, s.status, s.assignment.dueDate
@@ -215,5 +175,62 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
     // grade student
     List<Submission> findByStudentIdAndAssignment_ClassField_Id(Integer studentId, Integer classId);
 
-    
+    @Query("""
+    SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO(
+        s.assignment.classField.id,
+        s.assignment.classField.className,
+        s.student.fullName,
+        s.student.email,
+        AVG(s.score)
+    )
+    FROM Submission s
+    WHERE s.assignment.classField.id = :classId
+      AND s.student.id = :studentId
+    GROUP BY s.assignment.classField.id, s.assignment.classField.className, s.student.fullName
+""")
+    BaseScoreStatsDTO findAssignmentAverageByClassAndStudent(
+            @Param("classId") Integer classId,
+            @Param("studentId") Integer studentId
+    );
+    @Query("""
+    SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO(
+        s.assignment.classField.id,
+        s.assignment.classField.className,
+        s.student.fullName,
+        s.student.email,
+        AVG(s.score)
+    )
+    FROM Submission s
+    WHERE s.student.id = :studentId
+    GROUP BY s.assignment.classField.id, s.assignment.classField.className, s.student.fullName
+""")
+    List<BaseScoreStatsDTO> findAssignmentAverageAllClassesByStudent(@Param("studentId") Integer studentId);
+    @Query("""
+    SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO(
+        s.assignment.classField.id,
+        s.assignment.classField.className,
+        s.student.fullName,
+        null,
+        AVG(s.score),
+        null
+    )
+    FROM Submission s
+    WHERE s.student.id = :studentId
+    GROUP BY s.assignment.classField.id, s.assignment.classField.className, s.student.fullName
+""")
+    List<WeightedScorePerClassDTO> findAssignmentAvgByClassAndStudent(@Param("studentId") Integer studentId);
+    @Query("""
+    SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO(
+        c.id, c.className, s.fullName, s.email, AVG(sub.score)
+    )
+    FROM Submission sub
+    JOIN sub.assignment a
+    JOIN a.classField c
+    JOIN c.teacher t
+    JOIN sub.student s
+    WHERE t.id = :teacherId
+    GROUP BY c.id, c.className, s.fullName, s.email
+""")
+    List<BaseScoreStatsDTO> findAssignmentAverageByTeacher(@Param("teacherId") Integer teacherId);
+
 }
