@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 @Data
 @AllArgsConstructor
@@ -14,5 +15,5 @@ public class AssignmentDetailDTO {
     private String title;
     private BigDecimal score;
     private String status;
-    private String dueDate;
+    private Timestamp submitAt;
 }

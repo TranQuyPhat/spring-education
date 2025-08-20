@@ -1,4 +1,4 @@
-package com.example.springboot_education;
+package com.example.springboot_education.config;
 
 import com.google.genai.Client;
 import io.github.cdimascio.dotenv.Dotenv;
