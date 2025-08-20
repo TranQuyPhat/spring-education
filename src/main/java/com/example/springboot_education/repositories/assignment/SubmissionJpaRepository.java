@@ -174,6 +174,7 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
 
     // grade student
     List<Submission> findByStudentIdAndAssignment_ClassField_Id(Integer studentId, Integer classId);
+
     @Query("""
     SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO(
         s.assignment.classField.id,

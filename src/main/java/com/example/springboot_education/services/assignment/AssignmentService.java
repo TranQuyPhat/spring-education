@@ -4,8 +4,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
+import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
+import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
@@ -60,7 +67,8 @@ public class AssignmentService {
     }
 
     @LoggableAction(value = "CREATE", entity = "assignments", description = "Tạo bài tập mới")
-    public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file) throws IOException {
+    public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file)
+            throws IOException {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
 
@@ -81,7 +89,7 @@ public class AssignmentService {
         assignment.setFileType(file.getContentType());
 
         Assignment saved = assignmentJpaRepository.save(assignment);
-        
+
         // Xóa code ghi log thủ công
         // activityLogService.log(...);
 
@@ -137,6 +145,72 @@ public class AssignmentService {
                 .stream()
                 .map(this::convertToDto)
                 .toList();
+    }
+
+public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
+    List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
+
+    return assignments.stream().map(a -> {
+        try {
+            int daysLeft = -1;
+            if (a.getDueDate() != null) {
+                Date utilDate = new Date(a.getDueDate().getTime()); 
+                LocalDate due = utilDate.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
+            }
+
+            return UpcomingAssignmentDto.builder()
+                    .id(a.getId())
+                    .title(a.getTitle())
+                    .className(a.getClassField() != null ? a.getClassField().getClassName() : "Unknown")
+                    .dueDate(a.getDueDate())
+                    .daysLeft(daysLeft)
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }).collect(Collectors.toList());
+}
+
+
+public List<UpcomingSubmissionDto> getUpcomingSubmissions(Integer teacherId) {
+        List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByTeacherId(teacherId);
+
+        return assignments.stream().map(a -> {
+            try {
+                int daysLeft = -1;
+                if (a.getDueDate() != null) {
+                    Date utilDate = new Date(a.getDueDate().getTime());
+                    LocalDate due = utilDate.toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate();
+                    daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
+                }
+
+                // Assume getSubmissions() is now correctly defined on the Assignment entity.
+                int submittedCount = a.getSubmissions() != null ? a.getSubmissions().size() : 0;
+
+                // CORRECTED: Access classUsers list to get total student count.
+                int totalStudents = (a.getClassField() != null && a.getClassField().getClassUsers() != null) 
+                                     ? a.getClassField().getClassUsers().size() : 0;
+
+                return UpcomingSubmissionDto.builder()
+                        .id(a.getId())
+                        .title(a.getTitle())
+                        .className(a.getClassField() != null ? a.getClassField().getClassName() : "Unknown")
+                        .dueDate(a.getDueDate())
+                        .daysLeft(daysLeft)
+                        .submittedCount(submittedCount)
+                        .totalStudents(totalStudents)
+                        .build();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }).collect(Collectors.toList());
     }
 
 }
