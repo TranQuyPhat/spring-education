@@ -2,42 +2,24 @@
 package com.example.springboot_education.services.classes;
 
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classDTOs.*;
 import com.example.springboot_education.entities.*;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
-import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
-import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
-import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
-import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
-import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
-import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.entities.ClassUser;
-import com.example.springboot_education.entities.ClassUserId;
-import com.example.springboot_education.entities.Subject;
-import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
-import lombok.RequiredArgsConstructor;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,6 +46,7 @@ public class ClassService {
 }
     @Transactional
     @LoggableAction(value = "CREATE", entity = "classes", description = "Tạo lớp học mới")
+    @CacheEvict(value = "classesOfTeacher", key = "#dto.teacherId")
     public ClassResponseDTO createClass(CreateClassDTO dto) {
         Users teacher = userRepository.findById(dto.getTeacherId())
                 .orElseThrow();
@@ -175,7 +158,7 @@ public class ClassService {
         }
         return dto;
     }
-
+    @Cacheable(value = "classesOfTeacher", key = "#teacherId")
     public List<ClassResponseDTO> getAllClassesOfTeacher(Integer teacherId) {
         List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
 

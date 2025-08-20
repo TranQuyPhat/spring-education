@@ -1,0 +1,66 @@
+package com.example.springboot_education.controllers.grade;
+
+
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO;
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.QuizAverageScoreDTO;
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
+import com.example.springboot_education.services.grade.GradeStatsService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/stats")
+@RequiredArgsConstructor
+public class GradeStatsController {
+
+    private final GradeStatsService gradeStatsService;
+    @GetMapping("/student/{studentId}/weighted-average")
+    public ResponseEntity<List<WeightedScorePerClassDTO>> getWeightedAverageScore(
+            @PathVariable Integer studentId
+    ) {
+        return ResponseEntity.ok(gradeStatsService.getWeightedAveragePerClassByStudent(studentId));
+    }
+    @GetMapping("/quiz/{quizId}/average")
+    public ResponseEntity<List<QuizAverageScoreDTO>> getAverageScorePerQuiz(@PathVariable Integer quizId) {
+        return ResponseEntity.ok(gradeStatsService.getAverageScorePerQuiz(quizId));
+    }
+
+    @GetMapping("/class/{classId}/quiz-average")
+    public ResponseEntity<List<BaseScoreStatsDTO>> getQuizAverageByClass(@PathVariable Integer classId) {
+        return ResponseEntity.ok(gradeStatsService.getQuizAverageByClass(classId));
+    }
+
+    @GetMapping("/class/{classId}/assignment-average/student/{studentId}")
+    public ResponseEntity<BaseScoreStatsDTO> getAssignmentAverageByClassAndStudent(
+            @PathVariable Integer classId,
+            @PathVariable Integer studentId
+    ) {
+        return ResponseEntity.ok(gradeStatsService.getAssignmentAverageForStudentInClass(classId, studentId));
+    }
+    @GetMapping("/student/{studentId}/assignment-average")
+    public ResponseEntity<List<BaseScoreStatsDTO>> getAssignmentAverageAllClassesForStudent(
+            @PathVariable Integer studentId
+    ) {
+        return ResponseEntity.ok(gradeStatsService.getAssignmentAverageAllClassesForStudent(studentId));
+    }
+    @GetMapping("/class/{classId}/overall-average")
+    public ResponseEntity<List<BaseScoreStatsDTO>> getOverallAverageByClass(@PathVariable Integer classId) {
+        return ResponseEntity.ok(gradeStatsService.getOverallAverageByClass(classId));
+    }
+    @GetMapping("/student/{studentId}/overall-average")
+    public ResponseEntity<List<BaseScoreStatsDTO>> getOverallAveragePerClass(
+            @PathVariable Integer studentId
+    ) {
+        return ResponseEntity.ok(gradeStatsService.getOverallScorePerClassByStudent(studentId));
+    }
+    @GetMapping("/teacher/{teacherId}/ranking")
+    public ResponseEntity<List<BaseScoreStatsDTO>> getRanking(@PathVariable Integer teacherId) {
+        return ResponseEntity.ok(gradeStatsService.getStudentRankingByTeacher(teacherId));
+    }
+}

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 @Data
 @AllArgsConstructor
@@ -13,5 +14,5 @@ public class QuizDetailDTO {
     private Integer quizId;
     private String title;
     private BigDecimal score;
-    private String submittedAt;
+    private Timestamp submittedAt;
 }

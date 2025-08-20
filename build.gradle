@@ -38,15 +38,14 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation "org.springframework.boot:spring-boot-starter-websocket"
 	implementation "org.springframework.boot:spring-boot-starter-security"
-
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
 	// Spring Security
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	implementation("com.google.genai:google-genai:1.11.0")
-// https://mvnrepository.com/artifact/org.apache.tika/tika-core
 	implementation("org.apache.tika:tika-core:3.2.2")
-	// https://mvnrepository.com/artifact/org.apache.tika/tika-parsers-standard-package
 	implementation("org.apache.tika:tika-parsers-standard-package:3.2.2")
-	// https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
 	implementation("org.apache.poi:poi-ooxml:5.4.1")
 
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
@@ -54,7 +53,7 @@ dependencies {
 	implementation("com.google.genai:google-genai:1.11.0")
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-
+	implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 // JWT dependencies
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'

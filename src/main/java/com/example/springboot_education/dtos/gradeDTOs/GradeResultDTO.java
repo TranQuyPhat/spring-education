@@ -9,11 +9,11 @@ import java.time.Instant;
 @NoArgsConstructor
 @Builder
 public class GradeResultDTO {
-    private String type; // "ASSIGNMENT" hoặc "QUIZ"
+    private String type;
     private String title;
     private BigDecimal score;
     private BigDecimal maxScore;
     private Instant submittedAt;
     private Instant gradedAt;
-    private String status; // SUBMITTED, GRADED, LATE, MISSING
+    private String status;
 }
