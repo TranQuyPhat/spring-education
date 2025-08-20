@@ -51,6 +51,9 @@ public class ClassEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
+        @OneToMany(mappedBy = "classField", fetch = FetchType.LAZY)
+    private List<ClassUser> classUsers;
+
     // @OneToMany(mappedBy = "classRoom")
     // private List<ActivityLog> activities;
 

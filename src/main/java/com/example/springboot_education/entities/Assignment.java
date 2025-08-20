@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -70,5 +71,8 @@ public class Assignment {
     protected void onUpdate() {
         updatedAt = new Timestamp(System.currentTimeMillis());
     }
+
+      @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL)
+    private Set<Submission> submissions;
 
 }
