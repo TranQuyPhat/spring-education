@@ -7,75 +7,63 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
 import com.example.springboot_education.entities.Assignment;
+import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.repositories.ClassRepository;
+import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
 public class AssignmentService {
+
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
+    // Xóa ActivityLogService khỏi đây
+    // private final ActivityLogService activityLogService;
 
     private AssignmentResponseDto convertToDto(Assignment assignment) {
-        AssignmentResponseDto assignmentResponseDto = new AssignmentResponseDto();
-
-        assignmentResponseDto.setId(assignment.getId());
-        assignmentResponseDto.setClassId(assignment.getClassField().getId());
-        assignmentResponseDto.setTitle(assignment.getTitle());
-        assignmentResponseDto.setDescription(assignment.getDescription());
-        assignmentResponseDto.setDueDate(assignment.getDueDate());
-        assignmentResponseDto.setMaxScore(assignment.getMaxScore());
-        assignmentResponseDto.setFilePath(assignment.getFilePath());
-        assignmentResponseDto.setFileType(assignment.getFileType());
-        assignmentResponseDto.setCreatedAt(assignment.getCreatedAt());
-        assignmentResponseDto.setUpdatedAt(assignment.getUpdatedAt());
-
-        return assignmentResponseDto;
+        AssignmentResponseDto dto = new AssignmentResponseDto();
+        dto.setId(assignment.getId());
+        dto.setClassId(assignment.getClassField().getId());
+        dto.setTitle(assignment.getTitle());
+        dto.setDescription(assignment.getDescription());
+        dto.setDueDate(assignment.getDueDate());
+        dto.setMaxScore(assignment.getMaxScore());
+        dto.setFilePath(assignment.getFilePath());
+        dto.setFileType(assignment.getFileType());
+        dto.setCreatedAt(assignment.getCreatedAt());
+        dto.setUpdatedAt(assignment.getUpdatedAt());
+        return dto;
     }
 
     public List<AssignmentResponseDto> getAllAssignments() {
-        List<Assignment> assignments = assignmentJpaRepository.findAll();
-        return assignments.stream().map(this::convertToDto).toList();
+        return assignmentJpaRepository.findAll()
+                .stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
     public AssignmentResponseDto getAssignmentById(Integer id) {
-        Assignment assignment = assignmentJpaRepository.findById(id).orElseThrow();
+        Assignment assignment = assignmentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
         return convertToDto(assignment);
     }
 
-//    public AssignmentResponseDto createAssignment(CreateAssignmentRequestDto dto) {
-//        Assignment assignment = new Assignment();
-//
-//        assignment.setTitle(dto.getTitle());
-//        assignment.setClassId(dto.getClassId());
-//        assignment.setDescription(dto.getDescription());
-//        assignment.setDueDate(dto.getDueDate());
-//        assignment.setMaxScore(dto.getMaxScore());
-//        assignment.setFilePath(dto.getFilePath());
-//        assignment.setFileType(dto.getFileType());
-//
-//        Assignment savedAssignment = assignmentJpaRepository.save(assignment);
-//        return convertToDto(savedAssignment);
-//    }
-
-    //    Create assignment with file
+    @LoggableAction(value = "CREATE", entity = "assignments", description = "Tạo bài tập mới")
     public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file) throws IOException {
-        // 1. Kiểm tra class tồn tại
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
 
-        // 2. Upload file
         String uploadDir = "uploads/assignments";
         Files.createDirectories(Paths.get(uploadDir));
 
@@ -83,7 +71,6 @@ public class AssignmentService {
         Path filePath = Paths.get(uploadDir, filename);
         Files.write(filePath, file.getBytes());
 
-        // 3. Tạo assignment
         Assignment assignment = new Assignment();
         assignment.setClassField(classEntity);
         assignment.setTitle(dto.getTitle());
@@ -94,12 +81,18 @@ public class AssignmentService {
         assignment.setFileType(file.getContentType());
 
         Assignment saved = assignmentJpaRepository.save(assignment);
+        
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
+
         return convertToDto(saved);
     }
 
+    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Cập nhật bài tập")
     public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
 
@@ -111,13 +104,22 @@ public class AssignmentService {
         assignment.setFilePath(dto.getFilePath());
         assignment.setFileType(dto.getFileType());
 
+        Assignment updated = assignmentJpaRepository.save(assignment);
 
-        Assignment updatedAssignment = assignmentJpaRepository.save(assignment);
-        return convertToDto(updatedAssignment);
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
+
+        return convertToDto(updated);
     }
 
+    @LoggableAction(value = "DELETE", entity = "assignments", description = "Xóa bài tập")
     public void deleteAssignment(Integer id) {
-        Assignment assignment = assignmentJpaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+        Assignment assignment = assignmentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+
+        // Xóa code ghi log thủ công
+        // activityLogService.log(...);
+
         assignmentJpaRepository.delete(assignment);
     }
 
@@ -125,4 +127,16 @@ public class AssignmentService {
         return assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
     }
+
+    // Get assignment by class
+    public List<AssignmentResponseDto> getAssignmentsByClassId(Integer classId) {
+        ClassEntity classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+
+        return assignmentJpaRepository.findByClassField_Id(classId)
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
 }

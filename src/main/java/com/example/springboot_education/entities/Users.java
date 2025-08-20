@@ -1,16 +1,27 @@
 package com.example.springboot_education.entities;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
-
-import java.time.Instant;
 
 @Getter
 @Setter
@@ -18,37 +29,39 @@ import java.time.Instant;
 @Table(name = "users")
 public class Users {
     @Id
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Size(max = 50)
-    @Column(name = "username", length = 50)
+    @Column(length = 50)
     private String username;
 
-    @Size(max = 255)
     @NotNull
-    @Column(name = "password", nullable = false)
+    @Size(max = 255)
+    @Column(nullable = false)
     private String password;
 
     @Size(max = 100)
-    @Column(name = "full_name", length = 100)
     private String fullName;
 
-    @Size(max = 100)
     @NotNull
-    @Column(name = "email", nullable = false, length = 100)
+    @Size(max = 100)
+    @Column(nullable = false)
     private String email;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
-    private Instant createdAt;
-
     @Size(max = 255)
-    @Column(name = "image_url")
     private String imageUrl;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Timestamp createdAt;
+
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private Instant updatedAt;
+    private Timestamp updatedAt;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserRole> userRoles = new ArrayList<>();
 
 }

@@ -8,7 +8,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.sql.Timestamp;
-import java.time.Instant;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -39,8 +39,7 @@ public class AssignmentComment {
     @Column(name = "comment", nullable = false)
     private String comment;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
     @PrePersist

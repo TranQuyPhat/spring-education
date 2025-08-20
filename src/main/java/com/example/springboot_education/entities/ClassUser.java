@@ -29,8 +29,7 @@ public class ClassUser {
     @JoinColumn(name = "student_id", nullable = false)
     private Users student;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "joined_at")
+    @Column(name = "joined_at", updatable = false)
     private Instant joinedAt;
 
 }

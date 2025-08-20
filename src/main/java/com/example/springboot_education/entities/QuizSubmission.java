@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -41,11 +40,9 @@ public class QuizSubmission {
     @Column(name = "graded_at")
     private Instant gradedAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "start_at")
     private Instant startAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "end_at")
     private Instant endAt;
 

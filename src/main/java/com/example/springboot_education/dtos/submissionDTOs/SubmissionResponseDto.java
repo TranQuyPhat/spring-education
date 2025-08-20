@@ -23,4 +23,7 @@ public class SubmissionResponseDto {
     private String teacherComment;
     private Timestamp submittedAt;
     private Timestamp gradedAt;
+    private String fullName;
+    private String email;
+    private String imageUrl;
 }

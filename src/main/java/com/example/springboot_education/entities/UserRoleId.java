@@ -3,16 +3,18 @@ package com.example.springboot_education.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.Hibernate;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Objects;
 
-@Getter
-@Setter
+import org.hibernate.Hibernate;
 @Embeddable
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserRoleId implements Serializable {
     private static final long serialVersionUID = 552538177286132061L;
     @NotNull

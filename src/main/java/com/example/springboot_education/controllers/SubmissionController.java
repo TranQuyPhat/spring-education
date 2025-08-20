@@ -38,18 +38,14 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDto> submitAssignment(
             @RequestParam("assignmentId") Integer assignmentId,
             @RequestParam("studentId") Integer studentId,
-            @RequestPart("file") MultipartFile file) throws IOException {
-
-        String filePath = submissionService.storeFile(file); // lưu file thực tế
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
         SubmissionRequestDto requestDto = new SubmissionRequestDto();
         requestDto.setAssignmentId(assignmentId);
         requestDto.setStudentId(studentId);
-        requestDto.setFilePath(filePath);
-        requestDto.setFileType(file.getContentType());
 
-        SubmissionResponseDto response = submissionService.submitAssignment(requestDto);
-        return ResponseEntity.ok(response);
+//        SubmissionResponseDto response = submissionService.submitAssignment(requestDto);
+        return ResponseEntity.ok(submissionService.submitAssignment(requestDto, file));
     }
 
     // Chấm điểm
@@ -64,7 +60,7 @@ public class SubmissionController {
 
     // Lấy bài nộp theo assignment
     @GetMapping("/assignment/{assignmentId}")
-    public List<SubmissionResponseDto> getByAssignment(@PathVariable Integer assignmentId) {
+    public List<SubmissionResponseDto> getByAssignment(@PathVariable("assignmentId") Integer assignmentId) {
         return submissionService.getSubmissionsByAssignment(assignmentId);
     }
 
@@ -80,6 +76,12 @@ public class SubmissionController {
             @PathVariable Integer assignmentId,
             @PathVariable Integer studentId) {
         return submissionService.getSubmission(assignmentId, studentId);
+    }
+
+    // Lấy bài nộp theo lớp
+    @GetMapping("/class/{classId}")
+    public List<SubmissionResponseDto> getAssignmentsByClassId(@PathVariable Integer classId) {
+        return submissionService.getSubmissionsByClassId(classId);
     }
 
     // Tải file nộp bài về
@@ -101,14 +103,12 @@ public class SubmissionController {
                 .body(fileResource);
     }
 
-    // Xóa file nộp bài
+    // Xóa nộp bài
     @DeleteMapping("/{submissionId}")
     public ResponseEntity<Void> deleteSubmission(@PathVariable Integer submissionId) {
         submissionService.deleteSubmission(submissionId);
         return ResponseEntity.noContent().build();
     }
-
-
 }
 
 

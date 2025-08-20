@@ -3,9 +3,10 @@ package com.example.springboot_education.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+
+import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 
 import com.example.springboot_education.dtos.classschedules.ClassScheduleCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleResponseDTO;
@@ -20,12 +21,13 @@ public class ClassScheduleService {
 
     private final ClassScheduleRepository repository;
     private final ClassRepository classRepository;
-
+    
     public ClassScheduleService(ClassScheduleRepository repository, ClassRepository classRepository) {
         this.repository = repository;
         this.classRepository = classRepository;
     }
 
+    @LoggableAction(value = "CREATE", entity = "class_schedules", description = "Tạo lịch học mới")
     public ClassScheduleResponseDTO create(ClassScheduleCreateDTO dto) {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found"));
@@ -38,6 +40,7 @@ public class ClassScheduleService {
         schedule.setLocation(dto.getLocation());
 
         ClassSchedule saved = repository.save(schedule);
+
         return mapToDTO(saved);
     }
 
@@ -48,11 +51,12 @@ public class ClassScheduleService {
                 .collect(Collectors.toList());
     }
 
-    public Page<ClassScheduleResponseDTO> getAll(Pageable pageable) {
+    public org.springframework.data.domain.Page<ClassScheduleResponseDTO> getAll(org.springframework.data.domain.Pageable pageable) {
         return repository.findAll(pageable)
                 .map(this::mapToDTO);
     }
 
+    @LoggableAction(value = "UPDATE", entity = "class_schedules", description = "Cập nhật lịch học")
     public ClassScheduleResponseDTO update(Integer id, ClassScheduleUpdateDTO dto) {
         ClassSchedule schedule = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Class Schedule not found"));
@@ -63,9 +67,10 @@ public class ClassScheduleService {
         schedule.setLocation(dto.getLocation());
 
         ClassSchedule updated = repository.save(schedule);
+
         return mapToDTO(updated);
     }
-
+    
     private ClassScheduleResponseDTO mapToDTO(ClassSchedule schedule) {
         ClassScheduleResponseDTO dto = new ClassScheduleResponseDTO();
         dto.setId(schedule.getId());

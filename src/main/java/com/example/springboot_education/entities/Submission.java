@@ -5,14 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.Instant;
-
 @Getter
 @Setter
 @Entity
@@ -46,14 +43,14 @@ public class Submission {
     @Column(name = "submitted_at", nullable = false)
     private Timestamp submittedAt;
 
-    @Size(max = 255)
+    @Size(max = 500)
     @NotNull
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path", length = 500)
     private String filePath;
 
     @Size(max = 255)
     @NotNull
-    @Column(name = "file_type", nullable = false)
+    @Column(name = "file_type", length = 255)
     private String fileType;
 
     @Enumerated(EnumType.STRING)

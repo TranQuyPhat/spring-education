@@ -38,14 +38,16 @@ public class QuizQuestion {
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
-
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "question",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,      // cần để khi remove khỏi collection sẽ xóa row con
+            fetch = FetchType.LAZY
+    )
     private List<QuizOption> options;
 }

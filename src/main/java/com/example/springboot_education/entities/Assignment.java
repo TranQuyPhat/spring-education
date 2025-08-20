@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -41,6 +40,7 @@ public class Assignment {
 
     @NotNull
     @Column(name = "due_date", nullable = false)
+    @Temporal(TemporalType.DATE)
     private Date dueDate;
 
     @NotNull
@@ -55,11 +55,9 @@ public class Assignment {
     @Column(name = "file_type", length = 255)
     private String fileType;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
