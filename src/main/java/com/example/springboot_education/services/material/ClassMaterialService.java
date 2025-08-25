@@ -40,7 +40,7 @@ public class ClassMaterialService {
     private final ClassRepository classRepository;
     private final ActivityLogService activityLogService;
    
-    @LoggableAction(value = "CREATE", entity = "class_materials", description = "Tạo tài liệu mới")
+    @LoggableAction(value = "CREATE", entity = "class_materials", description = "Created a new material")
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto, MultipartFile file) throws IOException {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new EntityNotFoundException("User not found" + dto.getCreatedBy()));
@@ -75,7 +75,7 @@ public class ClassMaterialService {
                 .collect(Collectors.toList());
     }
 
-    @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Cập nhật tài liệu")
+    @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Updated a material")
     public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
@@ -89,7 +89,7 @@ public class ClassMaterialService {
         return toResponseDto(updated);
     }
 
-    @LoggableAction(value = "DELETE", entity = "class_materials", description = "Xóa tài liệu")
+    @LoggableAction(value = "DELETE", entity = "class_materials", description = "Deleted a material")
     public void deleteMaterial(Integer id) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));

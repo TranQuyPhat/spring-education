@@ -27,13 +27,14 @@ public class ActivityLogService {
         this.usersRepository = usersRepository;
     }
 
+    // Lấy tất cả log kèm thông tin user
     public List<ActivityLogResponseDTO> getAllLogs() {
-        // QUAN TRỌNG: Sử dụng findAllWithUser() để đảm bảo thông tin User được tải cùng lúc.
         return repository.findAllWithUser().stream() 
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
+    // Tạo log mới
     public void log(ActivityLogCreateDTO dto) {
         ActivityLog log = new ActivityLog();
         log.setActionType(dto.getActionType());
@@ -50,6 +51,19 @@ public class ActivityLogService {
         repository.save(log);
     }
 
+    public void deleteLogs(List<Integer> ids) {
+        ids.forEach(id -> {
+            if (repository.existsById(id)) {
+                repository.deleteById(id);
+            }
+        });
+    }
+
+    // Lấy danh sách actionType CRUD
+    public List<String> getActionTypes() {
+        return List.of("CREATE", "READ", "UPDATE", "DELETE");
+    }
+
     @SuppressWarnings("UnnecessaryUnboxing") 
     private ActivityLogResponseDTO toDTO(ActivityLog activity) {
         ActivityLogResponseDTO dto = new ActivityLogResponseDTO();
@@ -61,7 +75,6 @@ public class ActivityLogService {
         dto.setCreatedAt(activity.getCreatedAt());
         
         if (activity.getUser() != null) {
-           
             dto.setUserId(activity.getUser().getId().intValue()); 
             dto.setFullName(activity.getUser().getFullName()); 
         } else {

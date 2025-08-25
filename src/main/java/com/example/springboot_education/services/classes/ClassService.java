@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
@@ -110,11 +111,11 @@ public class ClassService {
     return toDTO(saved);
 }
 
-    @LoggableAction(value = "UPDATE", entity = "classes", description = "Cập nhật lớp học")
+    @LoggableAction(value = "UPDATE", entity = "classes", description = "Update class")
     public ClassResponseDTO updateClass(Integer id, CreateClassDTO dto) {
         ClassEntity clazz = classRepository.findById(id).orElseThrow();
         Subject subject = subjectRepository.findById(dto.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
 
         clazz.setClassName(dto.getClassName());
         clazz.setSchoolYear(dto.getSchoolYear());
@@ -129,26 +130,26 @@ public class ClassService {
         return toDTO(updated);
     }
 
-    @LoggableAction(value = "DELETE", entity = "classes", description = "Xóa lớp học")
+    @LoggableAction(value = "DELETE", entity = "classes", description = "Delete class")
     public void deleteClass(Integer id) {
         ClassEntity clazz = classRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Class does not exist"));
 
         classRepository.deleteById(id);
     }
     
-    @LoggableAction(value = "CREATE", entity = "class_users", description = "Thêm học sinh vào lớp học")
+    @LoggableAction(value = "CREATE", entity = "class_users", description = "Add student to class")
     public void addStudentToClass(AddStudentToClassDTO dto) {
-        // Kiểm tra xem đã tồn tại chưa
+        // Check if the student already exists in the class
         if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
-            throw new RuntimeException("Học sinh đã có trong lớp này!");
+            throw new RuntimeException("Student already exists in this class!");
         }
 
         ClassEntity clazz = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Class does not exist"));
 
         Users student = userRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Học sinh không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Student does not exist"));
 
         ClassUser member = new ClassUser();
         ClassUserId id = new ClassUserId();
@@ -161,7 +162,6 @@ public class ClassService {
         member.setJoinedAt(Instant.now());
 
         classUserRepository.save(member);
-
     }
 
     private ClassResponseDTO toDTO(ClassEntity clazz) {
@@ -198,6 +198,7 @@ public class ClassService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+
     public PaginatedClassResponseDto getClassesOfTeacher(Integer teacherId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ClassEntity> pageResult = classRepository.findByTeacher_Id(teacherId, pageable);
