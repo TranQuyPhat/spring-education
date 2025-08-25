@@ -50,7 +50,7 @@ public class SecurityConfig {
                 "http://localhost:8080",
                 "http://127.0.0.1:8080"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setAllowCredentials(true); // Cho phép gửi cookie/Authorization header
 
@@ -71,6 +71,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/public/**").permitAll()
+                    .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers("/api/profile/**").authenticated()
                     .requestMatchers("/api/users/**").hasAnyAuthority("admin")
                     .requestMatchers("/api/security/roles/**").hasAnyAuthority("admin")
                     .anyRequest().authenticated())
