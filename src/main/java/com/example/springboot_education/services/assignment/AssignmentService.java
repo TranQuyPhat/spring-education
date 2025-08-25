@@ -191,11 +191,16 @@ public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
     return assignments.stream().map(a -> {
         try {
             int daysLeft = -1;
+//            if (a.getDueDate() != null) {
+//                Date utilDate = new Date(a.getDueDate().getTime());
+//                LocalDate due = utilDate.toInstant()
+//                        .atZone(ZoneId.systemDefault())
+//                        .toLocalDate();
+//                daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
+//            }
             if (a.getDueDate() != null) {
-                Date utilDate = new Date(a.getDueDate().getTime()); 
-                LocalDate due = utilDate.toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate();
+                // do assignment.getDueDate() là LocalDateTime nên chỉ cần toLocalDate()
+                LocalDate due = a.getDueDate().toLocalDate();
                 daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
             }
 
@@ -220,11 +225,15 @@ public List<UpcomingSubmissionDto> getUpcomingSubmissions(Integer teacherId) {
         return assignments.stream().map(a -> {
             try {
                 int daysLeft = -1;
+//                if (a.getDueDate() != null) {
+//                    Date utilDate = new Date(a.getDueDate().getTime());
+//                    LocalDate due = utilDate.toInstant()
+//                            .atZone(ZoneId.systemDefault())
+//                            .toLocalDate();
+//                    daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
+//                }
                 if (a.getDueDate() != null) {
-                    Date utilDate = new Date(a.getDueDate().getTime());
-                    LocalDate due = utilDate.toInstant()
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate();
+                    LocalDate due = a.getDueDate().toLocalDate();
                     daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
                 }
 

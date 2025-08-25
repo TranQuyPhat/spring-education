@@ -20,5 +20,6 @@ public class AssignmentCommentResponseDto {
     private Timestamp createdAt;
     private Integer parentId;
 
+    @Builder.Default
     private List<AssignmentCommentResponseDto> replies = new ArrayList<>();
 }

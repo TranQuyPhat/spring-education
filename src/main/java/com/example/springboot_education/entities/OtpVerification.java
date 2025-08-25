@@ -32,9 +32,11 @@ public class OtpVerification {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isUsed = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer attemptCount = 0;
 
     // Constructor

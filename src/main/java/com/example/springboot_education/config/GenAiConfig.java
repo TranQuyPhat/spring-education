@@ -1,15 +1,15 @@
 package com.example.springboot_education.config;
 
 import com.google.genai.Client;
-import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class GenAiConfig {
 
-    Dotenv dotenv = Dotenv.load();
-    String apiKey = dotenv.get("GOOGLE_API_KEY_ENV");
+    @Value("${GOOGLE_API_KEY_ENV}")
+    private String apiKey;
 
     @Bean
     public Client genAiClient() {
