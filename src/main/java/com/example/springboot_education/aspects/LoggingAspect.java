@@ -1,11 +1,11 @@
 package com.example.springboot_education.aspects;
 
-import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.entities.ActivityLog;
-import com.example.springboot_education.entities.Users;
-import com.example.springboot_education.repositories.ActivityLogRepository;
-import com.example.springboot_education.repositories.UsersJpaRepository;
-import lombok.extern.slf4j.Slf4j;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -14,11 +14,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.entities.ActivityLog;
+import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.repositories.ActivityLogRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Aspect
 @Component

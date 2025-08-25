@@ -1,5 +1,13 @@
 package com.example.springboot_education.services.assignment;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.assignmentCommentDTOs.AssignmentCommentResponseDto;
 import com.example.springboot_education.dtos.assignmentCommentDTOs.CreateAssignmentCommentRequestDto;
 import com.example.springboot_education.entities.Assignment;
@@ -8,13 +16,8 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentCommentJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class AssignmentCommentService {
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
 
+    @LoggableAction( value = "CREATE", entity = "assignment_comment", description = "Added a comment to the assignment")
     public AssignmentCommentResponseDto create(CreateAssignmentCommentRequestDto dto) {
         Assignment assignment = assignmentJpaRepository.findById(dto.getAssignmentId())
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
@@ -52,6 +56,7 @@ public class AssignmentCommentService {
                 .toList();
     }
 
+    @LoggableAction( value = "DELETE", entity = "assignment_comment", description = "Deleted a comment")
     public void delete(Integer id) {
         assignmentCommentJpaRepository.deleteById(id);
     }

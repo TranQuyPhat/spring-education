@@ -1,5 +1,6 @@
 package com.example.springboot_education.services.assignment;
 
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
@@ -73,6 +74,7 @@ public class SubmissionService {
         return submissions.stream().map(this::convertToDto).toList();
     }
     // Nộp bài
+    @LoggableAction(value = "SUBMIT", entity = "Submission", description = "Submitted an assignment")
     public SubmissionResponseDto submitAssignment(SubmissionRequestDto requestDto, MultipartFile file) throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(requestDto.getAssignmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
@@ -162,6 +164,8 @@ public class SubmissionService {
 
 
     //    Chấm điểm
+
+    @LoggableAction( value = "GRADE", entity = "Submission", description = "Graded an assignment")
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
@@ -263,7 +267,7 @@ public class SubmissionService {
         );
     }
 
-    // xóa file nộp
+    @LoggableAction(value = "DELETE", entity = "Submission", description = "Deleted a submission")
     public void deleteSubmission(Integer submissionId) {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
