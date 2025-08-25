@@ -11,4 +11,6 @@ public class AttendanceResponseDTO {
     private Integer scheduleId;
     private Instant markedAt;
     private String status;
+    private String fullName;
+    private String className;
 }

@@ -3,9 +3,11 @@ package com.example.springboot_education.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.example.springboot_education.annotations.LoggableAction; 
+import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.subjects.CreateSubjectDTO;
 import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
@@ -37,24 +39,23 @@ public class SubjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found with id: " + id));
     }
 
-    @LoggableAction(value = "CREATE", entity = "subjects", description = "Tạo môn học mới")
+    @LoggableAction(value = "CREATE", entity = "subjects", description = "Create new subject")
     public SubjectResponseDTO create(CreateSubjectDTO dto) {
         Subject subject = new Subject();
         subject.setSubjectName(dto.getSubjectName());
         subject.setDescription(dto.getDescription());
 
-        Users creator = null;
-        if (dto.getCreatedById() != null) {
-            creator = userRepository.findById(dto.getCreatedById())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
-            subject.setCreatedBy(creator);
-        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Users creator = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        subject.setCreatedBy(creator);
 
         Subject saved = subjectRepository.save(subject);
         return toDTO(saved);
     }
 
-    @LoggableAction(value = "UPDATE", entity = "subjects", description = "Cập nhật môn học")
+    @LoggableAction(value = "UPDATE", entity = "subjects", description = "Update subject")
     public SubjectResponseDTO update(Integer id, UpdateSubjectDTO dto) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
@@ -67,7 +68,7 @@ public class SubjectService {
         return toDTO(updated);
     }
 
-    @LoggableAction(value = "DELETE", entity = "subjects", description = "Xóa môn học")
+    @LoggableAction(value = "DELETE", entity = "subjects", description = "Delete subject")
     public void delete(Integer id) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
@@ -81,6 +82,9 @@ public class SubjectService {
         dto.setSubjectName(subject.getSubjectName());
         dto.setDescription(subject.getDescription());
         dto.setCreatedByName(subject.getCreatedBy() != null ? subject.getCreatedBy().getFullName() : null);
+        dto.setCreatedAt(subject.getCreatedAt());
+        dto.setUpdatedAt(subject.getUpdatedAt());
+
         return dto;
     }
 }
