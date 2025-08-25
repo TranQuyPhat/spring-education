@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -180,8 +181,8 @@ public class GradesService {
                         .title(s.getAssignment().getTitle())
                         .score(s.getScore())
                         .maxScore(s.getAssignment().getMaxScore())
-                        .submittedAt(s.getSubmittedAt().toInstant())
-                        .gradedAt(s.getGradedAt() != null ? s.getGradedAt().toInstant() : null)
+                        .submittedAt(s.getSubmittedAt() != null ? s.getSubmittedAt().toInstant(ZoneOffset.ofHours(7)) : null)
+                        .gradedAt(s.getGradedAt() != null ? s.getGradedAt().toInstant(ZoneOffset.ofHours(7)) : null)
                         .status(s.getStatus() != null ? s.getStatus().name() : null)
                         .build()
         ));

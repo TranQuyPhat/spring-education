@@ -14,4 +14,6 @@ public class SubmissionRequestDto {
     private Integer studentId;
     private String filePath;
     private String fileType;
+    private Long fileSize;
+    private String description;
 }

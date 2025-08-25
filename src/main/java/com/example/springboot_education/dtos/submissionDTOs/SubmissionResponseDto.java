@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,15 +16,28 @@ import java.sql.Timestamp;
 public class SubmissionResponseDto {
     private Integer id;
     private Integer assignmentId;
-    private Integer studentId;
     private String filePath;
     private String fileType;
+    private String fileSize;
+    private String description;
     private Submission.SubmissionStatus status;
     private BigDecimal score;
     private String teacherComment;
-    private Timestamp submittedAt;
-    private Timestamp gradedAt;
-    private String fullName;
-    private String email;
-    private String imageUrl;
+    private LocalDateTime submittedAt;
+    private LocalDateTime gradedAt;
+
+    // 👇 Nested DTO cho student
+    private StudentDto student;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StudentDto {
+        private Integer id;
+        private String fullName;
+        private String email;
+        private String imageUrl;
+    }
 }

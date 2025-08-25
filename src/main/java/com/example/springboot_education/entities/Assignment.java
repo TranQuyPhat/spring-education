@@ -10,8 +10,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -40,8 +39,7 @@ public class Assignment {
 
     @NotNull
     @Column(name = "due_date", nullable = false)
-    @Temporal(TemporalType.DATE)
-    private Date dueDate;
+    private LocalDateTime dueDate;
 
     @NotNull
     @Column(name = "max_score", nullable = false, precision = 5, scale = 2)
@@ -54,6 +52,9 @@ public class Assignment {
     @Size(max = 255)
     @Column(name = "file_type", length = 255)
     private String fileType;
+
+    @Column(name = "file_size")
+    private Long fileSize; // bytes
 
     @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
