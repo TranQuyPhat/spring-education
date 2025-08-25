@@ -1,11 +1,13 @@
 package com.example.springboot_education.controllers.quiz;
 
 
+import com.example.springboot_education.dtos.quiz.APIResponse;
 import com.example.springboot_education.dtos.quiz.QuestionsPageResponseDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
+import com.example.springboot_education.dtos.quiz.student.StudentQuizDto;
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 import com.example.springboot_education.services.quiz.QuizService;
@@ -122,5 +124,68 @@ public ResponseEntity<?> getQuizByRole(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteQuiz(@PathVariable Integer id) {
         quizService.deleteQuiz(id);
+    }
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<APIResponse<List<StudentQuizDto>>> getStudentQuizzes(
+            @PathVariable Integer studentId) {
+
+        try {
+            List<StudentQuizDto> quizzes = quizService.getQuizzesByStudentId(studentId);
+
+            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+                    true,
+                    "Lấy danh sách quiz thành công",
+                    quizzes
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+                    false,
+                    "Có lỗi xảy ra khi lấy danh sách quiz: " + e.getMessage(),
+                    null
+            );
+
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * Lấy danh sách quiz với phân trang
+     */
+    @GetMapping("/student/{studentId}/page")
+    public ResponseEntity<APIResponse<List<StudentQuizDto>>> getStudentQuizzesWithPagination(
+            @PathVariable Integer studentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        try {
+            // Có thể implement thêm logic phân trang ở đây
+            List<StudentQuizDto> allQuizzes = quizService.getQuizzesByStudentId(studentId);
+
+            int start = page * size;
+            int end = Math.min(start + size, allQuizzes.size());
+
+            List<StudentQuizDto> pagedQuizzes = start < allQuizzes.size() ?
+                    allQuizzes.subList(start, end) : List.of();
+
+            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+                    true,
+                    "Lấy danh sách quiz thành công (trang " + (page + 1) + ")",
+                    pagedQuizzes
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+                    false,
+                    "Có lỗi xảy ra: " + e.getMessage(),
+                    null
+            );
+
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 }

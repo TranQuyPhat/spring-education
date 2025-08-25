@@ -1,37 +1,29 @@
 package com.example.springboot_education.controllers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.springboot_education.dtos.AuthDTOs.GoogleLoginRequestDto;
-import com.example.springboot_education.dtos.AuthDTOs.GoogleLoginWithCredentialRequestDto;
-import com.example.springboot_education.dtos.AuthDTOs.LoginRequestDto;
-import com.example.springboot_education.dtos.AuthDTOs.LoginResponseDto;
-import com.example.springboot_education.dtos.AuthDTOs.RegisterRequestDto;
-import com.example.springboot_education.dtos.AuthDTOs.RegisterResponseDto;
-import com.example.springboot_education.dtos.AuthDTOs.SelectRoleRequestDto;
+import com.example.springboot_education.dtos.*;
+import com.example.springboot_education.dtos.AuthDTOs.*;
 import com.example.springboot_education.entities.Role;
 import com.example.springboot_education.entities.UserRole;
 import com.example.springboot_education.entities.UserRoleId;
 import com.example.springboot_education.entities.Users;
-import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.RoleJpaRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.services.AuthService;
 import com.example.springboot_education.services.JwtService;
-
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
@@ -43,12 +35,12 @@ public class AuthController {
     private final JwtService jwtService;
 
     private final AuthService authService;
-
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
-        LoginResponseDto result = this.authService.login(request);
-        return ResponseEntity.ok(result);
-    }
+//
+//    @PostMapping("/login")
+//    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
+//        LoginResponseDto result = this.authService.login(request);
+//        return ResponseEntity.ok(result);
+//    }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDto> register(@RequestBody RegisterRequestDto request) {
@@ -129,5 +121,180 @@ public class AuthController {
                     .body(Map.of("message", "Select role failed", "error", e.getMessage()));
         }
     }
+    @PostMapping("/register/init")
+    public ResponseEntity<ApiResponse<RegisterInitResponseDto>> initRegistration(
+            @Valid @RequestBody RegisterRequestDto request) {
 
+
+        RegisterInitResponseDto response = authService.registerInit(request);
+
+        return ResponseEntity.ok(ApiResponse.<RegisterInitResponseDto>builder()
+                .success(true)
+                .message("OTP sent successfully")
+                .data(response)
+                .build());
+    }
+
+    // Bước 2: Xác thực OTP và hoàn tất đăng ký
+    @PostMapping("/register/confirm")
+    public ResponseEntity<ApiResponse<RegisterResponseDto>> confirmRegistration(
+            @Valid @RequestBody ConfirmRegistrationDto request) {
+
+
+        RegisterResponseDto response = authService.confirmRegistration(request);
+
+        return ResponseEntity.ok(ApiResponse.<RegisterResponseDto>builder()
+                .success(true)
+                .message("Registration completed successfully")
+                .data(response)
+                .build());
+    }
+
+    // Gửi lại OTP
+    @PostMapping("/otp/resend")
+    public ResponseEntity<ApiResponse<ResendOtpResponseDto>> resendOtp(
+            @Valid @RequestBody ResendOtpRequestDto request) {
+
+
+        ResendOtpResponseDto response = authService.resendOtp(request);
+
+        return ResponseEntity.ok(ApiResponse.<ResendOtpResponseDto>builder()
+                .success(true)
+                .message("New OTP sent successfully")
+                .data(response)
+                .build());
+    }
+
+    // Login endpoint giữ nguyên
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponseDto>> login(
+            @Valid @RequestBody LoginRequestDto request) {
+
+
+        LoginResponseDto response = authService.login(request);
+
+        return ResponseEntity.ok(ApiResponse.<LoginResponseDto>builder()
+                .success(true)
+                .message("Login successful")
+                .data(response)
+                .build());
+    }
+
+    // Endpoint kiểm tra trạng thái registration
+    @GetMapping("/register/status/{email}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRegistrationStatus(
+            @PathVariable @Email String email) {
+
+        // Logic kiểm tra trạng thái pending user
+        // Trả về thông tin như: có đang chờ xác thực không, thời gian hết hạn, etc.
+
+        Map<String, Object> status = new HashMap<>();
+        status.put("email", email);
+        status.put("isPending", true); // Tính toán từ database
+        status.put("expiresIn", 1500); // Seconds remaining
+
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .success(true)
+                .data(status)
+                .build());
+    }
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Missing or invalid Authorization header"));
+            }
+
+            String token = authHeader.substring(7);
+
+            // Validate token format and expiry
+            if (!jwtService.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid or expired token"));
+            }
+
+            // Extract username from token
+            String username = jwtService.extractUsername(token);
+
+            if (username == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token payload"));
+            }
+
+            // Check if user still exists and is active
+            Users user = usersJpaRepository.findByEmail(username) // Changed from userService.findByEmail
+                    .orElse(null);
+
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "User not found"));
+            }
+
+            // Check if user is still active/enabled
+//            if (!user.isEnabled()) {
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                        .body(Map.of("error", "User account is disabled"));
+//            }
+
+            // Extract roles from token for better performance
+            List<Map<String, Object>> tokenRoles = jwtService.extractRoles(token);
+            List<String> roleNames = tokenRoles.stream()
+                    .map(role -> (String) role.get("name"))
+                    .collect(Collectors.toList());
+
+            // Return success with user info
+            Map<String, Object> response = new HashMap<>();
+            response.put("valid", true);
+            response.put("username", username);
+            response.put("userId", user.getId());
+            response.put("roles", roleNames);
+            response.put("email", user.getEmail());
+
+            // Optional: Add token expiration info
+            long remainingTime = jwtService.getRemainingTime(token);
+            response.put("expiresIn", remainingTime / 1000); // in seconds
+
+            return ResponseEntity.ok(response);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token has expired"));
+        } catch (MalformedJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid token format"));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid token signature"));
+        } catch (Exception e) {
+            // Log the error for debugging
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error"));
+        }
+    }
+
+    // Optional: Add refresh token endpoint if needed
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refreshToken");
+
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Refresh token is required"));
+            }
+
+            // For now, since you don't have refresh tokens implemented,
+            // you can return an error or implement basic refresh logic
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(Map.of("error", "Refresh token not implemented yet"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Failed to refresh token"));
+        }
+    }
 }

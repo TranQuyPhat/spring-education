@@ -6,6 +6,7 @@ import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
+import com.example.springboot_education.dtos.quiz.student.StudentQuizDto;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 
 import java.util.List;
@@ -20,4 +21,7 @@ public interface QuizService {
     void deleteQuestion(Integer quizId, Integer questionId);
     void deleteQuiz(Integer quizId);
     QuestionsPageResponseDTO getQuizQuestionsPageForTeacher(Integer quizId, int page, int size);
-    QuestionsPageResponseDTO getQuizQuestionsPageForStudent(Integer quizId, int page, int size);}
+    QuestionsPageResponseDTO getQuizQuestionsPageForStudent(Integer quizId, int page, int size);
+    List<StudentQuizDto> getQuizzesByStudentId(Integer studentId);}
+
+

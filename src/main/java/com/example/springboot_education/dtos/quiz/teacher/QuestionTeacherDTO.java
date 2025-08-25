@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class QuestionTeacherDTO extends QuestionBaseDTO {
-    private Character correctOption;
+    private String correctOption;
 
 }

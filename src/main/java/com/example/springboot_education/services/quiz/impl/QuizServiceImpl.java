@@ -6,6 +6,7 @@ import com.example.springboot_education.dtos.quiz.base.QuestionBaseDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
+import com.example.springboot_education.dtos.quiz.student.StudentQuizDto;
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 import com.example.springboot_education.entities.Quiz;
@@ -28,6 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -54,7 +58,7 @@ public class QuizServiceImpl implements QuizService {
             QuizQuestion question = new QuizQuestion();
             question.setQuiz(quiz);
             question.setQuestionText(qdto.getQuestionText());
-            question.setCorrectOption(qdto.getCorrectOption().charAt(0));
+            question.setCorrectOptions(qdto.getCorrectOption());
             question.setScore(qdto.getScore());
             question.setCreatedAt(Instant.now());
             question.setUpdatedAt(Instant.now());
@@ -109,6 +113,47 @@ public class QuizServiceImpl implements QuizService {
         );
     }
 
+    @Override
+    public List<StudentQuizDto> getQuizzesByStudentId(Integer studentId) {
+        List<Object[]> results = quizRepository.findQuizzesByStudentId(studentId);
+
+        return results.stream()
+                .map(this::mapToStudentQuizDTO)
+                .collect(Collectors.toList());
+    }
+    private StudentQuizDto mapToStudentQuizDTO(Object[] row) {
+        return new StudentQuizDto(
+                (Integer) row[0],                                 // quizId
+                (String) row[1],                                  // title
+                (String) row[2],                                  // description
+                row[3] != null ? ((Number) row[3]).intValue() : null, // timeLimit
+                row[4] != null ? convertToLocalDateTime(row[4]) : null, // startDate
+                row[5] != null ? convertToLocalDateTime(row[5]) : null, // endDate
+                (String) row[6],                                  // grade
+                (String) row[7],                                  // subject
+                (String) row[8],                                  // className
+                row[9] != null ? convertToLocalDateTime(row[9]) : null  ,// createdAt
+                row[10] != null ? convertToLocalDateTime(row[10]) : null  // createdAt
+        );
+    }
+    private LocalDateTime convertToLocalDateTime(Object value) {
+        if (value instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) value).toLocalDateTime();
+        } else if (value instanceof java.time.LocalDateTime) {
+            return (LocalDateTime) value;
+        } else if (value instanceof java.time.LocalDate) {
+            return ((LocalDate) value).atStartOfDay();
+        } else if (value instanceof java.sql.Date) {
+            // java.sql.Date chỉ có ngày, không có giờ ⇒ dùng atStartOfDay
+            return ((java.sql.Date) value).toLocalDate().atStartOfDay();
+        } else if (value instanceof java.util.Date) {
+            return ((java.util.Date) value).toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+        }
+
+        throw new UnsupportedOperationException("Unsupported type: " + value.getClass().getName());
+    }
 
     @Override
     public QuizResponseTeacherDTO getQuizForTeacher(Integer quizId) {
@@ -194,7 +239,7 @@ public class QuizServiceImpl implements QuizService {
                 seenQuestionIds.add(q.getId());
             }
             q.setQuestionText(qdto.getQuestionText());
-            q.setCorrectOption(qdto.getCorrectOption());
+            q.setCorrectOptions(qdto.getCorrectOption());
             q.setScore(qdto.getScore());
             q.setUpdatedAt(Instant.now());
             q = questionRepository.save(q);

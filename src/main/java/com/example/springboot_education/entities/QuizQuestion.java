@@ -31,8 +31,8 @@ public class QuizQuestion {
     private String questionText;
 
 
-    @Column(name = "correct_option")
-    private Character correctOption;
+    @Column(name = "correct_options")
+    private String correctOptions;
 
     @ColumnDefault("1.00")
     @Column(name = "score", precision = 5, scale = 2)

@@ -29,8 +29,8 @@ public class QuizAnswer {
     @JoinColumn(name = "question_id", nullable = false)
     private QuizQuestion question;
 
-    @Column(name = "selected_option")
-    private Character selectedOption;
+    @Column(name = "selected_options")
+    private String selectedOptions;
 
     @Column(name = "is_correct")
     private Boolean isCorrect;

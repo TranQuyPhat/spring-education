@@ -26,7 +26,7 @@ public class QuizMapper2 {
     private final ClassRepository classRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private void mapBaseFields(Quiz quiz, QuizBaseDTO dto) {
+    public void mapBaseFields(Quiz quiz, QuizBaseDTO dto) {
         dto.setId(quiz.getId());
         dto.setTitle(quiz.getTitle());
         dto.setDescription(quiz.getDescription());
@@ -58,7 +58,7 @@ public class QuizMapper2 {
         QuestionTeacherDTO dto = new QuestionTeacherDTO();
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
-        dto.setCorrectOption(question.getCorrectOption());
+        dto.setCorrectOption(question.getCorrectOptions());
         dto.setScore(question.getScore());
         dto.setOptions(options);
         return dto;

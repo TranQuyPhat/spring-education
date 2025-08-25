@@ -3,6 +3,7 @@ package com.example.springboot_education.dtos.quiz.submit;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 @Data
 public class QuizSubmitReqDTO {
@@ -11,5 +12,5 @@ public class QuizSubmitReqDTO {
     private Instant startAt;
     private Instant endAt;
     private Instant submittedAt;
-    private Map<Integer, String> answers;
+    private Map<Integer, List<String>> answers;
 }

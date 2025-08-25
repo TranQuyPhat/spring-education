@@ -18,8 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -63,17 +62,11 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     @Override
     @Transactional
     public QuizSubmissionBaseDTO submitQuiz(QuizSubmitReqDTO request) {
-        // 1. Lấy quiz và student
-        log.info("📥 quizId: {}", request.getQuizId());
-        log.info("📥 studentId: {}", request.getStudentId());
-        log.info("📥 startAt: {}", request.getStartAt());
-        log.info("📥 answers: {}", request.getAnswers());
         Quiz quiz = quizRepository.findById(request.getQuizId())
                 .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
         Users student = userRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
 
-        // 2. Tạo submission (chưa tính score)
         QuizSubmission submission = new QuizSubmission();
         submission.setQuiz(quiz);
         submission.setStudent(student);
@@ -82,15 +75,21 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         submission.setSubmittedAt(Instant.now());
         submission = quizSubmissionRepository.save(submission);
 
-        // 3. Xử lý từng câu, tính tổng điểm và đếm số câu đúng
         BigDecimal totalScore = BigDecimal.ZERO;
         int correctCount = 0;
         int totalQuestions = quiz.getQuestions().size();
 
         List<QuizAnswer> answers = new ArrayList<>(totalQuestions);
         for (QuizQuestion question : quiz.getQuestions()) {
-            String userAnswer = request.getAnswers().get(question.getId());
-            boolean isCorrect = checkAnswer(userAnswer, question.getCorrectOption());
+            // Lấy câu trả lời của user (có thể là List<String> hoặc String)
+            List<String> userAnswers = request.getAnswers().get(question.getId());
+
+            // Chuyển thành format string để lưu DB
+            String userAnswerStr = userAnswers != null ?
+                    String.join(",", userAnswers) : null;
+
+            // Kiểm tra đáp án
+            boolean isCorrect = checkAnswer(userAnswers, question.getCorrectOptions());
 
             if (isCorrect) {
                 totalScore = totalScore.add(question.getScore());
@@ -100,16 +99,12 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
             QuizAnswer answer = new QuizAnswer();
             answer.setSubmission(submission);
             answer.setQuestion(question);
-            answer.setSelectedOption(
-                    userAnswer != null && !userAnswer.isEmpty()
-                            ? userAnswer.charAt(0)
-                            : null
-            );
+            answer.setSelectedOptions(userAnswerStr);
             answer.setIsCorrect(isCorrect);
             answers.add(answer);
         }
-        quizAnswerRepository.saveAll(answers);
 
+        quizAnswerRepository.saveAll(answers);
         submission.setScore(totalScore);
         submission.setGradedAt(Instant.now());
         submission = quizSubmissionRepository.save(submission);
@@ -117,25 +112,35 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         return mapToDTO(submission, totalQuestions, correctCount);
     }
 
-    private boolean checkAnswer(String userAnswer, Character correctAnswer) {
-        if (userAnswer == null || correctAnswer == null) {
+    // Phương thức kiểm tra đáp án mới
+    private boolean checkAnswer(List<String> userAnswers, String correctOptions) {
+        if (userAnswers == null || userAnswers.isEmpty() || correctOptions == null) {
             return false;
         }
 
-        // Loại bỏ khoảng trắng thừa
-        String trimmed = userAnswer.trim();
-        if (trimmed.length() != 1) {
-            return false;
-        }
+        // Parse correct options
+        Set<String> correctSet = parseOptions(correctOptions);
 
-        char userChar    = Character.toUpperCase(trimmed.charAt(0));
-        char correctChar = Character.toUpperCase(correctAnswer);
+        // Parse user answers
+        Set<String> userSet = userAnswers.stream()
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .collect(Collectors.toSet());
 
-        return userChar == correctChar;
+        // So sánh chính xác (All or Nothing)
+        return correctSet.equals(userSet);
     }
 
+    private Set<String> parseOptions(String options) {
+        if (options == null || options.trim().isEmpty()) {
+            return new HashSet<>();
+        }
 
-
+        return Arrays.stream(options.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .collect(Collectors.toSet());
+    }
     private QuizSubmissionBaseDTO mapToDTO(QuizSubmission sub, int totalQ, int correctQ) {
         QuizSubmissionBaseDTO dto = new QuizSubmissionBaseDTO();
         dto.setId(sub.getId());
@@ -154,25 +159,6 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         dto.setEndAt(sub.getEndAt());
         dto.setSubmittedAt(sub.getSubmittedAt());
         dto.setGradedAt(sub.getGradedAt());
-        return dto;
-    }
-    private QuizSubmissionBaseDTO mapToBaseDTO(QuizSubmission submission) {
-        Quiz quiz = submission.getQuiz();
-        Users student = submission.getStudent();
-
-        QuizSubmissionBaseDTO dto = new QuizSubmissionBaseDTO();
-        dto.setId(submission.getId());
-        dto.setQuizId(quiz.getId());
-        dto.setQuizTitle(quiz.getTitle());
-
-        dto.setStudentId(student.getId());
-        dto.setStudentName(student.getFullName());
-
-        dto.setScore(submission.getScore());
-        dto.setSubmittedAt(submission.getSubmittedAt());
-        dto.setStartAt(submission.getStartAt());
-        dto.setEndAt(submission.getEndAt());
-        dto.setGradedAt(submission.getGradedAt());
         return dto;
     }
 }
