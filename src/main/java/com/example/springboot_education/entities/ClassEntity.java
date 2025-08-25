@@ -59,5 +59,15 @@ public class ClassEntity {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+    
+    @NotNull
+    @Enumerated(EnumType.STRING) // Lưu bằng tên enum (AUTO, APPROVAL)
+    @Column(name = "join_mode", nullable = false, length = 20)
+    private JoinMode joinMode ; // default = AUTO
+
+    public enum JoinMode {
+        AUTO,      // Học sinh vào không cần xác nhận
+        APPROVAL   // Học sinh vào cần sự xác nhận của giáo viên
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.example.springboot_education.repositories;
+package com.example.springboot_education.repositories.classes;
 
 import java.util.List;
 

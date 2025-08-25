@@ -39,7 +39,7 @@ public class Attendance {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "schedule_id", nullable = false)
-    private ClassSchedule schedule;
+    private ClassScheduleSession schedule;
 
     @NotNull
     @Column(name = "status", nullable = false, length = 50)

@@ -26,15 +26,46 @@ public class ClassJoinRequestService {
     private final ClassUserService classUserService;
     private final UserService userService;
 
-        public JoinRequestDTO createRequest(Integer classId, Integer studentId) {
+        @Transactional
+public JoinRequestDTO joinClass(Integer classId, Integer studentId) {
+    ClassEntity classEntity = classService.getClassEntityById(classId);
+    Users student = userService.getUserEntityById(studentId);
+
+    // Nếu lớp đã có student rồi thì chặn
+//     if (classUserService.isStudentInClass(classId, studentId)) {
+//         throw new IllegalArgumentException("Bạn đã ở trong lớp này.");
+//     }
+
+    // Kiểm tra chế độ join
+    if (classEntity.getJoinMode() == ClassEntity.JoinMode.AUTO) {
+        // Thêm trực tiếp student vào class
+        classUserService.addStudentToClass(classId, studentId);
+
+        // Có thể trả về DTO kiểu request "ảo" cho thống nhất
+        return JoinRequestDTO.builder()
+                .requestId(null) // vì không có request trong DB
+                .classId(classId)
+                .studentId(studentId)
+                .studentName(student.getFullName())
+                .status(ClassJoinRequest.Status.APPROVED)
+                // .message("Đã tham gia lớp thành công (AUTO).")
+                .build();
+    }
+
+    if (classEntity.getJoinMode() == ClassEntity.JoinMode.APPROVAL) {
+        // Check nếu đã có request PENDING
         if (repo.existsByClassEntity_IdAndStudent_IdAndStatus(
                 classId, studentId, ClassJoinRequest.Status.PENDING
         )) {
-                throw new IllegalArgumentException("Yêu cầu đã tồn tại và đang chờ duyệt.");
+            throw new IllegalArgumentException("Yêu cầu đã tồn tại và đang chờ duyệt.");
         }
 
-        ClassEntity classEntity = classService.getClassEntityById(classId);
-        Users student = userService.getUserEntityById(studentId);
+        // Check nếu đã được duyệt trước đó
+        if (repo.existsByClassEntity_IdAndStudent_IdAndStatus(
+                classId, studentId, ClassJoinRequest.Status.APPROVED
+        )) {
+            throw new IllegalArgumentException("Bạn đã là thành viên của lớp này.");
+        }
 
         ClassJoinRequest saved = repo.save(
                 ClassJoinRequest.builder()
@@ -46,11 +77,14 @@ public class ClassJoinRequestService {
 
         Integer teacherId = classService.getTeacherIdOfClass(classId);
 
-        JoinRequestDTO dto = convertToDTO(saved); // dùng method convert chung
+        JoinRequestDTO dto = convertToDTO(saved);
         notificationService.notifyTeacher(teacherId, dto);
 
         return dto;
-        }
+    }
+
+    throw new IllegalArgumentException("Chế độ tham gia lớp không hợp lệ.");
+}
 
     public List<JoinRequestDTO> getRequestsForClass(Integer classId, ClassJoinRequest.Status status) {
         List<ClassJoinRequest> requests = status != null

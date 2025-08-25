@@ -1,9 +1,9 @@
 package com.example.springboot_education.services.grade;
 
 import com.example.springboot_education.dtos.gradeDTOs.*;
-import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
+import com.example.springboot_education.repositories.classes.ClassUserRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

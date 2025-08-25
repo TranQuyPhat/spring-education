@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.time.Instant;
 
+import com.example.springboot_education.entities.ClassEntity.JoinMode;
+
 @Data
 public class ClassResponseDTO {
     private Integer id;
@@ -14,8 +16,8 @@ public class ClassResponseDTO {
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
-
     private TeacherDTO teacher;
     private SubjectDTO subject;
+    private JoinMode joinMode;
 }
 
