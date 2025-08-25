@@ -42,17 +42,13 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "http://localhost:8080",
-                "http://127.0.0.1:8080"
-        ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
-        configuration.setAllowCredentials(true); // Cho phép gửi cookie/Authorization header
+
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173",
+                "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        configuration.setAllowCredentials(true); // Quan trọng để cho phép gửi header Authorization
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

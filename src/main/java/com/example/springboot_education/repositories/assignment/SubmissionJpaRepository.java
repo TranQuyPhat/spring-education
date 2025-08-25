@@ -17,27 +17,7 @@ import java.util.Optional;
 
 @Repository
 public interface SubmissionJpaRepository extends JpaRepository<Submission, Integer> {
-    @Query("""
-    SELECT new com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto(
-        s.id,
-        s.assignment.id,
-        s.student.id,
-        s.filePath,
-        s.fileType,
-        s.status,
-        s.score,
-        s.teacherComment,
-        s.submittedAt,
-        s.gradedAt,
-        s.student.fullName,
-        s.student.email,
-        s.student.imageUrl
-    )
-    FROM Submission s
-    WHERE s.assignment.id = :assignmentId
-""")
-    List<SubmissionResponseDto> findByAssignmentId(@Param("assignmentId") Integer assignmentId);
-
+    List<Submission> findByAssignment_Id(Integer assignmentId);
     List<Submission> findByStudentId(Integer studentId);
     Optional<Submission> findByAssignmentIdAndStudentId(Integer assignmentId, Integer studentId);
 

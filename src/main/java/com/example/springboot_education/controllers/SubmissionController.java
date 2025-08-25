@@ -1,5 +1,6 @@
 package com.example.springboot_education.controllers;
 
+import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.dtos.submissionDTOs.GradeSubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
@@ -38,25 +39,52 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDto> submitAssignment(
             @RequestParam("assignmentId") Integer assignmentId,
             @RequestParam("studentId") Integer studentId,
-            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestParam(required = false) String description) throws IOException {
 
         SubmissionRequestDto requestDto = new SubmissionRequestDto();
         requestDto.setAssignmentId(assignmentId);
         requestDto.setStudentId(studentId);
+        requestDto.setDescription(description);
 
-//        SubmissionResponseDto response = submissionService.submitAssignment(requestDto);
         return ResponseEntity.ok(submissionService.submitAssignment(requestDto, file));
+    }
+
+    // Chỉnh sửa bài nộp
+    @PatchMapping(value = "/{submissionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SubmissionResponseDto> updateSubmission(
+            @PathVariable("submissionId") Integer submissionId,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestPart(value = "file", required = false) MultipartFile file
+    ) throws IOException {
+
+        SubmissionRequestDto requestDto = new SubmissionRequestDto();
+        requestDto.setDescription(description);
+
+        SubmissionResponseDto updated = submissionService.updateSubmission(submissionId, requestDto, file);
+        return ResponseEntity.ok(updated);
     }
 
     // Chấm điểm
     @PatchMapping("/{submissionId}/grade")
     public ResponseEntity<SubmissionResponseDto> gradeSubmission(
-            @PathVariable Integer submissionId,
+            @PathVariable("submissionId") Integer submissionId,
             @RequestBody @Valid GradeSubmissionRequestDto dto) {
         SubmissionResponseDto response = submissionService.gradeSubmission(
                 submissionId, dto.getScore(), dto.getComment());
         return ResponseEntity.ok(response);
     }
+
+    // Chỉnh sửa điểm
+    @PatchMapping("/{submissionId}/update-grade")
+    public ResponseEntity<SubmissionResponseDto> updateGradeSubmission(
+            @PathVariable("submissionId") Integer submissionId,
+            @RequestBody @Valid GradeSubmissionRequestDto dto) {
+        SubmissionResponseDto response = submissionService.updateGradeSubmission(
+                submissionId, dto.getScore(), dto.getComment());
+        return ResponseEntity.ok(response);
+    }
+
 
     // Lấy bài nộp theo assignment
     @GetMapping("/assignment/{assignmentId}")
@@ -85,27 +113,19 @@ public class SubmissionController {
     }
 
     // Tải file nộp bài về
-    @GetMapping("/{submissionId}/download")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Integer submissionId) throws IOException {
-        Submission submission = submissionService.getSubmissionEntityById(submissionId);
-
-        Path filePath = Paths.get(submission.getFilePath());
-        if (!Files.exists(filePath)) {
-            throw new FileNotFoundException("File not found");
-        }
-
-        Resource fileResource = new UrlResource(filePath.toUri());
-        String fileName = filePath.getFileName().toString();
+    @GetMapping("/download/{id}")
+    public ResponseEntity<?> downloadSubmission(@PathVariable("id") Integer id) throws Exception {
+        DownloadFileDTO fileDto = submissionService.downloadSubmission(id);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .body(fileResource);
+                .contentType(org.springframework.http.MediaType.parseMediaType(fileDto.getFileType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
+                .body(fileDto.getResource());
     }
 
     // Xóa nộp bài
     @DeleteMapping("/{submissionId}")
-    public ResponseEntity<Void> deleteSubmission(@PathVariable Integer submissionId) {
+    public ResponseEntity<Void> deleteSubmission(@PathVariable("submissionId") Integer submissionId) {
         submissionService.deleteSubmission(submissionId);
         return ResponseEntity.noContent().build();
     }

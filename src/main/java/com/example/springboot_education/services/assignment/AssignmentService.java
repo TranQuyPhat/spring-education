@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
+import com.example.springboot_education.entities.ClassMaterial;
+import com.example.springboot_education.untils.FileUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,6 +54,7 @@ public class AssignmentService {
         dto.setMaxScore(assignment.getMaxScore());
         dto.setFilePath(assignment.getFilePath());
         dto.setFileType(assignment.getFileType());
+        dto.setFileSize(FileUtils.formatFileSize(assignment.getFileSize()));
         dto.setCreatedAt(assignment.getCreatedAt());
         dto.setUpdatedAt(assignment.getUpdatedAt());
         return dto;
@@ -87,6 +94,7 @@ public class AssignmentService {
         assignment.setMaxScore(dto.getMaxScore());
         assignment.setFilePath(filePath.toString());
         assignment.setFileType(file.getContentType());
+        assignment.setFileSize(file.getSize());
 
         Assignment saved = assignmentJpaRepository.save(assignment);
 
@@ -96,8 +104,9 @@ public class AssignmentService {
         return convertToDto(saved);
     }
 
+    // Update
     @LoggableAction(value = "UPDATE", entity = "assignments", description = "Cập nhật bài tập")
-    public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto) {
+    public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto, MultipartFile file) throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
 
@@ -109,14 +118,22 @@ public class AssignmentService {
         assignment.setDescription(dto.getDescription());
         assignment.setDueDate(dto.getDueDate());
         assignment.setMaxScore(dto.getMaxScore());
-        assignment.setFilePath(dto.getFilePath());
-        assignment.setFileType(dto.getFileType());
+
+        // Nếu có file mới thì thay thế
+        if (file != null && !file.isEmpty()) {
+            String uploadDir = "uploads/assignments";
+            Files.createDirectories(Paths.get(uploadDir));
+
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir, filename);
+            Files.write(filePath, file.getBytes());
+
+            assignment.setFilePath(filePath.toString());
+            assignment.setFileType(file.getContentType());
+            assignment.setFileSize(file.getSize());
+        }
 
         Assignment updated = assignmentJpaRepository.save(assignment);
-
-        // Xóa code ghi log thủ công
-        // activityLogService.log(...);
-
         return convertToDto(updated);
     }
 
@@ -147,6 +164,27 @@ public class AssignmentService {
                 .toList();
     }
 
+    // Tải tệp đính kèm bài tập về máy
+    public DownloadFileDTO downloadAssignment(Integer id) throws Exception {
+        // 1. Lấy thông tin bài tập
+        Assignment assignment = assignmentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+
+        // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
+        Path path = Paths.get(assignment.getFilePath());
+        Resource resource = new UrlResource(path.toUri());
+
+        if (!resource.exists()) {
+            throw new RuntimeException("File not found");
+        }
+
+        // 3. Trả DTO chứa file và metadata
+        return new DownloadFileDTO(
+                resource,
+                assignment.getFileType() != null ? assignment.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                path.getFileName().toString()
+        );
+    }
 public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
     List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
 

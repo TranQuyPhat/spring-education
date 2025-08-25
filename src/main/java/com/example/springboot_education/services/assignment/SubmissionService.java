@@ -1,6 +1,7 @@
 package com.example.springboot_education.services.assignment;
 
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
+import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
 import com.example.springboot_education.entities.Assignment;
@@ -11,8 +12,12 @@ import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
+import com.example.springboot_education.untils.FileUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,14 +44,27 @@ public class SubmissionService {
         SubmissionResponseDto dto = new SubmissionResponseDto();
         dto.setId(submission.getId());
         dto.setAssignmentId(submission.getAssignment().getId());
-        dto.setStudentId(submission.getStudent().getId());
         dto.setFilePath(submission.getFilePath());
         dto.setFileType(submission.getFileType());
+        dto.setFileSize(FileUtils.formatFileSize(submission.getFileSize()));
+        dto.setDescription(submission.getDescription());
         dto.setStatus(submission.getStatus());
         dto.setScore(submission.getScore());
         dto.setTeacherComment(submission.getTeacherComment());
         dto.setSubmittedAt(submission.getSubmittedAt());
         dto.setGradedAt(submission.getGradedAt());
+
+        if (submission.getStudent() != null) {
+            SubmissionResponseDto.StudentDto studentDto = SubmissionResponseDto.StudentDto.builder()
+                    .id(submission.getStudent().getId())
+                    .fullName(submission.getStudent().getFullName())
+                    .email(submission.getStudent().getEmail())
+                    .imageUrl(submission.getStudent().getImageUrl())
+                    .build();
+
+            dto.setStudent(studentDto);
+        }
+
         return dto;
     }
 
@@ -53,14 +72,14 @@ public class SubmissionService {
         List<Submission> submissions = submissionJpaRepository.findAll();
         return submissions.stream().map(this::convertToDto).toList();
     }
-
+    // Nộp bài
     public SubmissionResponseDto submitAssignment(SubmissionRequestDto requestDto, MultipartFile file) throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(requestDto.getAssignmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
 
         // Kiểm tra hạn nộp
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        if (assignment.getDueDate() != null && now.after(assignment.getDueDate())) {
+        LocalDateTime now = LocalDateTime.now();
+        if (assignment.getDueDate() != null && now.isAfter(assignment.getDueDate())) {
             throw new IllegalStateException("Submission deadline has passed");
         }
 
@@ -86,13 +105,63 @@ public class SubmissionService {
         submission.setStudent(student);
         submission.setFilePath(filePath.toString());
         submission.setFileType(file.getContentType());
+        submission.setFileSize(file.getSize());
+        submission.setDescription(requestDto.getDescription());
         submission.setStatus(Submission.SubmissionStatus.SUBMITTED);
         submission.setSubmittedAt(now);
 
         Submission saved = submissionJpaRepository.save(submission);
         return convertToDto(saved);
     }
-//    Chấm điểm
+
+    // Chỉnh sửa bài nộp (chỉ cho phép khi chưa chấm điểm)
+    public SubmissionResponseDto updateSubmission(Integer submissionId, SubmissionRequestDto requestDto, MultipartFile newFile) throws IOException {
+        Submission submission = submissionJpaRepository.findById(submissionId)
+                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+
+        // Không cho chỉnh sửa nếu đã chấm
+        if (submission.getStatus() == Submission.SubmissionStatus.GRADED) {
+            throw new IllegalStateException("Bài nộp đã được chấm, không thể chỉnh sửa!");
+        }
+
+        // Nếu có file mới thì thay thế
+        if (newFile != null && !newFile.isEmpty()) {
+            // Xóa file cũ
+            try {
+                Path oldPath = Paths.get(submission.getFilePath());
+                Files.deleteIfExists(oldPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Không thể xóa file cũ", e);
+            }
+
+            // Lưu file mới
+            String uploadDir = "uploads/submissions";
+            Files.createDirectories(Paths.get(uploadDir));
+
+            String filename = UUID.randomUUID() + "_" + newFile.getOriginalFilename();
+            Path newPath = Paths.get(uploadDir, filename);
+            Files.write(newPath, newFile.getBytes());
+
+            submission.setFilePath(newPath.toString());
+            submission.setFileType(newFile.getContentType());
+            submission.setFileSize(newFile.getSize());
+        }
+
+        // Cập nhật mô tả nếu có
+        if (requestDto.getDescription() != null) {
+            submission.setDescription(requestDto.getDescription());
+        }
+
+        // Cập nhật lại thời gian nộp
+        submission.setSubmittedAt(LocalDateTime.now());
+        submission.setStatus(Submission.SubmissionStatus.SUBMITTED);
+
+        Submission updated = submissionJpaRepository.save(submission);
+        return convertToDto(updated);
+    }
+
+
+    //    Chấm điểm
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
@@ -100,14 +169,32 @@ public class SubmissionService {
         submission.setScore(score);
         submission.setTeacherComment(comment);
         submission.setStatus(Submission.SubmissionStatus.GRADED);
-        submission.setGradedAt(new Timestamp(System.currentTimeMillis()));
+        submission.setGradedAt(LocalDateTime.now());
 
         Submission graded = submissionJpaRepository.save(submission);
         return convertToDto(graded);
     }
 
+    // Chỉnh sửa điểm
+    public SubmissionResponseDto updateGradeSubmission(Integer submissionId, BigDecimal score, String comment) {
+        Submission submission = submissionJpaRepository.findById(submissionId)
+                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+
+        if (submission.getStatus() != Submission.SubmissionStatus.GRADED) {
+            throw new IllegalStateException("Bài nộp chưa được chấm!");
+        }
+
+        submission.setScore(score);
+        submission.setTeacherComment(comment);
+        submission.setGradedAt(LocalDateTime.now());
+
+        Submission updated = submissionJpaRepository.save(submission);
+        return convertToDto(updated);
+    }
+
     public List<SubmissionResponseDto> getSubmissionsByAssignment(Integer assignmentId) {
-        return submissionJpaRepository.findByAssignmentId(assignmentId);
+        List<Submission> submissions = submissionJpaRepository.findByAssignment_Id(assignmentId);
+        return submissions.stream().map(this::convertToDto).toList();
     }
 
     public List<SubmissionResponseDto> getSubmissionsByStudent(Integer studentId) {
@@ -154,10 +241,26 @@ public class SubmissionService {
         return "/uploads/assignments/" + filename; // lưu đường dẫn vào DB
     }
 
-    // tải file nộp về
-    public Submission getSubmissionEntityById(Integer id) {
-        return submissionJpaRepository.findById(id)
+    // Tải tệp đính kèm bài nộp về máy
+    public DownloadFileDTO downloadSubmission(Integer id) throws Exception {
+        // 1. Lấy thông tin bài nộp
+        Submission submission = submissionJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found with id: " + id));
+
+        // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
+        Path path = Paths.get(submission.getFilePath());
+        Resource resource = new UrlResource(path.toUri());
+
+        if (!resource.exists()) {
+            throw new RuntimeException("File not found");
+        }
+
+        // 3. Trả DTO chứa file và metadata
+        return new DownloadFileDTO(
+                resource,
+                submission.getFileType() != null ? submission.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                path.getFileName().toString()
+        );
     }
 
     // xóa file nộp

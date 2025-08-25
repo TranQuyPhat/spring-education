@@ -1,5 +1,6 @@
 package com.example.springboot_education.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,6 +11,8 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -41,7 +44,7 @@ public class Submission {
 
     @NotNull
     @Column(name = "submitted_at", nullable = false)
-    private Timestamp submittedAt;
+    private LocalDateTime submittedAt;
 
     @Size(max = 500)
     @NotNull
@@ -53,6 +56,13 @@ public class Submission {
     @Column(name = "file_type", length = 255)
     private String fileType;
 
+    @Column(name = "file_size")
+    private Long fileSize; // bytes
+
+    @Lob
+    @Column(name = "description")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private SubmissionStatus status;
@@ -61,7 +71,7 @@ public class Submission {
     private BigDecimal score;
 
     @Column(name = "graded_at")
-    private Timestamp gradedAt;
+    private LocalDateTime gradedAt;
 
     @Lob
     @Column(name = "teacher_comment")
@@ -69,16 +79,16 @@ public class Submission {
 
     @PrePersist
     protected void onSubmit() {
-        submittedAt = new Timestamp(System.currentTimeMillis());
+        submittedAt = LocalDateTime.now();
     }
 
     public boolean isGraded() {
-        return score != null;
+        return score != null && status == SubmissionStatus.GRADED;
     }
 
     public boolean isLate() {
         if (assignment == null || assignment.getDueDate() == null || submittedAt == null) return false;
-        return submittedAt.after(assignment.getDueDate());
+        return submittedAt.isAfter(assignment.getDueDate());
     }
 
 }
