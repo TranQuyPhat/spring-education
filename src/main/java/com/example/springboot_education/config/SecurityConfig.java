@@ -13,20 +13,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Import CorsConfiguration
-import org.springframework.web.cors.CorsConfiguration; // Import CorsConfigurationSource
-import org.springframework.web.cors.CorsConfigurationSource; // Import UrlBasedCorsConfigurationSource
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.example.springboot_education.exceptions.CustomAccessDeniedHandler;
 import com.example.springboot_education.exceptions.CustomAuthenticationEntryPoint;
 import com.example.springboot_education.filters.JwtAuthenticationFilter;
 
-import lombok.RequiredArgsConstructor; // Import Arrays
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity()
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -38,42 +38,43 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Bean để cấu hình CORS - ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT
+    // Cấu hình CORS tập trung ở đây
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173",
-                "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(
-                Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
-        configuration.setAllowCredentials(true); // Quan trọng để cho phép gửi header Authorization
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        configuration.setAllowCredentials(true); // Cho phép gửi cookie/Authorization header
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Áp dụng cấu hình CORS cho tất cả các đường dẫn
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // <-- THÊM DÒNG NÀY ĐỂ KÍCH HOẠT
-                // CORS CHO SPRING SECURITY
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptionHandlingCustomizer -> exceptionHandlingCustomizer
-                        .authenticationEntryPoint(this.customAuthenticationEntryPoint)
-                        .accessDeniedHandler(this.customAccessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/users/**").hasAnyAuthority("admin")
-                        .requestMatchers("/api/security/roles/**").hasAnyAuthority("admin")
-                        .anyRequest().authenticated()) // <-- KHUYẾN NGHỊ: Đảm bảo đây là .authenticated() hoặc có ràng buộc cụ thể
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.csrf(AbstractHttpConfigurer::disable)
+.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptionHandlingCustomizer -> exceptionHandlingCustomizer
+                    .authenticationEntryPoint(this.customAuthenticationEntryPoint)
+                    .accessDeniedHandler(this.customAccessDeniedHandler))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/public/**").permitAll()
+                    .requestMatchers("/api/users/**").hasAnyAuthority("admin")
+                    .requestMatchers("/api/security/roles/**").hasAnyAuthority("admin")
+                    .anyRequest().authenticated())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
