@@ -16,9 +16,9 @@ import com.example.springboot_education.entities.ClassUserId;
 import com.example.springboot_education.entities.Users;
 // import com.example.springboot_education.repositories.ClassMemberRepository;
 import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.ClassUserRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.repositories.classes.ClassUserRepository;
 import com.example.springboot_education.services.ActivityLogService;
 
 import lombok.RequiredArgsConstructor;

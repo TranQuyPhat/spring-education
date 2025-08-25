@@ -26,7 +26,7 @@ public class ClassJoinRequestController {
             @PathVariable("classId") Integer classId,
             @RequestBody CreateJoinRequestRequest body) {
 
-        return ResponseEntity.ok(service.createRequest(classId, body.getStudentId()));
+        return ResponseEntity.ok(service.joinClass(classId, body.getStudentId()));
     }
 
     @GetMapping("/{classId}/join-requests")

@@ -2,20 +2,43 @@
 package com.example.springboot_education.services.classes;
 
 import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.classDTOs.*;
 import com.example.springboot_education.entities.*;
-import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.ClassUserRepository;
-import com.example.springboot_education.repositories.SubjectRepository;
-import com.example.springboot_education.repositories.UsersJpaRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.classDTOs.AddStudentToClassDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassMemberDTO;
+import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
+import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
+import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
+import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
+import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
+import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.entities.ClassEntity.JoinMode;
+import com.example.springboot_education.entities.ClassUser;
+import com.example.springboot_education.entities.ClassUserId;
+import com.example.springboot_education.entities.Subject;
+import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.repositories.ClassRepository;
+import com.example.springboot_education.repositories.SubjectRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.repositories.classes.ClassUserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
@@ -73,6 +96,7 @@ public class ClassService {
         clazz.setDescription(dto.getDescription());
         clazz.setTeacher(teacher);
         clazz.setSubject(subject);
+        clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : JoinMode.AUTO);
         clazz.setCreatedAt(Instant.now());
 
         ClassEntity saved = classRepository.save(clazz);
@@ -91,6 +115,7 @@ public class ClassService {
         clazz.setSemester(dto.getSemester());
         clazz.setDescription(dto.getDescription());
         clazz.setSubject(subject);
+        clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : clazz.getJoinMode());
         clazz.setUpdatedAt(Instant.now());
 
         ClassEntity updated = classRepository.save(clazz);
@@ -140,6 +165,7 @@ public class ClassService {
         dto.setSchoolYear(clazz.getSchoolYear());
         dto.setSemester(clazz.getSemester());
         dto.setDescription(clazz.getDescription());
+        dto.setJoinMode(clazz.getJoinMode());
         dto.setCreatedAt(clazz.getCreatedAt());
         dto.setUpdatedAt(clazz.getUpdatedAt());
 
