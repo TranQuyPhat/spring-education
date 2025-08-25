@@ -18,4 +18,6 @@ public class LoginResponseDto {
     private String accessToken;
      private List<String> roles; 
          private boolean requireRoleSelection;
+    private String fullName;
+    private String imageUrl;
 }

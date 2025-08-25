@@ -88,7 +88,7 @@ public class AuthService {
                     .orElseThrow(() -> new HttpException("Invalid username or password", HttpStatus.UNAUTHORIZED));
         } else {
             throw new HttpException("Username or Email is required", HttpStatus.BAD_REQUEST);
-        }
+        } 
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
@@ -105,6 +105,8 @@ public class AuthService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .imageUrl(user.getImageUrl())
                 .accessToken(accessToken)
                 .roles(roles)
                 .build();
