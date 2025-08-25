@@ -71,38 +71,44 @@ public class ClassService {
     @LoggableAction(value = "CREATE", entity = "classes", description = "Tạo lớp học mới")
     @CacheEvict(value = "classesOfTeacher", key = "#dto.teacherId")
     public ClassResponseDTO createClass(CreateClassDTO dto) {
-        Users teacher = userRepository.findById(dto.getTeacherId())
-                .orElseThrow();
-        Subject subject = subjectRepository.findById(dto.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+    Users teacher = userRepository.findById(dto.getTeacherId())
+            .orElseThrow();
+    Subject subject = subjectRepository.findById(dto.getSubjectId())
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
 
-        String yearPart = String.valueOf(dto.getSchoolYear());
-        String semesterPart = "01";
-        if ("Học kỳ 2".equalsIgnoreCase(dto.getSemester())) {
-            semesterPart = "02";
-        }
-        String prefix = yearPart + semesterPart;
-
-        Integer maxId = classRepository.findMaxIdByPrefixForUpdate(Integer.parseInt(prefix + "000"));
-        int nextNumber = (maxId != null) ? (maxId % 1000) + 1 : 1;
-
-        Integer newId = Integer.parseInt(prefix + String.format("%03d", nextNumber));
-
-        ClassEntity clazz = new ClassEntity();
-        clazz.setId(newId);
-        clazz.setClassName(dto.getClassName());
-        clazz.setSchoolYear(dto.getSchoolYear());
-        clazz.setSemester(dto.getSemester());
-        clazz.setDescription(dto.getDescription());
-        clazz.setTeacher(teacher);
-        clazz.setSubject(subject);
-        clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : JoinMode.AUTO);
-        clazz.setCreatedAt(Instant.now());
-
-        ClassEntity saved = classRepository.save(clazz);
-
-        return toDTO(saved);
+    String yearPart = String.valueOf(dto.getSchoolYear());
+    String semesterPart = "01";
+    if ("Học kỳ 2".equalsIgnoreCase(dto.getSemester())) {
+        semesterPart = "02";
     }
+    String prefix = yearPart + semesterPart;
+
+    // Lấy maxId hiện tại (lock row để tránh race condition)
+    Integer maxId = classRepository.findMaxIdByPrefixForUpdate(Integer.parseInt(prefix + "000"));
+    int nextNumber = (maxId != null) ? (maxId % 1000) + 1 : 1;
+
+    Integer newId;
+    // Lặp cho đến khi tìm được ID chưa tồn tại
+    do {
+        newId = Integer.parseInt(prefix + String.format("%03d", nextNumber));
+        nextNumber++;
+    } while (classRepository.existsById(newId));
+
+    ClassEntity clazz = new ClassEntity();
+    clazz.setId(newId);
+    clazz.setClassName(dto.getClassName());
+    clazz.setSchoolYear(dto.getSchoolYear());
+    clazz.setSemester(dto.getSemester());
+    clazz.setDescription(dto.getDescription());
+    clazz.setTeacher(teacher);
+    clazz.setSubject(subject);
+    clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : JoinMode.AUTO);
+    clazz.setCreatedAt(Instant.now());
+
+    ClassEntity saved = classRepository.save(clazz);
+
+    return toDTO(saved);
+}
 
     @LoggableAction(value = "UPDATE", entity = "classes", description = "Cập nhật lớp học")
     public ClassResponseDTO updateClass(Integer id, CreateClassDTO dto) {
