@@ -53,6 +53,45 @@ public class UserService {
                 .build();
     }
 
+    // public conversion for controllers
+    public UserResponseDto convertToDtoPublic(Users user) {
+        return convertToDto(user);
+    }
+
+    public Users getUserEntityByEmail(String email) {
+        return userJpaRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
+    public Users getUserEntityByUsername(String username) {
+        return userJpaRepository.findByUsernameWithRoles(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+    }
+
+    // Update profile for currently authenticated user
+    public UserResponseDto updateProfileByUser(Integer id, com.example.springboot_education.dtos.usersDTOs.UpdateProfileRequestDto dto) {
+        Users user = userJpaRepository.findById(id)
+                .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
+
+        if (dto.getFullName() != null) user.setFullName(dto.getFullName());
+        if (dto.getImageUrl() != null) user.setImageUrl(dto.getImageUrl());
+
+        Users updated = userJpaRepository.save(user);
+        return convertToDto(updated);
+    }
+
+    public void changePassword(Integer id, String oldPassword, String newPassword) {
+        Users user = userJpaRepository.findById(id)
+                .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new HttpException("Old password is incorrect", HttpStatus.BAD_REQUEST);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userJpaRepository.save(user);
+    }
+
     // Lấy toàn bộ user
     public List<UserResponseDto> getUsers() {
         List<Users> users = userJpaRepository.findAllUsersWithRoles();
