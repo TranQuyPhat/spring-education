@@ -42,11 +42,10 @@ public class ClassMaterialController {
         return ResponseEntity.ok(materialService.getMaterialsByClass(classId));
     }
 
-//    @PostMapping("/{id}/download")
-//    public ResponseEntity<Void> increaseDownload(@PathVariable Integer id) {
-//        materialService.increaseDownloadCount(id);
-//        return ResponseEntity.ok().build();
-//    }
+    @GetMapping()
+    public List<ClassMaterialResponseDto> getAllMaterials() {
+        return materialService.getAllMaterials();
+    }
 
     @GetMapping("/download/{id}")
     public ResponseEntity<?> downloadMaterial(@PathVariable("id") Integer id) throws Exception {
@@ -58,4 +57,3 @@ public class ClassMaterialController {
                 .body(fileDto.getResource());
     }
 }
-

@@ -74,6 +74,13 @@ public class ClassMaterialService {
                 .stream().map(this::toResponseDto)
                 .collect(Collectors.toList());
     }
+    // Get all materials
+    public List<ClassMaterialResponseDto> getAllMaterials() {
+        return classMaterialJpaRepository.findAll()
+                .stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
 
     @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Updated a material")
     public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
