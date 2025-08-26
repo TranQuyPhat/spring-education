@@ -49,7 +49,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    @LoggableAction(value = "CREATE", entity = "quizzes", description = "Tạo quiz mới")
+    @LoggableAction(value = "CREATE", entity = "quizzes", description = "Created new quiz")
     public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
         Quiz quiz = quizMapper2.toEntity(quizDTO);
         quiz = quizRepository.save(quiz);
@@ -197,7 +197,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Cập nhật quiz")
+    @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Update quiz")
     public QuizResponseTeacherDTO updateQuizMeta(Integer quizId, QuizBaseDTO dto) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
@@ -301,7 +301,7 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    @LoggableAction(value = "DELETE", entity = "quizzes", description = "Xóa quiz")
+    @LoggableAction(value = "DELETE", entity = "quizzes", description = "Delete quiz")
     @Transactional
     public void deleteQuiz(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)

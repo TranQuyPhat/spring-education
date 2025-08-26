@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Dòng này đã được sửa
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
@@ -98,8 +98,8 @@ public class UserService {
         return users.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    // Tạo user mới
-    @LoggableAction(value = "CREATE", entity = "users", description = "Tạo user mới")
+    // Create new user
+    @LoggableAction(value = "CREATE", entity = "users", description = "Create new user")
     public UserResponseDto createUser(CreateUserRequestDto dto) {
         if (this.userJpaRepository.existsByEmail(dto.getEmail())) {
             throw new HttpException("Email already exists: " + dto.getEmail(), HttpStatus.CONFLICT);
@@ -142,7 +142,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
     // Cập nhật user
-    @LoggableAction(value = "UPDATE", entity = "users", description = "Cập nhật user")
+    @LoggableAction(value = "UPDATE", entity = "users", description = "Update user")
     public UserResponseDto updateUser(Integer id, UpdateUserRequestDto dto) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
@@ -178,7 +178,7 @@ public class UserService {
 
     // Xoá user
     @Transactional
-    @LoggableAction(value = "DELETE", entity = "users", description = "Xóa user")
+    @LoggableAction(value = "DELETE", entity = "users", description = "Delete user")
     public void deleteUser(Integer id) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));

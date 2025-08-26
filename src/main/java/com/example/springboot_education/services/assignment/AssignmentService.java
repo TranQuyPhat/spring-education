@@ -73,7 +73,7 @@ public class AssignmentService {
         return convertToDto(assignment);
     }
 
-    @LoggableAction(value = "CREATE", entity = "assignments", description = "Tạo bài tập mới")
+    @LoggableAction(value = "CREATE", entity = "assignments", description = "Created a new assignment")
     public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file)
             throws IOException {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
@@ -105,7 +105,7 @@ public class AssignmentService {
     }
 
     // Update
-    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Cập nhật bài tập")
+    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Updated an assignment")
     public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto, MultipartFile file) throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
@@ -137,7 +137,7 @@ public class AssignmentService {
         return convertToDto(updated);
     }
 
-    @LoggableAction(value = "DELETE", entity = "assignments", description = "Xóa bài tập")
+    @LoggableAction(value = "DELETE", entity = "assignments", description = "Deleted an assignment")
     public void deleteAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));

@@ -1,6 +1,8 @@
 package com.example.springboot_education.dtos.subjects;
 
 
+import java.time.Instant;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,4 +13,7 @@ public class SubjectResponseDTO {
     private String subjectName;
     private String description;
     private String createdByName;
+    private Instant createdAt;
+    private Instant updatedAt;
+
 }
