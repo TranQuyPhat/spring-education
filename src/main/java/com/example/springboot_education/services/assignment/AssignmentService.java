@@ -24,9 +24,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.springboot_education.annotations.LoggableAction; // Import annotation
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
+import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
+import com.example.springboot_education.dtos.dashboard.student.AssignmentDTO;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.repositories.ClassRepository;
@@ -38,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class AssignmentService {
+    private final NotificationServiceAssignment notificationService;
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
@@ -98,6 +101,15 @@ public class AssignmentService {
 
         Assignment saved = assignmentJpaRepository.save(assignment);
 
+
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(dto.getClassId())
+            .title(saved.getTitle())
+            .description(saved.getDescription())
+            .dueDate(saved.getDueDate())
+            .build();
+
+        notificationService.notifyClass(dto.getClassId(), notifyPayload);
         // Xóa code ghi log thủ công
         // activityLogService.log(...);
 
