@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,7 +61,11 @@ public class SubmissionService {
                     .id(submission.getStudent().getId())
                     .fullName(submission.getStudent().getFullName())
                     .email(submission.getStudent().getEmail())
-                    .imageUrl(submission.getStudent().getImageUrl())
+                    .avatarBase64(
+                            submission.getStudent().getAvatar() != null
+                                    ? "data:image/png;base64,"
+                                            + Base64.getEncoder().encodeToString(submission.getStudent().getAvatar())
+                                    : null)
                     .build();
 
             dto.setStudent(studentDto);
@@ -73,9 +78,11 @@ public class SubmissionService {
         List<Submission> submissions = submissionJpaRepository.findAll();
         return submissions.stream().map(this::convertToDto).toList();
     }
+
     // Nộp bài
     @LoggableAction(value = "SUBMIT", entity = "Submission", description = "Submitted an assignment")
-    public SubmissionResponseDto submitAssignment(SubmissionRequestDto requestDto, MultipartFile file) throws IOException {
+    public SubmissionResponseDto submitAssignment(SubmissionRequestDto requestDto, MultipartFile file)
+            throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(requestDto.getAssignmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
 
@@ -90,10 +97,9 @@ public class SubmissionService {
 
         // Kiểm tra đã nộp chưa
         submissionJpaRepository.findByAssignmentIdAndStudentId(
-                requestDto.getAssignmentId(), requestDto.getStudentId()
-        ).ifPresent(existing -> {
-            throw new IllegalStateException("You have already submitted this assignment");
-        });
+                requestDto.getAssignmentId(), requestDto.getStudentId()).ifPresent(existing -> {
+                    throw new IllegalStateException("You have already submitted this assignment");
+                });
 
         String uploadDir = "uploads/submissions";
         Files.createDirectories(Paths.get(uploadDir));
@@ -117,7 +123,8 @@ public class SubmissionService {
     }
 
     // Chỉnh sửa bài nộp (chỉ cho phép khi chưa chấm điểm)
-    public SubmissionResponseDto updateSubmission(Integer submissionId, SubmissionRequestDto requestDto, MultipartFile newFile) throws IOException {
+    public SubmissionResponseDto updateSubmission(Integer submissionId, SubmissionRequestDto requestDto,
+            MultipartFile newFile) throws IOException {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
 
@@ -162,10 +169,9 @@ public class SubmissionService {
         return convertToDto(updated);
     }
 
+    // Chấm điểm
 
-    //    Chấm điểm
-
-    @LoggableAction( value = "GRADE", entity = "Submission", description = "Graded an assignment")
+    @LoggableAction(value = "GRADE", entity = "Submission", description = "Graded an assignment")
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
@@ -214,7 +220,7 @@ public class SubmissionService {
         return convertToDto(submission);
     }
 
-    //    Get submission by class
+    // Get submission by class
     public List<SubmissionResponseDto> getSubmissionsByClassId(Integer classId) {
         ClassEntity classEntity = classRepository.findById(classId)
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
@@ -231,7 +237,8 @@ public class SubmissionService {
         if (contentType == null ||
                 !(contentType.equals("application/pdf") ||
                         contentType.equals("application/msword") ||
-                        contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
+                        contentType
+                                .equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
             throw new IllegalArgumentException("Invalid file type");
         }
 
@@ -263,8 +270,7 @@ public class SubmissionService {
         return new DownloadFileDTO(
                 resource,
                 submission.getFileType() != null ? submission.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                path.getFileName().toString()
-        );
+                path.getFileName().toString());
     }
 
     @LoggableAction(value = "DELETE", entity = "Submission", description = "Deleted a submission")

@@ -8,6 +8,6 @@ import lombok.*;
 public class GoogleLoginRequestDto {
     private String name;
     private String email;
-    private String imageUrl;
+    private String avatarBase64;
 }
 

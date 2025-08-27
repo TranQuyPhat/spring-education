@@ -1,5 +1,7 @@
 package com.example.springboot_education.services;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -8,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.roleDTOs.RoleResponseDto;
@@ -31,21 +34,30 @@ public class UserService {
     private final UsersJpaRepository userJpaRepository;
     private final RoleJpaRepository roleJpaRepository;
 
+    private byte[] decodeBase64Image(String base64) {
+        if (base64.contains(",")) {
+            base64 = base64.split(",")[1];
+        }
+        return Base64.getDecoder().decode(base64);
+    }
+
     private UserResponseDto convertToDto(Users user) {
         List<RoleResponseDto> roles = user.getUserRoles().stream()
                 .map(userRole -> new RoleResponseDto(
                         userRole.getRole().getId(),
                         userRole.getRole().getName(),
                         userRole.getRole().getCreatedAt(),
-                        userRole.getRole().getUpdatedAt()
-                ))
+                        userRole.getRole().getUpdatedAt()))
                 .collect(Collectors.toList());
 
         return UserResponseDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
-                .imageUrl(user.getImageUrl())
+                .avatarBase64(
+                        user.getAvatar() != null
+                                ? "data:image/png;base64," + Base64.getEncoder().encodeToString(user.getAvatar())
+                                : null)
                 .email(user.getEmail())
                 .roles(roles)
                 .createdAt(user.getCreatedAt())
@@ -69,12 +81,28 @@ public class UserService {
     }
 
     // Update profile for currently authenticated user
-    public UserResponseDto updateProfileByUser(Integer id, com.example.springboot_education.dtos.usersDTOs.UpdateProfileRequestDto dto) {
+    public UserResponseDto updateProfileByUser(
+            Integer id,
+            com.example.springboot_education.dtos.usersDTOs.UpdateProfileRequestDto dto) {
         Users user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
 
-        if (dto.getFullName() != null) user.setFullName(dto.getFullName());
-        if (dto.getImageUrl() != null) user.setImageUrl(dto.getImageUrl());
+        if (dto.getFullName() != null) {
+            user.setFullName(dto.getFullName());
+        }
+
+        // Nếu client gửi base64 thì decode rồi lưu vào avatar
+        if (dto.getAvatarBase64() != null) {
+            try {
+                String base64 = dto.getAvatarBase64();
+                if (base64.contains(",")) {
+                    base64 = base64.split(",")[1];
+                }
+                user.setAvatar(Base64.getDecoder().decode(base64));
+            } catch (IllegalArgumentException e) {
+                throw new HttpException("Invalid base64 image", HttpStatus.BAD_REQUEST);
+            }
+        }
 
         Users updated = userJpaRepository.save(user);
         return convertToDto(updated);
@@ -109,13 +137,18 @@ public class UserService {
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setFullName(dto.getFullName());
-        user.setImageUrl(dto.getImageUrl());
+
+        if (dto.getAvatarBase64() != null && !dto.getAvatarBase64().isEmpty()) {
+            user.setAvatar(decodeBase64Image(dto.getAvatarBase64()));
+        }
+
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
             for (Integer roleId : dto.getRoles()) {
                 var role = roleJpaRepository.findById(roleId)
-                        .orElseThrow(() -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
+                        .orElseThrow(
+                                () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
                 userRole.setId(new UserRoleId(user.getId(), role.getId()));
@@ -137,11 +170,13 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return convertToDto(user);
     }
+
     public Users getUserEntityById(Integer id) {
         return userJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
-    // Cập nhật user
+
+    // Update user
     @LoggableAction(value = "UPDATE", entity = "users", description = "Update user")
     public UserResponseDto updateUser(Integer id, UpdateUserRequestDto dto) {
         Users user = userJpaRepository.findById(id)
@@ -150,8 +185,9 @@ public class UserService {
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setFullName(dto.getFullName());
-        user.setImageUrl(dto.getImageUrl());
-
+        if (dto.getAvatarBase64() != null && !dto.getAvatarBase64().isEmpty()) {
+            user.setAvatar(decodeBase64Image(dto.getAvatarBase64()));
+        }
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -160,7 +196,8 @@ public class UserService {
             user.getUserRoles().clear();
             for (Integer roleId : dto.getRoles()) {
                 var role = roleJpaRepository.findById(roleId)
-                        .orElseThrow(() -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
+                        .orElseThrow(
+                                () -> new HttpException("Role not found with id: " + roleId, HttpStatus.NOT_FOUND));
 
                 var userRole = new UserRole();
                 userRole.setId(new UserRoleId(user.getId(), role.getId()));
@@ -190,9 +227,25 @@ public class UserService {
         Optional<Users> user = userJpaRepository.findById(userId);
         return user.isPresent() && user.get().getEmail().equals(currentUserEmail);
     }
+
     public String getFullName(Integer userId) {
         return userJpaRepository.findById(userId)
                 .map(Users::getFullName)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với ID: " + userId));
     }
+
+    public UserResponseDto updateAvatar(Integer userId, MultipartFile file) throws IOException {
+        Users user = userJpaRepository.findById(userId).orElseThrow();
+        user.setAvatar(file.getBytes()); // lưu vào DB dạng BLOB
+        userJpaRepository.save(user);
+        return convertToDtoPublic(user);
+    }
+
+    public String getAvatarBase64(Integer userId) {
+        Users user = userJpaRepository.findById(userId).orElseThrow();
+        if (user.getAvatar() == null)
+            return null;
+        return "data:image/png;base64," + Base64.getEncoder().encodeToString(user.getAvatar());
+    }
+
 }

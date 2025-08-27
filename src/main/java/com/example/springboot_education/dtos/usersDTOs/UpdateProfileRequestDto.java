@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateProfileRequestDto {
-   private String fullName;
-    private String imageUrl;
+    private String fullName;
+    private String avatarBase64;
 }

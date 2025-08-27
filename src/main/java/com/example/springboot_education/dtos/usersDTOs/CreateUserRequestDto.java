@@ -35,8 +35,8 @@ public class CreateUserRequestDto {
     @Email(message = "Email is invalid")
     private String email;
     
-      @JsonProperty("image_url") 
-    private String imageUrl;  
+      @JsonProperty("avatar") 
+     private String avatarBase64;
     
     @NotBlank(message = "Password is required")
     @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
