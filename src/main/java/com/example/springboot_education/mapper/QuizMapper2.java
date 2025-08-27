@@ -33,10 +33,10 @@ public class QuizMapper2 {
         dto.setTimeLimit(quiz.getTimeLimit());
         dto.setStartDate(quiz.getStartDate());
         dto.setEndDate(quiz.getEndDate());
-        dto.setGrade(quiz.getGrade());
         dto.setSubject(quiz.getSubject());
     }
     public QuizResponseTeacherDTO toTeacherDto(Quiz quiz, List<QuestionTeacherDTO> questions) {
+        if (quiz == null) return null;
         QuizResponseTeacherDTO dto = new QuizResponseTeacherDTO();
         mapBaseFields(quiz, dto);
         dto.setClassId(quiz.getClassField().getId());
@@ -58,16 +58,26 @@ public class QuizMapper2 {
         QuestionTeacherDTO dto = new QuestionTeacherDTO();
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
-        dto.setCorrectOption(question.getCorrectOptions());
+        dto.setQuestionType(question.getQuestionType());
+        dto.setCorrectOption(question.getCorrectOptions()); // hoặc rename thành correctOptions
         dto.setScore(question.getScore());
         dto.setOptions(options);
+
+        // Bổ sung phần FILL_BLANK và regex
+        dto.setCorrectAnswerTexts(question.getCorrectAnswerTexts());
+        dto.setCorrectAnswerRegex(question.getCorrectAnswerRegex());
+        dto.setCaseSensitive(question.isCaseSensitive());
+        dto.setTrimWhitespace(question.isTrimWhitespace());
+
         return dto;
     }
+
 
     public QuestionStudentDTO toStudentQuestionDto(QuizQuestion question, List<OptionDTO> options) {
         QuestionStudentDTO dto = new QuestionStudentDTO();
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
+        dto.setQuestionType(question.getQuestionType());
         dto.setOptions(options);
         dto.setScore(question.getScore());
         return dto;
@@ -93,9 +103,7 @@ public class QuizMapper2 {
         Users creator = userRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getCreatedBy()));
         quiz.setCreatedBy(creator);
-
-        quiz.setGrade(dto.getGrade());
-        quiz.setSubject(dto.getSubject());
+       ClassEntity classEntity2=classRepository.findById(dto.getClassId()).orElseThrow(() -> new RuntimeException("Class not found with ID: " + dto.getSubject()));
         quiz.setCreatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
         quiz.setUpdatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
         return quiz;

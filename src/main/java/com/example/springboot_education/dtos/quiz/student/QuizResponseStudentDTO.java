@@ -11,4 +11,5 @@ import java.util.List;
 public class QuizResponseStudentDTO extends QuizBaseDTO {
 
     private List<QuestionStudentDTO> questions;
+    private boolean submitted;
 }

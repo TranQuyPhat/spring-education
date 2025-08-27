@@ -1,24 +1,30 @@
 package com.example.springboot_education.services.quiz.impl;
 
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.quiz.*;
+import com.example.springboot_education.dtos.quiz.OptionDTO;
+import com.example.springboot_education.dtos.quiz.QuestionsPageResponseDTO;
+import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
+import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuestionBaseDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
-import com.example.springboot_education.dtos.quiz.student.StudentQuizDto;
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
+import com.example.springboot_education.entities.QuestionType;
 import com.example.springboot_education.entities.Quiz;
 import com.example.springboot_education.entities.QuizOption;
 import com.example.springboot_education.entities.QuizQuestion;
 import com.example.springboot_education.mapper.QuizMapper2;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.repositories.classes.ClassUserRepository;
 import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.quiz.QuizService;
+import com.example.springboot_education.untils.QuizUtils;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,9 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -46,38 +49,88 @@ public class QuizServiceImpl implements QuizService {
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final UsersJpaRepository usersJpaRepository;
+    private final ClassUserRepository classUserRepository;
 
     @Override
     @Transactional
     @LoggableAction(value = "CREATE", entity = "quizzes", description = "Created new quiz")
-    public QuizBaseDTO createQuiz(QuizRequestDTO quizDTO) {
-        Quiz quiz = quizMapper2.toEntity(quizDTO);
+    public QuizBaseDTO createQuiz(QuizRequestDTO quizReqDTO) {
+        Quiz quiz = quizMapper2.toEntity(quizReqDTO);
         quiz = quizRepository.save(quiz);
 
-        for (QuestionDTO qdto : quizDTO.getQuestions()) {
+        int order = 1;
+        for (QuestionTeacherDTO qdto : quizReqDTO.getQuestions()) {
             QuizQuestion question = new QuizQuestion();
             question.setQuiz(quiz);
             question.setQuestionText(qdto.getQuestionText());
-            question.setCorrectOptions(qdto.getCorrectOption());
+            question.setQuestionType(qdto.getQuestionType()); // QUAN TRỌNG!
             question.setScore(qdto.getScore());
             question.setCreatedAt(Instant.now());
             question.setUpdatedAt(Instant.now());
+
+            // correctOptions normalize + validate
+            String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOption());
+            QuizUtils.validateByType(qdto.getQuestionType(), normalized);
+            question.setCorrectOptions(normalized);
+            if (qdto.getQuestionType() == QuestionType.TRUE_FALSE) {
+                question.setCorrectTrueFalse("TRUE".equalsIgnoreCase(normalized));
+            }
+
+            if (qdto.getQuestionType() == QuestionType.FILL_BLANK) {
+                question.setCorrectAnswerTexts(new HashSet<>(qdto.getCorrectAnswerTexts()));
+                question.setCorrectAnswerRegex(qdto.getCorrectAnswerRegex());
+                question.setCaseSensitive(qdto.isCaseSensitive());
+                question.setTrimWhitespace(qdto.isTrimWhitespace());
+            }
+
             question = questionRepository.save(question);
 
+            // Option labels: enforce unique + normalize
+            Set<String> seen = new HashSet<>();
             for (OptionDTO opt : qdto.getOptions()) {
+                String label = (opt.getOptionLabel() == null ? "" : opt.getOptionLabel().trim().toUpperCase());
+                if (label.isEmpty()) {
+                    throw new ValidationException("optionLabel is required");
+                }
+                if (!seen.add(label)) {
+                    throw new ValidationException("Duplicate option label: " + label);
+                }
+
                 QuizOption option = new QuizOption();
                 option.setQuestion(question);
-                option.setOptionLabel(opt.getOptionLabel());
+                option.setOptionLabel(label);
                 option.setOptionText(opt.getOptionText());
                 option.setCreatedAt(Instant.now());
                 option.setUpdatedAt(Instant.now());
                 optionRepository.save(option);
             }
+            order++;
         }
 
         return getQuizForTeacher(quiz.getId());
     }
 
+    @Override
+    public List<QuizResponseTeacherDTO> getQuizzesByTeacherId(Integer teacherId) {
+        List<Quiz> quizzes = quizRepository.findByCreatedBy_Id(teacherId);
+
+        return quizzes.stream().map(quiz -> {
+            QuizResponseTeacherDTO dto = new QuizResponseTeacherDTO();
+            quizMapper2.mapBaseFields(quiz, dto);
+            dto.setClassId(quiz.getClassField().getId());
+            dto.setCreatedBy(teacherId);
+            dto.setClassName(quiz.getClassField().getClassName());
+
+            int totalStudents = classUserRepository.countByClassField_Id(quiz.getClassField().getId());
+            int submitted = quizSubmissionRepository.countByQuiz_Id(quiz.getId());
+            dto.setTotalStudents(totalStudents);
+            dto.setStudentsSubmitted(submitted);
+            dto.setStudentsUnSubmitted(Math.max(0, totalStudents - submitted));
+            dto.setQuestions(null); // Không trả về câu hỏi
+
+            return dto;
+        }).toList();
+    }
 
     @Override
     public List<QuizResponseTeacherDTO> getAllQuizzes() {
@@ -86,88 +139,49 @@ public class QuizServiceImpl implements QuizService {
                 .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public QuestionsPageResponseDTO<QuestionTeacherDTO> getQuizQuestionsPageForTeacher(Integer quizId, int page, int size) {
-        return getQuizQuestionsPage(
-                quizId,
-                page,
-                size,
-                (q, optsByQid) -> {
-                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
-                    return quizMapper2.toTeacherQuestionDto(q, opts);
-                }
-        );
-    }
-    @Override
-    @Transactional(readOnly = true)
-    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(Integer quizId, int page, int size) {
-        return getQuizQuestionsPage(
-                quizId,
-                page,
-                size,
-                (q, optsByQid) -> {
-                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
-                    return quizMapper2.toStudentQuestionDto(q, opts);
-                }
-        );
-    }
 
     @Override
-    public List<StudentQuizDto> getQuizzesByStudentId(Integer studentId) {
-        List<Object[]> results = quizRepository.findQuizzesByStudentId(studentId);
+    public List<QuizResponseStudentDTO> getQuizzesByStudentId(Integer studentId) {
+        List<Object[]> rows = quizRepository.findBasicQuizzesByStudentId(studentId);
 
-        return results.stream()
-                .map(this::mapToStudentQuizDTO)
-                .collect(Collectors.toList());
-    }
-    private StudentQuizDto mapToStudentQuizDTO(Object[] row) {
-        return new StudentQuizDto(
-                (Integer) row[0],                                 // quizId
-                (String) row[1],                                  // title
-                (String) row[2],                                  // description
-                row[3] != null ? ((Number) row[3]).intValue() : null, // timeLimit
-                row[4] != null ? convertToLocalDateTime(row[4]) : null, // startDate
-                row[5] != null ? convertToLocalDateTime(row[5]) : null, // endDate
-                (String) row[6],                                  // grade
-                (String) row[7],                                  // subject
-                (String) row[8],                                  // className
-                row[9] != null ? convertToLocalDateTime(row[9]) : null  ,// createdAt
-                row[10] != null ? convertToLocalDateTime(row[10]) : null  // createdAt
-        );
-    }
-    private LocalDateTime convertToLocalDateTime(Object value) {
-        if (value instanceof java.sql.Timestamp) {
-            return ((java.sql.Timestamp) value).toLocalDateTime();
-        } else if (value instanceof java.time.LocalDateTime) {
-            return (LocalDateTime) value;
-        } else if (value instanceof java.time.LocalDate) {
-            return ((LocalDate) value).atStartOfDay();
-        } else if (value instanceof java.sql.Date) {
-            // java.sql.Date chỉ có ngày, không có giờ ⇒ dùng atStartOfDay
-            return ((java.sql.Date) value).toLocalDate().atStartOfDay();
-        } else if (value instanceof java.util.Date) {
-            return ((java.util.Date) value).toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
+        // Lấy danh sách quiz đã nộp
+        List<Integer> submittedQuizIds = quizSubmissionRepository.findSubmittedQuizIdsByStudentId(studentId);
+
+        Set<Integer> submittedQuizIdSet = new HashSet<>(submittedQuizIds); // để check nhanh
+
+        List<QuizResponseStudentDTO> quizzes = new ArrayList<>();
+
+        for (Object[] row : rows) {
+            QuizResponseStudentDTO dto = new QuizResponseStudentDTO();
+            Integer quizId = (Integer) row[0];
+
+            dto.setId(quizId);
+            dto.setTitle((String) row[1]);
+            dto.setDescription((String) row[2]);
+            dto.setTimeLimit(row[3] != null ? ((Number) row[3]).intValue() : null);
+            dto.setStartDate(QuizUtils.convertToLocalDateTime(row[4]));
+            dto.setEndDate(QuizUtils.convertToLocalDateTime(row[5]));
+            dto.setGrade((String) row[6]);
+            dto.setSubject((String) row[7]);
+            dto.setSubmitted(submittedQuizIdSet.contains(quizId));
+
+            quizzes.add(dto);
         }
 
-        throw new UnsupportedOperationException("Unsupported type: " + value.getClass().getName());
+        return quizzes;
     }
+
 
     @Override
     public QuizResponseTeacherDTO getQuizForTeacher(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
 
-        List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
-
+        List<QuizQuestion> questions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
         List<QuestionTeacherDTO> questionDTOs = questions.stream()
                 .map(question -> {
-                    List<QuizOption> options = optionRepository.findByQuestion_Id(question.getId());
-                    List<OptionDTO> optionDTOs = options.stream()
-                            .map(quizMapper2::toOptionDto)
-                            .toList();
+                    List<OptionDTO> optionDTOs = question.getOptions()
+                            .stream().map(quizMapper2::toOptionDto).toList();
                     return quizMapper2.toTeacherQuestionDto(question, optionDTOs);
                 })
                 .toList();
@@ -176,11 +190,11 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public QuizResponseStudentDTO getQuizForStudent(Integer quizId) {
+    public QuizResponseStudentDTO   getQuizForStudent(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
 
-        List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
+        List<QuizQuestion> questions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
 
         List<QuestionStudentDTO> questionDTOs = questions.stream()
                 .map(question -> {
@@ -207,8 +221,6 @@ public class QuizServiceImpl implements QuizService {
         if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());
         if (dto.getStartDate() != null) quiz.setStartDate(dto.getStartDate());
         if (dto.getEndDate() != null) quiz.setEndDate(dto.getEndDate());
-        if (dto.getGrade() != null) quiz.setGrade(dto.getGrade());
-        if (dto.getSubject() != null) quiz.setSubject(dto.getSubject());
 
         quiz.setUpdatedAt(Instant.now());
         quizRepository.save(quiz);
@@ -220,8 +232,7 @@ public class QuizServiceImpl implements QuizService {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        // Map các question/option hiện có để tiện tra cứu
-        List<QuizQuestion> existedQuestions = questionRepository.findByQuiz_Id(quizId);
+        List<QuizQuestion> existedQuestions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
         Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
                 .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
 
@@ -344,5 +355,31 @@ public class QuizServiceImpl implements QuizService {
         return new QuestionsPageResponseDTO<>(quizId, page, size, questionPage.getTotalElements(), items);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionsPageResponseDTO<QuestionTeacherDTO> getQuizQuestionsPageForTeacher(Integer quizId, int page, int size) {
+        return getQuizQuestionsPage(
+                quizId,
+                page,
+                size,
+                (q, optsByQid) -> {
+                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
+                    return quizMapper2.toTeacherQuestionDto(q, opts);
+                }
+        );
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(Integer quizId, int page, int size) {
+        return getQuizQuestionsPage(
+                quizId,
+                page,
+                size,
+                (q, optsByQid) -> {
+                    List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
+                    return quizMapper2.toStudentQuestionDto(q, opts);
+                }
+        );
+    }
 
 }

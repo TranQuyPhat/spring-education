@@ -5,12 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -36,10 +35,10 @@ public class Quiz {
     private Integer timeLimit;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
@@ -56,13 +55,11 @@ public class Quiz {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Size(max = 10)
-    @Column(name = "grade", length = 10)
-    private String grade;
 
-    @Size(max = 100)
-    @Column(name = "subject", length = 100)
-    private String subject;
+    public String getSubject() {
+        return classField != null && classField.getSubject() != null
+                ? classField.getSubject().getSubjectName() : null;
+    }
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<QuizQuestion> questions;
 }

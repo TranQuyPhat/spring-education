@@ -15,5 +15,6 @@ public class QuizResponseTeacherDTO extends QuizBaseDTO {
     private List<QuestionTeacherDTO> questions;
     private int totalStudents;
     private int studentsSubmitted;
+    private int studentsUnSubmitted;
 }
 

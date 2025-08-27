@@ -15,6 +15,8 @@ import java.util.Optional;
 public interface QuizRepository extends JpaRepository<Quiz, Integer> {
     @EntityGraph(attributePaths = {"questions"})
     Optional<Quiz> findById(Long id);
+
+    List<Quiz> findByCreatedBy_Id(Integer teacherId);
     @Query(value = """
         SELECT 
             q.id as quiz_id,
@@ -34,5 +36,25 @@ public interface QuizRepository extends JpaRepository<Quiz, Integer> {
         WHERE cu.student_id = :studentId
         ORDER BY q.created_at DESC
         """, nativeQuery = true)
-    List<Object[]> findQuizzesByStudentId(@Param("studentId") Integer studentId);
+    List<Object> findQuizzesByStudentId(@Param("studentId") Integer studentId);
+    @Query(value = """
+    SELECT
+    q.id,
+    q.title,
+    q.description,
+    q.time_limit,
+    q.start_date,
+    q.end_date,
+    q.grade,
+    q.subject,
+    c.class_name,
+    q.created_at,
+    q.updated_at
+    FROM quizzes q
+    INNER JOIN classes c ON q.class_id = c.id
+    INNER JOIN class_user cu ON c.id = cu.class_id
+    WHERE cu.student_id = :studentId
+    ORDER BY q.created_at DESC
+    """, nativeQuery = true)
+    List<Object[]> findBasicQuizzesByStudentId(@Param("studentId") Integer studentId);
 }

@@ -19,7 +19,8 @@ public interface QuizSubmissionRepository extends JpaRepository<QuizSubmission, 
             "WHERE q.id = :quizId")
     List<QuizSubmission> findAllByQuizIdWithDetails(@Param("quizId") Integer quizId);
     List<QuizSubmission> findByQuiz_Id(Integer quizId);
-
+    @Query("SELECT qs.quiz.id FROM QuizSubmission qs WHERE qs.student.id = :studentId")
+    List<Integer> findSubmittedQuizIdsByStudentId(@Param("studentId") Integer studentId);
 
     @Query("""
         SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.QuizAverageScoreDTO(

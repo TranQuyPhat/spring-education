@@ -1,6 +1,7 @@
 package com.example.springboot_education.dtos.quiz.base;
 
 import com.example.springboot_education.dtos.quiz.OptionDTO;
+import com.example.springboot_education.entities.QuestionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,7 +17,8 @@ import java.util.List;
 public class QuestionBaseDTO {
     private Integer id;
     private String questionText;
-    private String questionType;
+    private QuestionType questionType;
     private List<OptionDTO> options;
     private BigDecimal score;
+
 }

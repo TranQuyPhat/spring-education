@@ -13,7 +13,9 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "quiz_options")
+@Table(name = "quiz_options" , uniqueConstraints = {
+@UniqueConstraint(name = "uq_question_option_label", columnNames = {"question_id", "option_label"})
+    })
 public class QuizOption {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,5 +42,17 @@ public class QuizOption {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+        if (this.optionLabel != null) this.optionLabel = this.optionLabel.trim().toUpperCase();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+        if (this.optionLabel != null) this.optionLabel = this.optionLabel.trim().toUpperCase();
+    }
 
 }

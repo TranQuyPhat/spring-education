@@ -7,10 +7,12 @@ import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
 import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
-import com.example.springboot_education.dtos.quiz.student.StudentQuizDto;
+import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 import com.example.springboot_education.services.quiz.QuizService;
+import com.example.springboot_education.untils.JwtTokenUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +26,37 @@ import java.util.List;
 public class QuizController {
 
     private final QuizService quizService;
-
+    private final JwtTokenUtil jwtTokenUtil;
     @PostMapping
     public ResponseEntity<QuizBaseDTO> createQuiz(@RequestBody QuizRequestDTO request) {
         return ResponseEntity.ok(quizService.createQuiz(request));
+    }
+    @GetMapping("/teacher")
+    public ResponseEntity<APIResponse<List<QuizResponseTeacherDTO>>> getQuizzesByCurrentTeacher(
+            HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest().body(new APIResponse<>(false, "Missing or invalid token", null));
+            }
+            token = token.substring(7); // Remove "Bearer "
+
+            Integer teacherId = jwtTokenUtil.getUserIdFromToken(token);
+
+            List<QuizResponseTeacherDTO> quizzes = quizService.getQuizzesByTeacherId(teacherId);
+
+            return ResponseEntity.ok(new APIResponse<>(
+                    true,
+                    "Lấy danh sách quiz của giáo viên thành công",
+                    quizzes
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new APIResponse<>(
+                    false,
+                    "Lỗi: " + e.getMessage(),
+                    null
+            ));
+        }
     }
 
 
@@ -78,19 +107,19 @@ public class QuizController {
                 .body("You don't have permission to access this quiz questions page");
     }
 
-    @GetMapping("/{id}")
-public ResponseEntity<?> getQuizByRole(
-        @PathVariable Integer id,
-        @RequestParam(defaultValue = "student") String role
-) {
-    if ("teacher".equalsIgnoreCase(role)) {
-        return ResponseEntity.ok(quizService.getQuizForTeacher(id));
-    } else if ("student".equalsIgnoreCase(role)) {
-        return ResponseEntity.ok(quizService.getQuizForStudent(id));
-    } else {
-        return ResponseEntity.badRequest().body("Invalid role: " + role);
-    }
-}
+        //    @GetMapping("/{id}")
+        //public ResponseEntity<?> getQuizByRole(
+        //        @PathVariable Integer id,
+        //        @RequestParam(defaultValue = "student") String role
+        //) {
+        //    if ("teacher".equalsIgnoreCase(role)) {
+        //        return ResponseEntity.ok(quizService.getQuizForTeacher(id));
+        //    } else if ("student".equalsIgnoreCase(role)) {
+        //        return ResponseEntity.ok(quizService.getQuizForStudent(id));
+        //    } else {
+        //        return ResponseEntity.badRequest().body("Invalid role: " + role);
+        //    }
+        //}
     @GetMapping
     public ResponseEntity<List<QuizResponseTeacherDTO>> getAllQuizzes() {
         return ResponseEntity.ok(quizService.getAllQuizzes());
@@ -126,13 +155,13 @@ public ResponseEntity<?> getQuizByRole(
         quizService.deleteQuiz(id);
     }
     @GetMapping("/student/{studentId}")
-    public ResponseEntity<APIResponse<List<StudentQuizDto>>> getStudentQuizzes(
+    public ResponseEntity<APIResponse<List<QuizResponseStudentDTO>>> getStudentQuizzes(
             @PathVariable Integer studentId) {
 
         try {
-            List<StudentQuizDto> quizzes = quizService.getQuizzesByStudentId(studentId);
+            List<QuizResponseStudentDTO> quizzes = quizService.getQuizzesByStudentId(studentId);
 
-            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
                     true,
                     "Lấy danh sách quiz thành công",
                     quizzes
@@ -141,7 +170,7 @@ public ResponseEntity<?> getQuizByRole(
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
                     false,
                     "Có lỗi xảy ra khi lấy danh sách quiz: " + e.getMessage(),
                     null
@@ -155,22 +184,22 @@ public ResponseEntity<?> getQuizByRole(
      * Lấy danh sách quiz với phân trang
      */
     @GetMapping("/student/{studentId}/page")
-    public ResponseEntity<APIResponse<List<StudentQuizDto>>> getStudentQuizzesWithPagination(
+    public ResponseEntity<APIResponse<List<QuizResponseStudentDTO>>> getStudentQuizzesWithPagination(
             @PathVariable Integer studentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         try {
             // Có thể implement thêm logic phân trang ở đây
-            List<StudentQuizDto> allQuizzes = quizService.getQuizzesByStudentId(studentId);
+            List<QuizResponseStudentDTO> allQuizzes = quizService.getQuizzesByStudentId(studentId);
 
             int start = page * size;
             int end = Math.min(start + size, allQuizzes.size());
 
-            List<StudentQuizDto> pagedQuizzes = start < allQuizzes.size() ?
+            List<QuizResponseStudentDTO> pagedQuizzes = start < allQuizzes.size() ?
                     allQuizzes.subList(start, end) : List.of();
 
-            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
                     true,
                     "Lấy danh sách quiz thành công (trang " + (page + 1) + ")",
                     pagedQuizzes
@@ -179,7 +208,7 @@ public ResponseEntity<?> getQuizByRole(
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            APIResponse<List<StudentQuizDto>> response = new APIResponse<>(
+            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
                     false,
                     "Có lỗi xảy ra: " + e.getMessage(),
                     null
