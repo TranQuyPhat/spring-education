@@ -19,5 +19,5 @@ public class LoginResponseDto {
      private List<String> roles; 
          private boolean requireRoleSelection;
     private String fullName;
-    private String imageUrl;
+    private String avatarBase64;
 }

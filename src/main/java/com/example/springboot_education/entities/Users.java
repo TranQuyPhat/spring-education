@@ -44,8 +44,10 @@ public class Users {
     private String email;
     @Column(name = "is_email_verified", nullable = false)
     private Boolean isEmailVerified = false;
-    @Size(max = 255)
-    private String imageUrl;
+ @Lob
+@Column(name = "avatar", columnDefinition = "LONGBLOB")
+private byte[] avatar;
+
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
