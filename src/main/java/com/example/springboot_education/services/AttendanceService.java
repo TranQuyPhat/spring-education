@@ -1,86 +1,82 @@
-// package com.example.springboot_education.services;
+package com.example.springboot_education.services;
 
-// import java.time.Instant;
-// import java.util.List;
-// import java.util.stream.Collectors;
+import com.example.springboot_education.dtos.attendances.AttendanceRequestDTO;
+import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
+import com.example.springboot_education.entities.Attendance;
+import com.example.springboot_education.entities.ClassScheduleSession;
+import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.repositories.AttendanceRepository;
+import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
+import com.example.springboot_education.repositories.UsersJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-// import org.springframework.stereotype.Service;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class AttendanceService {
 
-// import com.example.springboot_education.annotations.LoggableAction;
-// import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
-// import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
-// import com.example.springboot_education.dtos.attendances.AttendanceUpdateDTO;
-// import com.example.springboot_education.entities.Attendance;
-// import com.example.springboot_education.entities.ClassSchedule;
-// import com.example.springboot_education.entities.Users;
-// import com.example.springboot_education.repositories.AttendanceRepository;
-// import com.example.springboot_education.repositories.UsersJpaRepository;
-// import com.example.springboot_education.repositories.schedules.ClassScheduleRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final ClassScheduleSessionRepository sessionRepository;
+    private final UsersJpaRepository usersRepository;
 
-// @Service
-// public class AttendanceService {
+    public void recordAttendance(Integer sessionId, List<AttendanceRequestDTO> records) {
+        ClassScheduleSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
 
-//     private final AttendanceRepository repository;
-//     private final UsersJpaRepository userRepository;
-//     private final ClassScheduleRepository scheduleRepository;
+        Instant submitTime = Instant.now();
+        session.setSubmittedAt(submitTime); // nếu bạn đã thêm submittedAt trong session entity
 
-//     public AttendanceService(AttendanceRepository repository, UsersJpaRepository userRepository,
-//                              ClassScheduleRepository scheduleRepository) {
-//         this.repository = repository;
-//         this.userRepository = userRepository;
-//         this.scheduleRepository = scheduleRepository;
-//     }
-//     public AttendanceResponseDTO create(AttendanceCreateDTO dto) {
-//         Users student = userRepository.findById(dto.getStudentId())
-//                 .orElseThrow(() -> new RuntimeException("Student not found"));
+        for (AttendanceRequestDTO dto : records) {
+            Users student = usersRepository.findById(dto.getStudentId())
+                    .orElseThrow(() -> new RuntimeException("Student not found"));
 
-//         ClassSchedule schedule = scheduleRepository.findById(dto.getScheduleId())
-//                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
+            Attendance record = new Attendance();
+            record.setSession(session);
+            record.setStudent(student);
+            record.setStatus(dto.getStatus());
+            record.setNote(dto.getNote());
+            record.setMarkedAt(submitTime);
 
-//         Attendance attendance = new Attendance();
-//         attendance.setStudent(student);
-//         attendance.setSchedule(schedule);
-//         attendance.setStatus(dto.getStatus());
-//         attendance.setMarkedAt(Instant.now());
+            attendanceRepository.save(record);
+        }
+    }
 
-//         Attendance saved = repository.save(attendance);
+    public List<AttendanceResponseDTO> getAttendance(Integer sessionId) {
+        List<Attendance> records = attendanceRepository.findBySession_Id(sessionId);
+        return records.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
 
-//         return mapToDTO(saved);
-//     }
+    public AttendanceResponseDTO updateAttendance(Integer recordId, AttendanceRequestDTO dto) {
+        Attendance record = attendanceRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found"));
 
-//     // Phương thức để điểm danh cả lớp
-//     @LoggableAction(value = "CREATE", entity = "attendances", description = "Tạo mới điểm danh cho cả lớp")
-//     public List<AttendanceResponseDTO> markClassAttendance(List<AttendanceCreateDTO> dtos) {
-//         return dtos.stream()
-//                 .map(this::create) // Tái sử dụng phương thức create
-//                 .collect(Collectors.toList());
-//     }
+        Users student = usersRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
-//     public List<AttendanceResponseDTO> getByScheduleId(Integer scheduleId) {
-//         return repository.findByScheduleId(scheduleId)
-//                 .stream()
-//                 .map(this::mapToDTO)
-//                 .collect(Collectors.toList());
-//     }
+        record.setStudent(student);
+        record.setStatus(dto.getStatus());
+        record.setNote(dto.getNote());
+        record.setMarkedAt(Instant.now());
 
-//     @LoggableAction(value = "UPDATE", entity = "attendances", description = "Cập nhật trạng thái điểm danh")
-//     public AttendanceResponseDTO updateStatus(Integer id, AttendanceUpdateDTO dto) {
-//         Attendance attendance = repository.findById(id)
-//                 .orElseThrow(() -> new RuntimeException("Attendance not found with id " + id));
+        Attendance updated = attendanceRepository.save(record);
+        return mapToDto(updated);
+    }
 
-//         attendance.setStatus(dto.getStatus());
-//         Attendance updated = repository.save(attendance);
-//         return mapToDTO(updated);
-//     }
-
-//     private AttendanceResponseDTO mapToDTO(Attendance entity) {
-//         AttendanceResponseDTO dto = new AttendanceResponseDTO();
-//         dto.setId(entity.getId());
-//         dto.setStudentId(entity.getStudent().getId());
-//         dto.setScheduleId(entity.getSchedule().getId());
-//         dto.setStatus(entity.getStatus());
-//         dto.setMarkedAt(entity.getMarkedAt());
-//         return dto;
-//     }
-// }
+    private AttendanceResponseDTO mapToDto(Attendance record) {
+        AttendanceResponseDTO dto = new AttendanceResponseDTO();
+        dto.setId(record.getId());
+        dto.setStudentId(record.getStudent().getId());
+        dto.setStudentName(record.getStudent().getFullName());
+        dto.setSessionId(record.getSession().getId());
+        dto.setStatus(record.getStatus());
+        dto.setNote(record.getNote());
+        dto.setMarkedAt(record.getMarkedAt());
+        return dto;
+    }
+}
