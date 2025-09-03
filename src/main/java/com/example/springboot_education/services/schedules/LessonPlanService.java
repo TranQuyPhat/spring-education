@@ -9,6 +9,7 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.IOException;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +17,8 @@ import com.example.springboot_education.dtos.classschedules.LessonPlanCreateDTO;
 import com.example.springboot_education.dtos.classschedules.LessonPlanDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.LessonPlan;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.schedules.LessonPlanRepository;
 
@@ -50,13 +53,13 @@ public class LessonPlanService {
     public void importLessonPlansFromExcel(Integer classId, MultipartFile file) throws IOException {
         // lấy class từ DB
         ClassEntity classEntity = classRepository.findById(classId)
-                .orElseThrow(() -> new RuntimeException("Class not found with id: " + classId));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         // đọc file excel
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0); // sheet đầu tiên
+            Sheet sheet = workbook.getSheetAt(0); 
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // bỏ qua dòng header
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { 
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
@@ -65,14 +68,14 @@ public class LessonPlanService {
                 // cột 0: sessionNumber
                 Cell sessionCell = row.getCell(0);
                 if (sessionCell == null || sessionCell.getCellType() != CellType.NUMERIC) {
-                    throw new RuntimeException("Invalid session number at row " + (i + 1));
+                    throw new HttpException("Invalid session number at row " + (i + 1), HttpStatus.BAD_REQUEST);
                 }
                 dto.setSessionNumber((int) sessionCell.getNumericCellValue());
 
                 // cột 1: title
                 Cell titleCell = row.getCell(1);
                 if (titleCell == null || titleCell.getCellType() == CellType.BLANK) {
-                    throw new RuntimeException("Title is required at row " + (i + 1));
+                    throw new HttpException("Title is required at row " + (i + 1), HttpStatus.BAD_REQUEST);
                 }
                 dto.setTitle(titleCell.getStringCellValue());
 
@@ -95,7 +98,7 @@ public class LessonPlanService {
     }
     public LessonPlanDTO updateLessonPlan(Integer id, LessonPlanDTO dto) {
         LessonPlan existing = lessonPlanRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lesson plan not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Lesson plan"));
 
         existing.setSessionNumber(dto.getSessionNumber());
         existing.setTitle(dto.getTitle());
@@ -107,7 +110,10 @@ public class LessonPlanService {
         return toDTO(saved);
     }
 
-    public void deleteLessonPlan(Integer id) {
-        lessonPlanRepository.deleteById(id);
-    }
+  public void deleteLessonPlan(Integer id) {
+    LessonPlan existing = lessonPlanRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Lesson plan not found with id " + id));
+    lessonPlanRepository.delete(existing);
+}
+
 }

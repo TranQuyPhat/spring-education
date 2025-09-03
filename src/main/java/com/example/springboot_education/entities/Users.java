@@ -15,11 +15,11 @@ import java.util.List;
 
 @Getter
 @Setter
-@Entity @Table(name = "users",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = "email"),
-                @UniqueConstraint(columnNames = "username")
-        })
+@Entity
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email"),
+        @UniqueConstraint(columnNames = "username")
+})
 public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,17 +37,18 @@ public class Users {
     @Size(max = 100)
     private String fullName;
 
-    @NotNull
+    // @NotNull
+    // @Size(max = 100)
+    // @jakarta.validation.constraints.Email
+    // @Column(nullable = false)
     @Size(max = 100)
-    @jakarta.validation.constraints.Email
-    @Column(nullable = false)
+@Column(nullable = false, unique = true)
     private String email;
     @Column(name = "is_email_verified", nullable = false)
     private Boolean isEmailVerified = false;
- @Lob
-@Column(name = "avatar", columnDefinition = "LONGBLOB")
-private byte[] avatar;
-
+    @Lob
+    @Column(name = "avatar", columnDefinition = "LONGBLOB")
+    private byte[] avatar;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -60,6 +61,5 @@ private byte[] avatar;
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<UserRole> userRoles = new ArrayList<>();
-
 
 }

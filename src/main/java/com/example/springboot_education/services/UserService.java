@@ -20,6 +20,8 @@ import com.example.springboot_education.dtos.usersDTOs.UserResponseDto;
 import com.example.springboot_education.entities.UserRole;
 import com.example.springboot_education.entities.UserRoleId;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityDuplicateException;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.RoleJpaRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
@@ -72,13 +74,11 @@ public class UserService {
 
     public Users getUserEntityByEmail(String email) {
         return userJpaRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
+   .orElseThrow(() -> new HttpException("User not found with email: " + email, HttpStatus.NOT_FOUND));    }
 
     public Users getUserEntityByUsername(String username) {
         return userJpaRepository.findByUsernameWithRoles(username)
-                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
-    }
+            .orElseThrow(() -> new HttpException("User not found with username: " + username, HttpStatus.NOT_FOUND));    }
 
     // Update profile for currently authenticated user
     public UserResponseDto updateProfileByUser(
@@ -133,6 +133,11 @@ public class UserService {
             throw new HttpException("Email already exists: " + dto.getEmail(), HttpStatus.CONFLICT);
         }
 
+        // Optional<Users> founds = this.userJpaRepository.findByEmail(dto.getEmail());
+        // if (!founds.isEmpty()) {
+        //     throw new EntityDuplicateException("Email");
+        // }
+
         Users user = new Users();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
@@ -167,13 +172,13 @@ public class UserService {
     // GET USER BY ID
     public UserResponseDto getUserById(Integer id) {
         Users user = this.userJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+               .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
         return convertToDto(user);
     }
 
     public Users getUserEntityById(Integer id) {
         return userJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                 .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
     }
 
     // Update user
@@ -218,7 +223,8 @@ public class UserService {
     @LoggableAction(value = "DELETE", entity = "users", description = "Delete user")
     public void deleteUser(Integer id) {
         Users user = userJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                        // .orElseThrow(() -> new HttpException("User not found with id: " + id, HttpStatus.NOT_FOUND));
+                        .orElseThrow(() -> new EntityNotFoundException("User"));
 
         userJpaRepository.delete(user);
     }
@@ -231,7 +237,7 @@ public class UserService {
     public String getFullName(Integer userId) {
         return userJpaRepository.findById(userId)
                 .map(Users::getFullName)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với ID: " + userId));
+                .orElseThrow(() -> new HttpException("Không tìm thấy user với ID: " + userId, HttpStatus.NOT_FOUND));
     }
 
     public UserResponseDto updateAvatar(Integer userId, MultipartFile file) throws IOException {

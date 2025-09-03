@@ -10,6 +10,7 @@ import com.example.springboot_education.dtos.classschedules.ClassScheduleSession
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassSchedulePattern;
 import com.example.springboot_education.entities.ClassScheduleSession;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.classes.ClassesJpaRepository;
 import com.example.springboot_education.repositories.schedules.ClassSchedulePatternRepository;
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
@@ -29,9 +30,9 @@ public class ClassScheduleSessionService {
     @LoggableAction(value = "CREATE", entity = "class_schedule_sessions", description = "Tạo buổi học")
     public ClassScheduleSessionResponseDTO create(ClassScheduleSessionCreateDTO dto) {
         ClassSchedulePattern pattern = patternRepository.findById(dto.getPatternId())
-                .orElseThrow(() -> new RuntimeException("Pattern not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Pattern"));
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         ClassScheduleSession session = new ClassScheduleSession();
         session.setPattern(pattern);
@@ -68,7 +69,7 @@ public class ClassScheduleSessionService {
     @LoggableAction(value = "UPDATE", entity = "class_schedule_sessions", description = "Cập nhật buổi học")
     public ClassScheduleSessionResponseDTO update(Integer id, ClassScheduleSessionUpdateDTO dto) {
         ClassScheduleSession session = sessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Session"));
 
         session.setSessionDate(dto.getSessionDate());
         session.setStartPeriod(dto.getStartPeriod());
@@ -82,7 +83,7 @@ public class ClassScheduleSessionService {
 
     public void delete(Integer id) {
         if (!sessionRepository.existsById(id)) {
-            throw new RuntimeException("Session not found");
+            throw new EntityNotFoundException("Session");
         }
         sessionRepository.deleteById(id);
     }
