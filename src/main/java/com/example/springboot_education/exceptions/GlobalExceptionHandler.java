@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 
@@ -97,6 +98,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(new APIResponse<>(false, ex.getMessage(), null));
+
+     @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxSizeException(MaxUploadSizeExceededException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 413); 
+        response.put("error", "Payload Too Large");
+        response.put("message", "File size exceeds the allowed limit. Please upload a smaller file.");
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(response);
     }
 
 }

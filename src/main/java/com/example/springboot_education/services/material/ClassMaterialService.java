@@ -12,11 +12,11 @@ import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassMaterial;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
 import com.example.springboot_education.services.ActivityLogService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -43,10 +43,10 @@ public class ClassMaterialService {
     @LoggableAction(value = "CREATE", entity = "class_materials", description = "Created a new material")
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto, MultipartFile file) throws IOException {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
-                .orElseThrow(() -> new EntityNotFoundException("User not found" + dto.getCreatedBy()));
+                .orElseThrow(() -> new EntityNotFoundException("User" + dto.getCreatedBy()));
 
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + dto.getClassId()));
 
         ClassMaterial material = new ClassMaterial();
         material.setTitle(dto.getTitle());
@@ -85,7 +85,7 @@ public class ClassMaterialService {
     @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Updated a material")
     public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Material not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         material.setTitle(dto.getTitle());
         material.setDescription(dto.getDescription());
@@ -99,14 +99,14 @@ public class ClassMaterialService {
     @LoggableAction(value = "DELETE", entity = "class_materials", description = "Deleted a material")
     public void deleteMaterial(Integer id) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Material not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         classMaterialJpaRepository.delete(material);
     }
 
     public void increaseDownloadCount(Integer materialId) {
         ClassMaterial material = classMaterialJpaRepository.findById(materialId)
-                .orElseThrow(() -> new RuntimeException("Material not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Material"));
         material.setDownloadCount(material.getDownloadCount() + 1);
         classMaterialJpaRepository.save(material);
     }
@@ -114,7 +114,7 @@ public class ClassMaterialService {
     public DownloadFileDTO downloadMaterial(Integer id) throws Exception {
         // 1. Lấy thông tin tài liệu
         ClassMaterial material = classMaterialJpaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Material not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         // 2. Tăng lượt tải
         material.setDownloadCount(material.getDownloadCount() + 1);
@@ -125,7 +125,7 @@ public class ClassMaterialService {
         Resource resource = new UrlResource(path.toUri());
 
         if (!resource.exists()) {
-            throw new RuntimeException("File not found");
+            throw new EntityNotFoundException("File");
         }
 
         // 4. Trả DTO chứa file và metadata

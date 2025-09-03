@@ -1,10 +1,13 @@
 package com.example.springboot_education.controllers;
 
+import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
+import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.dtos.submissionDTOs.GradeSubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
 import com.example.springboot_education.entities.Submission;
+import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.services.assignment.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,17 +38,27 @@ public class SubmissionController {
     }
 
     // Upload và nộp bài
+    // @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // public ResponseEntity<SubmissionResponseDto> submitAssignment(
+    // @Valid @RequestParam("assignmentId") Integer assignmentId,
+    // @Valid @RequestParam("studentId") Integer studentId,
+    // @RequestPart(value = "file", required = false) MultipartFile file,
+    // @Valid @RequestParam(required = false) String description) throws IOException
+    // {
+
+    // SubmissionRequestDto requestDto = new SubmissionRequestDto();
+    // requestDto.setAssignmentId(assignmentId);
+    // requestDto.setStudentId(studentId);
+    // requestDto.setDescription(description);
+
+    // return ResponseEntity.ok(submissionService.submitAssignment(requestDto,
+    // file));
+    // }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SubmissionResponseDto> submitAssignment(
-            @RequestParam("assignmentId") Integer assignmentId,
-            @RequestParam("studentId") Integer studentId,
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "description", required = false) String description) throws IOException {
-
-        SubmissionRequestDto requestDto = new SubmissionRequestDto();
-        requestDto.setAssignmentId(assignmentId);
-        requestDto.setStudentId(studentId);
-        requestDto.setDescription(description);
+            @Valid @ModelAttribute SubmissionRequestDto requestDto,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
         return ResponseEntity.ok(submissionService.submitAssignment(requestDto, file));
     }
@@ -55,8 +68,7 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDto> updateSubmission(
             @PathVariable("submissionId") Integer submissionId,
             @RequestParam(value = "description", required = false) String description,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
         SubmissionRequestDto requestDto = new SubmissionRequestDto();
         requestDto.setDescription(description);
@@ -69,7 +81,7 @@ public class SubmissionController {
     @PatchMapping("/{submissionId}/grade")
     public ResponseEntity<SubmissionResponseDto> gradeSubmission(
             @PathVariable("submissionId") Integer submissionId,
-            @RequestBody @Valid GradeSubmissionRequestDto dto) {
+            @Valid @RequestBody GradeSubmissionRequestDto dto) {
         SubmissionResponseDto response = submissionService.gradeSubmission(
                 submissionId, dto.getScore(), dto.getComment());
         return ResponseEntity.ok(response);
@@ -79,12 +91,11 @@ public class SubmissionController {
     @PatchMapping("/{submissionId}/update-grade")
     public ResponseEntity<SubmissionResponseDto> updateGradeSubmission(
             @PathVariable("submissionId") Integer submissionId,
-            @RequestBody @Valid GradeSubmissionRequestDto dto) {
+            @Valid @RequestBody GradeSubmissionRequestDto dto) {
         SubmissionResponseDto response = submissionService.updateGradeSubmission(
                 submissionId, dto.getScore(), dto.getComment());
         return ResponseEntity.ok(response);
     }
-
 
     // Lấy bài nộp theo assignment
     @GetMapping("/assignment/{assignmentId}")
@@ -130,6 +141,3 @@ public class SubmissionController {
         return ResponseEntity.noContent().build();
     }
 }
-
-
-

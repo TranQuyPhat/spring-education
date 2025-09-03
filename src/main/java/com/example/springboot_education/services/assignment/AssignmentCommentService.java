@@ -13,6 +13,7 @@ import com.example.springboot_education.dtos.assignmentCommentDTOs.CreateAssignm
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.AssignmentComment;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentCommentJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
@@ -27,12 +28,12 @@ public class AssignmentCommentService {
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
 
-    @LoggableAction( value = "CREATE", entity = "assignment_comment", description = "Added a comment to the assignment")
+    @LoggableAction(value = "CREATE", entity = "assignment_comment", description = "Added a comment to the assignment")
     public AssignmentCommentResponseDto create(CreateAssignmentCommentRequestDto dto) {
         Assignment assignment = assignmentJpaRepository.findById(dto.getAssignmentId())
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment"));
         Users user = usersJpaRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User"));
 
         AssignmentComment comment = AssignmentComment.builder()
                 .assignment(assignment)
@@ -42,7 +43,7 @@ public class AssignmentCommentService {
 
         if (dto.getParentId() != null) {
             AssignmentComment parent = assignmentCommentJpaRepository.findById(dto.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("Parent comment"));
             comment.setParent(parent);
         }
 
@@ -56,8 +57,10 @@ public class AssignmentCommentService {
                 .toList();
     }
 
-    @LoggableAction( value = "DELETE", entity = "assignment_comment", description = "Deleted a comment")
+    @LoggableAction(value = "DELETE", entity = "assignment_comment", description = "Deleted a comment")
     public void delete(Integer id) {
+        AssignmentComment comment = assignmentCommentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("AssignmentComment"));
         assignmentCommentJpaRepository.deleteById(id);
     }
 
