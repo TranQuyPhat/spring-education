@@ -15,6 +15,7 @@ import com.example.springboot_education.repositories.classes.ClassesJpaRepositor
 import com.example.springboot_education.repositories.schedules.ClassSchedulePatternRepository;
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
 
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,6 +45,11 @@ public class ClassScheduleSessionService {
         session.setNote(dto.getNote());
 
         return mapToDTO(sessionRepository.save(session));
+    }
+    public ClassScheduleSessionResponseDTO getSessionById(Integer sessionId) {
+        ClassScheduleSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found with id: " + sessionId));
+        return mapToDTO(session);
     }
 
     public List<ClassScheduleSessionResponseDTO> getAllByClass(Integer classId) {

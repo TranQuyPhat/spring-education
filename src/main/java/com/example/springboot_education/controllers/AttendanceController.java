@@ -1,43 +1,53 @@
-// package com.example.springboot_education.controllers;
+package com.example.springboot_education.controllers;
 
-// import java.util.List;
+import com.example.springboot_education.dtos.attendances.AttendanceRequestDTO;
+import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
+import com.example.springboot_education.services.AttendanceService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.PatchMapping;
-// import org.springframework.web.bind.annotation.PathVariable;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
-// import com.example.springboot_education.dtos.attendances.AttendanceCreateDTO;
-// import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
-// import com.example.springboot_education.dtos.attendances.AttendanceUpdateDTO;
-// import com.example.springboot_education.services.AttendanceService;
+@RestController
+@RequestMapping("/api/attendance")
+@RequiredArgsConstructor
+public class AttendanceController {
 
-// @RestController
-// @RequestMapping("/api/attendances")
-// public class AttendanceController {
+    private final AttendanceService attendanceService;
 
-//     private final AttendanceService service;
+    /**
+     * Submit điểm danh cho cả lớp trong 1 buổi học
+     */
+    @PostMapping("/{sessionId}")
+    public ResponseEntity<String> recordAttendance(
+            @PathVariable("sessionId") Integer sessionId,
+            @RequestBody List<AttendanceRequestDTO> records
+    ) {
+        attendanceService.recordAttendance(sessionId, records);
+        return ResponseEntity.ok("Attendance recorded successfully");
+    }
 
-//     public AttendanceController(AttendanceService service) {
-//         this.service = service;
-//     }
+    /**
+     * Lấy danh sách điểm danh theo buổi học
+     */
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<List<AttendanceResponseDTO>> getAttendance(
+            @PathVariable("sessionId") Integer sessionId
+    ) {
+        List<AttendanceResponseDTO> records = attendanceService.getAttendance(sessionId);
+        return ResponseEntity.ok(records);
+    }
 
-//     @GetMapping("/class-schedule/{scheduleId}")
-//     public List<AttendanceResponseDTO> getByClassSchedule(@PathVariable("scheduleId") Integer scheduleId) {
-//         return service.getByScheduleId(scheduleId);
-//     }
-
-//     @PostMapping
-//     public AttendanceResponseDTO create(@RequestBody AttendanceCreateDTO dto) {
-//         return service.create(dto);
-//     }
-
-//     @PatchMapping("/{id}")
-//     public AttendanceResponseDTO updateStatus(@PathVariable("id") Integer id, @RequestBody AttendanceUpdateDTO dto) {
-//         return service.updateStatus(id, dto);
-//     }
-
-// }
+    /**
+     * Cập nhật điểm danh cho một học sinh
+     */
+    @PutMapping("/{recordId}")
+    public ResponseEntity<AttendanceResponseDTO> updateAttendance(
+            @PathVariable Integer recordId,
+            @RequestBody AttendanceRequestDTO dto
+    ) {
+        AttendanceResponseDTO updated = attendanceService.updateAttendance(recordId, dto);
+        return ResponseEntity.ok(updated);
+    }
+}

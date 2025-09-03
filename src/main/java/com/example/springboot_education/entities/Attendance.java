@@ -7,6 +7,8 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,18 +40,29 @@ public class Attendance {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "schedule_id", nullable = false)
-    private ClassScheduleSession schedule;
+    @JoinColumn(name = "session_id", nullable = false)
+    private ClassScheduleSession session;
 
-    @NotNull
-    @Column(name = "status", nullable = false, length = 50)
-    private String status;
+     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private AttendanceStatus status = AttendanceStatus.ABSENT;
 
-    @Column(name = "marked_at", updatable = false)
+    @Column(name = "note")
+    private String note;
+
+
+    @Column(name = "marked_at")
     private Instant markedAt;
 
     @PrePersist
     protected void onCreate() {
         this.markedAt = Instant.now();
+    }
+
+    public enum AttendanceStatus {
+        PRESENT,   // Có mặt
+        ABSENT,    // Vắng mặt
+        LATE,      // Đi trễ
+        EXCUSED    // Vắng có phép
     }
 }

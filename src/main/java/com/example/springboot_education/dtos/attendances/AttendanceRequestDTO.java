@@ -1,18 +1,21 @@
 package com.example.springboot_education.dtos.attendances;
 
-import java.time.Instant;
 
 import com.example.springboot_education.entities.Attendance.AttendanceStatus;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class AttendanceResponseDTO {
-    private Integer id;
+public class AttendanceRequestDTO {
+
+    @NotNull
     private Integer studentId;
-    private String studentName; // lấy từ Users.fullName chẳng hạn
-    private Integer sessionId;
+
+    // @NotNull
+    // private Integer sessionId;
+
+    @NotNull
     private AttendanceStatus status;
+
     private String note;
-    private Instant markedAt;
 }
