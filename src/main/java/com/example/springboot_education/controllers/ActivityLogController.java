@@ -9,6 +9,8 @@ import com.example.springboot_education.dtos.activitylogs.ActivityLogCreateDTO;
 import com.example.springboot_education.dtos.activitylogs.ActivityLogResponseDTO;
 import com.example.springboot_education.services.ActivityLogService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/activity-logs")
 public class ActivityLogController {
@@ -26,24 +28,23 @@ public class ActivityLogController {
 
     // Tạo log mới
     @PostMapping
-    public ResponseEntity<String> createLog(@RequestBody ActivityLogCreateDTO dto) {
+    public ResponseEntity<String> createLog(@Valid @RequestBody ActivityLogCreateDTO dto) {
         service.log(dto);
         return ResponseEntity.ok("Log created successfully");
     }
 
     // Xóa 1 log
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteLog(@PathVariable Integer id) {
-        service.deleteLogs(List.of(id));
-        return ResponseEntity.ok("Log deleted successfully");
-    }
+  @DeleteMapping("/{id}")
+public ResponseEntity<String> deleteLog(@PathVariable Integer id) {
+    service.deleteLogs(List.of(id));
+    return ResponseEntity.ok("Log with id " + id + " deleted successfully");
+}
 
-    // Xóa nhiều log cùng lúc
-    @DeleteMapping
-    public ResponseEntity<String> deleteLogs(@RequestBody List<Integer> ids) {
-        service.deleteLogs(ids);
-        return ResponseEntity.ok("Logs deleted successfully");
-    }
+@DeleteMapping
+public ResponseEntity<String> deleteLogs(@RequestBody List<Integer> ids) {
+    service.deleteLogs(ids);
+    return ResponseEntity.ok("Logs with ids " + ids + " deleted successfully");
+}
 
     // Lấy danh sách actionType CRUD
     @GetMapping("/action-types")

@@ -13,4 +13,6 @@ public interface SubjectRepository extends JpaRepository<Subject, Integer> {
       FROM Subject s
     """)
     List<Object[]> findAllSubjectsIdName();
+    boolean existsBySubjectName(String subjectName);
+
 }

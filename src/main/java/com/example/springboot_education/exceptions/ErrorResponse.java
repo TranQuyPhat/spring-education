@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ErrorResponse {
     private int status;
-    private List<String> messages; // Can be String or List<String>
+    private List<String> messages; 
     private String error;
 }

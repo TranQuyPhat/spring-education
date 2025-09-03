@@ -1,5 +1,6 @@
 package com.example.springboot_education.dtos.activitylogs;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,11 +9,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActivityLogCreateDTO {
+    @NotNull(message = "Action Type is required")
     private String actionType;
     private Integer targetId;
     private String targetTable;
     private String description;
     private Integer classId;
+    @NotNull (message = "UserId is required")
     private Integer userId;
 
 

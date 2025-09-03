@@ -20,6 +20,7 @@ import com.example.springboot_education.entities.LessonPlan;
 
 import com.example.springboot_education.services.schedules.LessonPlanService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/auth/lesson-plans")
@@ -45,14 +46,14 @@ public class LessonPlanController {
     }
 
     @PostMapping
-    public ResponseEntity<LessonPlan> createLessonPlan(@RequestBody LessonPlan lessonPlan) {
+    public ResponseEntity<LessonPlan> createLessonPlan(@Valid @RequestBody LessonPlan lessonPlan) {
         return ResponseEntity.ok(lessonPlanService.createLessonPlan(lessonPlan));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LessonPlanDTO> updateLessonPlan(
             @PathVariable("id") Integer id,
-            @RequestBody LessonPlanDTO dto
+            @Valid @RequestBody LessonPlanDTO dto
     ) {
         LessonPlanDTO updated = lessonPlanService.updateLessonPlan(id, dto);
         return ResponseEntity.ok(updated);

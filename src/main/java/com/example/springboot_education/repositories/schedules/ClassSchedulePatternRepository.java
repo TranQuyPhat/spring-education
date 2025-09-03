@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ClassSchedulePatternRepository extends JpaRepository<ClassSchedulePattern, Integer> {
     List<ClassSchedulePattern> findByClassEntity_Id(Integer classId);
+    boolean existsByLocationId(Integer locationId);
 }
