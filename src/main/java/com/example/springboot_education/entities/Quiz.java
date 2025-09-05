@@ -55,10 +55,14 @@ public class Quiz {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-
-    public String getSubject() {
-        return classField != null && classField.getSubject() != null
-                ? classField.getSubject().getSubjectName() : null;
+    @Column(name = "subject")
+    private String subject;
+    @PrePersist @PreUpdate
+    private void syncSubjectFromClass() {
+        if (classField != null && classField.getSubject() != null) {
+            this.subject = classField.getSubject().getSubjectName();
+        }
+        
     }
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<QuizQuestion> questions;

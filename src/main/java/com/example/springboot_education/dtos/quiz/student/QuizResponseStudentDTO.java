@@ -12,4 +12,5 @@ public class QuizResponseStudentDTO extends QuizBaseDTO {
 
     private List<QuestionStudentDTO> questions;
     private boolean submitted;
+    private double score;
 }

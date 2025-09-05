@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface QuizSubmitService {
     List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId);
-    QuizSubmissionBaseDTO submitQuiz(QuizSubmitReqDTO request);
+    QuizSubmissionBaseDTO submitQuiz( Integer quizId, Integer studentId,QuizSubmitReqDTO request);
 
 }

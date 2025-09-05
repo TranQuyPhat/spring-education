@@ -38,23 +38,47 @@ public interface QuizRepository extends JpaRepository<Quiz, Integer> {
         """, nativeQuery = true)
     List<Object> findQuizzesByStudentId(@Param("studentId") Integer studentId);
     @Query(value = """
-    SELECT
+SELECT
     q.id,
     q.title,
     q.description,
     q.time_limit,
     q.start_date,
     q.end_date,
-    q.grade,
     q.subject,
     c.class_name,
-    q.created_at,
-    q.updated_at
-    FROM quizzes q
-    INNER JOIN classes c ON q.class_id = c.id
-    INNER JOIN class_user cu ON c.id = cu.class_id
-    WHERE cu.student_id = :studentId
-    ORDER BY q.created_at DESC
-    """, nativeQuery = true)
+    (
+        SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id = q.id
+    ) AS total_questions,
+    s.score                 AS student_score,
+    s.submitted_at          AS student_submitted_at,
+    CASE WHEN s.quiz_id IS NULL THEN 0 ELSE 1 END AS has_submission
+FROM quizzes q
+INNER JOIN classes c     ON q.class_id = c.id
+INNER JOIN class_user cu ON c.id = cu.class_id
+LEFT JOIN (
+    SELECT *
+    FROM (
+        SELECT
+            qs.quiz_id,
+            qs.student_id,
+            qs.score,
+            qs.submitted_at,
+            qs.graded_at,
+            ROW_NUMBER() OVER (
+                PARTITION BY qs.quiz_id
+                ORDER BY COALESCE(qs.graded_at, qs.submitted_at) DESC, qs.id DESC
+            ) AS rn
+        FROM quiz_submissions qs
+        WHERE qs.student_id = :studentId
+    ) t
+    WHERE t.rn = 1
+) s ON s.quiz_id = q.id
+WHERE cu.student_id = :studentId
+ORDER BY q.created_at DESC
+""", nativeQuery = true)
     List<Object[]> findBasicQuizzesByStudentId(@Param("studentId") Integer studentId);
+
+
+
 }

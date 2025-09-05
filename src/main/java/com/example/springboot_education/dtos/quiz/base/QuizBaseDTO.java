@@ -14,7 +14,7 @@ public class QuizBaseDTO {
     protected Integer timeLimit;
     protected LocalDateTime startDate;
     protected LocalDateTime endDate;
-    protected String grade;
     protected String subject;
     protected String className;
+    protected int totalQuestion;
 }

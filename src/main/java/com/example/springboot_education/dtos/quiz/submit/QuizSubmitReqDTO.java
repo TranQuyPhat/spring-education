@@ -8,9 +8,7 @@ import java.util.Map;
 @Data
 public class QuizSubmitReqDTO {
     private Integer quizId;
-    private Integer studentId;
     private Instant startAt;
     private Instant endAt;
-    private Instant submittedAt;
     private Map<Integer, List<String>> answers;
 }

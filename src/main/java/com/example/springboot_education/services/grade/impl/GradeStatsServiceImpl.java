@@ -4,8 +4,10 @@ package com.example.springboot_education.services.grade.impl;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.QuizAverageScoreDTO;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
+import com.example.springboot_education.repositories.DashboardRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
+import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.services.grade.GradeStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ public class GradeStatsServiceImpl implements GradeStatsService {
 
     private final QuizSubmissionRepository quizRepo;
     private final SubmissionJpaRepository submissionRepo;
+    private final DashboardRepository dashboardRepository;
+    private final AssignmentService assignmentService;
 
     @Override
     public List<QuizAverageScoreDTO> getAverageScorePerQuiz(Integer quizId) {
@@ -148,5 +152,6 @@ public class GradeStatsServiceImpl implements GradeStatsService {
 
         return result;
     }
+
 
 }

@@ -26,6 +26,7 @@ public class QuizGenService {
         this.client = client;
     }
 
+
     public String generateQuizJson(String extractedText,
                                    String effectivePrompt,
                                    int numQuestions,
@@ -34,18 +35,32 @@ public class QuizGenService {
         String systemInstruction =
                 "Bạn là trợ giảng nghiêm túc. Chỉ dựa vào nội dung tài liệu để tạo câu hỏi trắc nghiệm."
                         + " Mỗi câu có 4 phương án (A–D) và duy nhất 1 đáp án đúng."
-                        + " Bổ sung ngắn gọn: explanation, topic, difficulty (easy|medium|hard)."
-                        + " Trả về JSON đúng schema, không thêm text ngoài JSON.";
+                        + " Trả JSON đúng schema, không thêm text ngoài JSON."
+                        + " Lưu ý: options là object gồm {id, optionLabel, optionText}; id có thể null; optionLabel ∈ {A,B,C,D}.";
 
-        // 2) Schema
+        // --- NEW: schema cho OptionDTO ---
+        Schema optionSchema = Schema.builder()
+                .type(Type.Known.OBJECT)
+                .properties(Map.of(
+                        "id", Schema.builder().type(Type.Known.INTEGER).build(), // optional
+                        "optionLabel", Schema.builder().type(Type.Known.STRING)
+                                .enum_(List.of("A","B","C","D")).build(),
+                        "optionText", Schema.builder().type(Type.Known.STRING).build()
+                ))
+                .required(List.of("optionLabel","optionText")) // id không bắt buộc
+                .propertyOrdering(List.of("id","optionLabel","optionText"))
+                .build();
+
+        // --- UPDATE: schema cho question, options = array<object> ---
         Schema questionSchema = Schema.builder()
                 .type(Type.Known.OBJECT)
                 .properties(Map.of(
                         "questionText", Schema.builder().type(Type.Known.STRING).build(),
                         "options", Schema.builder().type(Type.Known.ARRAY)
                                 .minItems(4L).maxItems(4L)
-                                .items(Schema.builder().type(Type.Known.STRING).build())
+                                .items(optionSchema)
                                 .build(),
+                        // Giữ correctIndex để tương thích backend (0..3)
                         "correctIndex", Schema.builder().type(Type.Known.INTEGER)
                                 .minimum(0.0).maximum(3.0).build(),
                         "explanation", Schema.builder().type(Type.Known.STRING).build(),
@@ -72,17 +87,17 @@ public class QuizGenService {
             switch (settings.getAiLevel().toLowerCase()) {
                 case "strict" -> { temperature = 0.1f; topK = 30f; topP = 0.8f; }
                 case "creative" -> { temperature = 0.6f; topK = 50f; topP = 0.95f; }
-                default -> { /* balanced mặc định */ }
+                default -> {}
             }
         }
 
         GenerateContentConfig config = GenerateContentConfig.builder()
-                .systemInstruction( Content.builder()
-                        .role("system")
-                        .parts(List.of(Part.builder()
-                                .text(systemInstruction)
-                                .build()))
-                        .build())
+                .systemInstruction(
+                        Content.builder()
+                                .role("system")
+                                .parts(List.of(Part.builder().text(systemInstruction).build()))
+                                .build()
+                )
                 .responseMimeType("application/json")
                 .responseSchema(quizSchema)
                 .temperature(temperature)
@@ -97,11 +112,12 @@ public class QuizGenService {
 
         [VĂN BẢN TỪ FILE]
         %s
+
+        [ĐỊNH DẠNG OPTIONS]
+        Mỗi options[i] là object: { "id": null hoặc số, "optionLabel": "A|B|C|D", "optionText": "..."}.
         """.formatted(effectivePrompt, numQuestions, extractedText);
 
-        GenerateContentResponse resp =
-                client.models.generateContent(model, prompt, config);
-
+        GenerateContentResponse resp = client.models.generateContent(model, prompt, config);
         return resp.text();
     }
 }

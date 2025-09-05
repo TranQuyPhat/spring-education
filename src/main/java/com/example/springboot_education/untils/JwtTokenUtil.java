@@ -6,6 +6,10 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class JwtTokenUtil {
@@ -16,7 +20,53 @@ public class JwtTokenUtil {
         byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+    public List<String> getRolesFromToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+            Object rolesObj = claims.get("roles");
 
+            List<String> roleNames = new ArrayList<>();
+
+            if (rolesObj instanceof List<?>) {
+                for (Object role : (List<?>) rolesObj) {
+                    if (role instanceof Map<?, ?> map) {
+                        Object name = map.get("name");
+                        if (name instanceof String) {
+                            roleNames.add((String) name);
+                        }
+                    }
+                }
+            }
+
+            return roleNames;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error extracting roles from token: " + e.getMessage(), e);
+        }
+    }
+
+    public List<String> getRoleNamesFromToken(String token) {
+        Claims claims = getClaims(token);
+
+        Object rolesObj = claims.get("roles");
+        if (rolesObj instanceof List<?> rolesList) {
+            return rolesList.stream()
+                    .filter(Map.class::isInstance)
+                    .map(roleMap -> ((Map<?, ?>) roleMap).get("name"))
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .toList();
+        }
+
+        return List.of(); // Không có role
+    }
     public Integer getUserIdFromToken(String token) {
         try {
             Claims claims = Jwts.parser()

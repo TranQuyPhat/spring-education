@@ -103,7 +103,6 @@ public class QuizMapper2 {
         Users creator = userRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getCreatedBy()));
         quiz.setCreatedBy(creator);
-       ClassEntity classEntity2=classRepository.findById(dto.getClassId()).orElseThrow(() -> new RuntimeException("Class not found with ID: " + dto.getSubject()));
         quiz.setCreatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
         quiz.setUpdatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
         return quiz;

@@ -16,7 +16,6 @@ public class QuestionTeacherDTO extends QuestionBaseDTO {
     private String correctOption;
     private Set<String> correctAnswerTexts;
     private String correctAnswerRegex;
-
     private boolean caseSensitive;
     private boolean trimWhitespace;
 }
