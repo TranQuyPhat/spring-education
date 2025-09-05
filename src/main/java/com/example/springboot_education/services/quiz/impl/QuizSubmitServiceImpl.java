@@ -6,9 +6,8 @@ import com.example.springboot_education.entities.*;
 import com.example.springboot_education.exceptions.ResourceNotFoundException;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
-import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
-import com.example.springboot_education.services.ActivityLogService;
+import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizSubmitService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,9 +29,8 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     private static final Logger log = LoggerFactory.getLogger(QuizSubmitServiceImpl.class);
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final QuizAnswerRepository quizAnswerRepository;
-    private final QuizRepository quizRepository;
     private final UsersJpaRepository userRepository;
-    private final ActivityLogService activityLogService;
+    private final QuizAccessService quizAccessService;
     @Override
     public List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId) {
         List<QuizSubmission> submissions = quizSubmissionRepository.findAllByQuizIdWithDetails(quizId);
@@ -61,10 +60,9 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
 
     @Override
     @Transactional
-    public QuizSubmissionBaseDTO submitQuiz(QuizSubmitReqDTO request) {
-        Quiz quiz = quizRepository.findById(request.getQuizId())
-                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
-        Users student = userRepository.findById(request.getStudentId())
+    public QuizSubmissionBaseDTO submitQuiz(Integer quizId, Integer studentId,QuizSubmitReqDTO request) {
+        Quiz quiz = quizAccessService.assertStudentCanAccess(quizId, studentId);
+        Users student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
 
         QuizSubmission submission = new QuizSubmission();
@@ -81,18 +79,14 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
 
         List<QuizAnswer> answers = new ArrayList<>(totalQuestions);
         for (QuizQuestion question : quiz.getQuestions()) {
-            // Lấy câu trả lời của user (có thể là List<String> hoặc String)
             List<String> userAnswers = request.getAnswers().get(question.getId());
 
-            // Chuyển thành format string để lưu DB
             String userAnswerStr = userAnswers != null ?
                     String.join(",", userAnswers) : null;
 
-            // Kiểm tra đáp án
             boolean isCorrect = checkAnswer(userAnswers, question.getCorrectOptions());
 
             if (isCorrect) {
-                totalScore = totalScore.add(question.getScore());
                 correctCount++;
             }
 
@@ -103,7 +97,8 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
             answer.setIsCorrect(isCorrect);
             answers.add(answer);
         }
-
+        double percentage = (double) correctCount / totalQuestions;
+         totalScore = BigDecimal.valueOf(percentage * 10).setScale(2, RoundingMode.HALF_UP);
         quizAnswerRepository.saveAll(answers);
         submission.setScore(totalScore);
         submission.setGradedAt(Instant.now());

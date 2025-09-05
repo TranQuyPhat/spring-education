@@ -22,11 +22,13 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
+import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizService;
 import com.example.springboot_education.untils.QuizUtils;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +52,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassUserRepository classUserRepository;
-
+    private final QuizAccessService quizAccessService;
     @Override
     @Transactional
     @LoggableAction(value = "CREATE", entity = "quizzes", description = "Created new quiz")
@@ -67,8 +69,6 @@ public class QuizServiceImpl implements QuizService {
             question.setScore(qdto.getScore());
             question.setCreatedAt(Instant.now());
             question.setUpdatedAt(Instant.now());
-
-            // correctOptions normalize + validate
             String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOption());
             QuizUtils.validateByType(qdto.getQuestionType(), normalized);
             question.setCorrectOptions(normalized);
@@ -85,7 +85,6 @@ public class QuizServiceImpl implements QuizService {
 
             question = questionRepository.save(question);
 
-            // Option labels: enforce unique + normalize
             Set<String> seen = new HashSet<>();
             for (OptionDTO opt : qdto.getOptions()) {
                 String label = (opt.getOptionLabel() == null ? "" : opt.getOptionLabel().trim().toUpperCase());
@@ -109,7 +108,7 @@ public class QuizServiceImpl implements QuizService {
 
         return getQuizForTeacher(quiz.getId());
     }
-
+    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
     @Override
     public List<QuizResponseTeacherDTO> getQuizzesByTeacherId(Integer teacherId) {
         List<Quiz> quizzes = quizRepository.findByCreatedBy_Id(teacherId);
@@ -139,35 +138,34 @@ public class QuizServiceImpl implements QuizService {
                 .toList();
     }
 
-
+    @Cacheable(value = "quizzesByStudent", key = "#studentId")
     @Override
     public List<QuizResponseStudentDTO> getQuizzesByStudentId(Integer studentId) {
         List<Object[]> rows = quizRepository.findBasicQuizzesByStudentId(studentId);
-
-        // Lấy danh sách quiz đã nộp
-        List<Integer> submittedQuizIds = quizSubmissionRepository.findSubmittedQuizIdsByStudentId(studentId);
-
-        Set<Integer> submittedQuizIdSet = new HashSet<>(submittedQuizIds); // để check nhanh
-
         List<QuizResponseStudentDTO> quizzes = new ArrayList<>();
 
         for (Object[] row : rows) {
             QuizResponseStudentDTO dto = new QuizResponseStudentDTO();
-            Integer quizId = (Integer) row[0];
 
-            dto.setId(quizId);
+            dto.setId((Integer) row[0]);
             dto.setTitle((String) row[1]);
             dto.setDescription((String) row[2]);
             dto.setTimeLimit(row[3] != null ? ((Number) row[3]).intValue() : null);
-            dto.setStartDate(QuizUtils.convertToLocalDateTime(row[4]));
+            dto.setStartDate(QuizUtils.convertToLocalDateTime(row[4])); // LocalDateTime
             dto.setEndDate(QuizUtils.convertToLocalDateTime(row[5]));
-            dto.setGrade((String) row[6]);
-            dto.setSubject((String) row[7]);
-            dto.setSubmitted(submittedQuizIdSet.contains(quizId));
+            dto.setSubject((String) row[6]);
+            dto.setClassName((String) row[7]);
+            dto.setTotalQuestion(row[8] != null ? ((Number) row[8]).intValue() : 0);
+
+            if (row[9] != null) {
+                dto.setScore(((Number) row[9]).doubleValue());
+            }
+
+            boolean submitted = row[11] != null && ((Number) row[11]).intValue() == 1;
+            dto.setSubmitted(submitted);
 
             quizzes.add(dto);
         }
-
         return quizzes;
     }
 
@@ -208,7 +206,30 @@ public class QuizServiceImpl implements QuizService {
 
         return quizMapper2.toStudentDto(quiz, questionDTOs);
     }
+    public QuizResponseStudentDTO getQuizForStudent(Integer quizId, Integer studentId) {
+        Quiz quiz = quizAccessService.assertStudentCanAccess(quizId, studentId);
+        var questions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
+        var qDtos = questions.stream().map(q -> {
+            var opts = optionRepository.findByQuestion_Id(q.getId());
+            var oDtos = opts.stream().map(quizMapper2::toOptionDto).toList();
+            return quizMapper2.toStudentQuestionDto(q, oDtos);
+        }).toList();
+        return quizMapper2.toStudentDto(quiz, qDtos);
+    }
 
+    // ⭐ Thêm biến thể guard cho trang câu hỏi (student)
+    @Transactional(readOnly = true)
+    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(
+            Integer quizId, int page, int size, Integer studentId) {
+        quizAccessService.assertStudentCanAccess(quizId, studentId);
+        return getQuizQuestionsPage(
+                quizId, page, size,
+                (q, optsByQid) -> {
+                    var opts = optsByQid.getOrDefault(q.getId(), List.of());
+                    return quizMapper2.toStudentQuestionDto(q, opts);
+                }
+        );
+    }
     @Override
     @Transactional
     @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Update quiz")

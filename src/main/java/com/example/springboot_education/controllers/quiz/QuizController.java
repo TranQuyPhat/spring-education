@@ -1,22 +1,21 @@
 package com.example.springboot_education.controllers.quiz;
 
 
+import com.example.springboot_education.annotations.CurrentUser;
 import com.example.springboot_education.dtos.quiz.APIResponse;
-import com.example.springboot_education.dtos.quiz.QuestionsPageResponseDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
 import com.example.springboot_education.dtos.quiz.base.QuizBaseDTO;
-import com.example.springboot_education.dtos.quiz.student.QuestionStudentDTO;
 import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO;
-import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
+import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.services.quiz.QuizService;
+import com.example.springboot_education.services.quiz.impl.QuizServiceImpl;
 import com.example.springboot_education.untils.JwtTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +29,30 @@ public class QuizController {
     @PostMapping
     public ResponseEntity<QuizBaseDTO> createQuiz(@RequestBody QuizRequestDTO request) {
         return ResponseEntity.ok(quizService.createQuiz(request));
+    }
+    @GetMapping("/{quizId}")
+    public ResponseEntity<?> getQuizByRole(
+            @PathVariable Integer quizId,
+            @CurrentUser Users currentUser) {
+        try {
+            var roles = currentUser.getUserRoles();
+            boolean isTeacher = roles.stream().anyMatch(r -> "teacher".equalsIgnoreCase(r.getRole().getName()));
+            boolean isStudent = roles.stream().anyMatch(r -> "student".equalsIgnoreCase(r.getRole().getName()));
+
+            if (isTeacher) {
+                var teacherDTO = quizService.getQuizForTeacher(quizId);
+                return ResponseEntity.ok(new APIResponse<>(true, "Dành cho giáo viên", teacherDTO));
+            } else if (isStudent) {
+                var studentDTO = ((QuizServiceImpl)quizService).getQuizForStudent(quizId, currentUser.getId());
+                return ResponseEntity.ok(new APIResponse<>(true, "Dành cho học sinh", studentDTO));
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new APIResponse<>(false, "Không có quyền truy cập", null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new APIResponse<>(false, "Lỗi: " + e.getMessage(), null));
+        }
     }
     @GetMapping("/teacher")
     public ResponseEntity<APIResponse<List<QuizResponseTeacherDTO>>> getQuizzesByCurrentTeacher(
@@ -87,27 +110,26 @@ public class QuizController {
             @PathVariable Integer id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            Authentication authentication
+            @CurrentUser Users currentUser
     ) {
-        var authorities = authentication.getAuthorities();
-        boolean isTeacher = authorities.stream().anyMatch(a -> a.getAuthority().equals("teacher"));
-        boolean isStudent = authorities.stream().anyMatch(a -> a.getAuthority().equals("student"));
+        var roles = currentUser.getUserRoles();
+        boolean isTeacher = roles.stream().anyMatch(r -> "teacher".equalsIgnoreCase(r.getRole().getName()));
+        boolean isStudent = roles.stream().anyMatch(r -> "student".equalsIgnoreCase(r.getRole().getName()));
 
         if (isTeacher) {
-            QuestionsPageResponseDTO<QuestionTeacherDTO> dto =
-                    quizService.getQuizQuestionsPageForTeacher(id, page, size);
+            var dto = quizService.getQuizQuestionsPageForTeacher(id, page, size);
             return ResponseEntity.ok(dto);
         } else if (isStudent) {
-            QuestionsPageResponseDTO<QuestionStudentDTO> dto =
-                    quizService.getQuizQuestionsPageForStudent(id, page, size);
+            // dùng method có guard
+            var dto = ((QuizServiceImpl)quizService).getQuizQuestionsPageForStudent(id, page, size, currentUser.getId());
             return ResponseEntity.ok(dto);
         }
-
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body("You don't have permission to access this quiz questions page");
     }
 
-        //    @GetMapping("/{id}")
+
+    //    @GetMapping("/{id}")
         //public ResponseEntity<?> getQuizByRole(
         //        @PathVariable Integer id,
         //        @RequestParam(defaultValue = "student") String role
@@ -154,30 +176,15 @@ public class QuizController {
     public void deleteQuiz(@PathVariable Integer id) {
         quizService.deleteQuiz(id);
     }
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<APIResponse<List<QuizResponseStudentDTO>>> getStudentQuizzes(
-            @PathVariable Integer studentId) {
+    @GetMapping("/student")
+    public ResponseEntity<APIResponse<List<QuizResponseStudentDTO>>> getStudentQuizzes(@CurrentUser Users student) {
+        List<QuizResponseStudentDTO> quizzes = quizService.getQuizzesByStudentId(student.getId());
 
-        try {
-            List<QuizResponseStudentDTO> quizzes = quizService.getQuizzesByStudentId(studentId);
-
-            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
-                    true,
-                    "Lấy danh sách quiz thành công",
-                    quizzes
-            );
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            APIResponse<List<QuizResponseStudentDTO>> response = new APIResponse<>(
-                    false,
-                    "Có lỗi xảy ra khi lấy danh sách quiz: " + e.getMessage(),
-                    null
-            );
-
-            return ResponseEntity.internalServerError().body(response);
-        }
+        return ResponseEntity.ok(new APIResponse<>(
+                true,
+                "Lấy danh sách quiz của học sinh thành công",
+                quizzes
+        ));
     }
 
     /**

@@ -83,5 +83,5 @@ public interface QuizSubmissionRepository extends JpaRepository<QuizSubmission, 
     GROUP BY c.id, c.className, s.fullName, s.email
 """)
     List<BaseScoreStatsDTO> findQuizAverageByTeacher(@Param("teacherId") Integer teacherId);
-
+    boolean existsByQuizIdAndStudentId(Integer quizId, Integer studentId);
 }

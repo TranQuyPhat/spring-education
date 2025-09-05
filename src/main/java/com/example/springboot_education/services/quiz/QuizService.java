@@ -25,3 +25,4 @@ public interface QuizService {
 List<QuizResponseTeacherDTO> getQuizzesByTeacherId(Integer teacherId);}
 
 
+
