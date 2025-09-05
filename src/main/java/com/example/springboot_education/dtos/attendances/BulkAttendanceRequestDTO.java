@@ -8,8 +8,9 @@ import java.util.List;
 @Data
 public class BulkAttendanceRequestDTO {
 
-    @NotNull
-    private Integer sessionId;
+    // @NotNull
+    // private Integer sessionId;
+    private String noteSession;
 
     @NotNull
     private List<AttendanceRequestDTO> records;
