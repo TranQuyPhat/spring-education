@@ -39,6 +39,11 @@ public class ClassSchedulePatternService {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
+        boolean exists = patternRepository.existsByClassEntity(classEntity);
+        if (exists) {
+            throw new RuntimeException("Class already has a schedule");
+        }
+
         List<ClassSchedulePatternResponseDTO> result = new ArrayList<>();
 
         for (ClassSchedulePatternCreateDTO.SlotDTO slot : dto.getSlots()) {

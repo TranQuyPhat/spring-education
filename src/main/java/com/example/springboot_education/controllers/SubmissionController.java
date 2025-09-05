@@ -40,7 +40,7 @@ public class SubmissionController {
             @RequestParam("assignmentId") Integer assignmentId,
             @RequestParam("studentId") Integer studentId,
             @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestParam(required = false) String description) throws IOException {
+            @RequestParam(value = "description", required = false) String description) throws IOException {
 
         SubmissionRequestDto requestDto = new SubmissionRequestDto();
         requestDto.setAssignmentId(assignmentId);

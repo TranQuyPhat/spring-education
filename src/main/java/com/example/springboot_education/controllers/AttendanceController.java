@@ -2,7 +2,10 @@ package com.example.springboot_education.controllers;
 
 import com.example.springboot_education.dtos.attendances.AttendanceRequestDTO;
 import com.example.springboot_education.dtos.attendances.AttendanceResponseDTO;
+import com.example.springboot_education.dtos.attendances.BulkAttendanceRequestDTO;
 import com.example.springboot_education.services.AttendanceService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,13 +22,20 @@ public class AttendanceController {
     /**
      * Submit điểm danh cho cả lớp trong 1 buổi học
      */
+    // @PostMapping("/{sessionId}")
+    // public ResponseEntity<String> recordAttendance(
+    //         @PathVariable("sessionId") Integer sessionId,
+    //         @RequestBody List<AttendanceRequestDTO> records
+    // ) {
+    //     attendanceService.recordAttendance(sessionId, records);
+    //     return ResponseEntity.ok("Attendance recorded successfully");
+    // }
     @PostMapping("/{sessionId}")
-    public ResponseEntity<String> recordAttendance(
+    public ResponseEntity<Void> recordAttendance(
             @PathVariable("sessionId") Integer sessionId,
-            @RequestBody List<AttendanceRequestDTO> records
-    ) {
-        attendanceService.recordAttendance(sessionId, records);
-        return ResponseEntity.ok("Attendance recorded successfully");
+            @RequestBody @Valid BulkAttendanceRequestDTO request) {
+        attendanceService.recordAttendance(sessionId, request);
+        return ResponseEntity.ok().build();
     }
 
     /**

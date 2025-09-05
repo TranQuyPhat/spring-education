@@ -7,13 +7,17 @@ import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionUpdateDTO;
+import com.example.springboot_education.dtos.classschedules.SessionLocationUpdateDTO;
+import com.example.springboot_education.dtos.classschedules.SessionStatusUpdateDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassSchedulePattern;
 import com.example.springboot_education.entities.ClassScheduleSession;
+import com.example.springboot_education.entities.Location;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.classes.ClassesJpaRepository;
 import com.example.springboot_education.repositories.schedules.ClassSchedulePatternRepository;
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
+import com.example.springboot_education.repositories.schedules.LocationRepository;
 
 import jakarta.persistence.criteria.CriteriaBuilder.In;
 
@@ -26,13 +30,15 @@ public class ClassScheduleSessionService {
     private final ClassScheduleSessionRepository sessionRepository;
     private final ClassSchedulePatternRepository patternRepository;
     private final ClassesJpaRepository classRepository;
+    private final LocationRepository locationRepository;
+
 
     @LoggableAction(value = "CREATE", entity = "class_schedule_sessions", description = "Tạo buổi học")
     public ClassScheduleSessionResponseDTO create(ClassScheduleSessionCreateDTO dto) {
         ClassSchedulePattern pattern = patternRepository.findById(dto.getPatternId())
                 .orElseThrow(() -> new EntityNotFoundException("Pattern"));
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new EntityNotFoundException("Class"));
+                .orElseThrow(() -> new RuntimeException("Class not found"));     
 
         ClassScheduleSession session = new ClassScheduleSession();
         session.setPattern(pattern);
@@ -86,6 +92,25 @@ public class ClassScheduleSessionService {
             throw new EntityNotFoundException("Session");
         }
         sessionRepository.deleteById(id);
+    }
+
+    public ClassScheduleSessionResponseDTO updateStatus(Integer id, SessionStatusUpdateDTO dto) {
+        ClassScheduleSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+        session.setStatus(ClassScheduleSession.SessionStatus.valueOf(dto.getStatus()));
+        return mapToDTO(sessionRepository.save(session));
+    }
+
+    public ClassScheduleSessionResponseDTO updateLocation(Integer id, SessionLocationUpdateDTO dto) {
+        ClassScheduleSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // lấy entity Location mới
+        // Location location = locationRepository.findById(dto.getLocationId())
+        //         .orElseThrow(() -> new RuntimeException("Location not found: " + dto.getLocationId()));
+
+        session.setLocation(dto.getLocation()); // nếu ClassScheduleSession có quan hệ @ManyToOne Location
+        return mapToDTO(sessionRepository.save(session));
     }
 
     private ClassScheduleSessionResponseDTO mapToDTO(ClassScheduleSession entity) {
