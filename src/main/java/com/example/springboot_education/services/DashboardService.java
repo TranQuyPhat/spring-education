@@ -1,9 +1,5 @@
 package com.example.springboot_education.services;
 
-import java.sql.Timestamp;
-import java.util.*;
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.dashboardsClient.DashboardActivityDTO;
@@ -15,13 +11,16 @@ import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.services.grade.impl.GradeStatsServiceImpl;
 import com.example.springboot_education.untils.TimeAgoUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -82,9 +81,10 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
                             .orElse(0.0)
             )
             .recentActivities(top5Activities)
-                    .upcomingDeadlinesTeacher(upcomingDeadlines)
+                    .upcomingDeadlinesTeacher(upcomingDeadlines) 
             .build();
 }
+
 
     public StudentDashboardResponse getStudentDashboard(Integer studentId) {
         List<UpcomingAssignmentDto> upcoming = assignmentService.getUpcomingAssignments(studentId);
@@ -114,3 +114,4 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
     }
 
 }
+
