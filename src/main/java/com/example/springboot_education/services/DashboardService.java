@@ -1,9 +1,5 @@
 package com.example.springboot_education.services;
 
-import java.sql.Timestamp;
-import java.util.*;
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.dashboardsClient.DashboardActivityDTO;
@@ -12,8 +8,13 @@ import com.example.springboot_education.dtos.dashboardsClient.TeacherDashboardRe
 import com.example.springboot_education.repositories.DashboardRepository;
 import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.untils.TimeAgoUtil;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
