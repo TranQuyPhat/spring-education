@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionResponseDTO;
-
+import com.example.springboot_education.entities.ClassScheduleSession;
 import com.example.springboot_education.services.schedules.ClassScheduleSessionService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -36,4 +38,11 @@ public class ClassScheduleSessionController {
         List<ClassScheduleSessionResponseDTO> sessions = sessionService.getAllByClass(classId);
         return ResponseEntity.ok(sessions);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<ClassScheduleSessionResponseDTO> getSessionById(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(sessionService.getSessionById(id));
+    }
+        
+
+
 }

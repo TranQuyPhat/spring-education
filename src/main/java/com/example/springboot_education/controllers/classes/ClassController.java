@@ -13,6 +13,8 @@ import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
 import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.services.classes.ClassService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -61,6 +63,10 @@ public class ClassController {
     ) {
         return classService.getClassesOfTeacher(teacherId, page, size);
     }
+    @PostMapping("/test")  
+public String test(@RequestBody CreateClassDTO dto) {
+    return "OK - TeacherId: " + dto.getTeacherId();
+}
 
     
 }

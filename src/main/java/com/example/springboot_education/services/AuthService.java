@@ -193,40 +193,46 @@ public class AuthService {
     }
 
     // ✅ Đăng nhập
-    public LoginResponseDto login(LoginRequestDto request) {
-        Users user = null;
+   public LoginResponseDto login(LoginRequestDto request) {
+    Users user = null;
 
-        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            user = userJpaRepository.findByEmailWithRoles(request.getEmail())
-                    .orElseThrow(() -> new HttpException("Invalid email or password", HttpStatus.UNAUTHORIZED));
-        } else if (request.getUsername() != null && !request.getUsername().isEmpty()) {
-            user = userJpaRepository.findByUsernameWithRoles(request.getUsername())
-                    .orElseThrow(() -> new HttpException("Invalid username or password", HttpStatus.UNAUTHORIZED));
-        } else {
-            throw new HttpException("Username or Email is required", HttpStatus.BAD_REQUEST);
-        } 
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
-        }
-
-        String accessToken = jwtService.generateAccessToken(user);
-
-        List<String> roles = user.getUserRoles()
-                .stream()
-                .map(ur -> ur.getRole().getName())
-                .collect(Collectors.toList());
-
-        return LoginResponseDto.builder()
-                .userId(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .imageUrl(user.getImageUrl())
-                .accessToken(accessToken)
-                .roles(roles)
-                .build();
+    if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+        user = userJpaRepository.findByEmailWithRoles(request.getEmail())
+                .orElseThrow(() -> new HttpException("Invalid email or password", HttpStatus.UNAUTHORIZED));
+    } else if (request.getUsername() != null && !request.getUsername().isEmpty()) {
+        user = userJpaRepository.findByUsernameWithRoles(request.getUsername())
+                .orElseThrow(() -> new HttpException("Invalid username or password", HttpStatus.UNAUTHORIZED));
+    } else {
+        throw new HttpException("Username or Email is required", HttpStatus.BAD_REQUEST);
     }
+
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+    }
+
+    String accessToken = jwtService.generateAccessToken(user);
+
+    List<String> roles = user.getUserRoles()
+            .stream()
+            .map(ur -> ur.getRole().getName())
+            .collect(Collectors.toList());
+
+    // map avatarBase64 từ blob
+    String avatarBase64 = null;
+    if (user.getAvatar() != null) {
+        avatarBase64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(user.getAvatar());
+    }
+
+    return LoginResponseDto.builder()
+            .userId(user.getId())
+            .username(user.getUsername())
+            .email(user.getEmail())
+            .fullName(user.getFullName())
+            .avatarBase64(avatarBase64)  
+            .accessToken(accessToken)
+            .roles(roles)
+            .build();
+}
 
     public LoginResponseDto googleLogin(GoogleLoginRequestDto request) {
         if (request.getEmail() == null || request.getEmail().isEmpty()) {
@@ -244,7 +250,7 @@ public class AuthService {
                     request.getEmail().length() > 50 ? request.getEmail().substring(0, 50) : request.getEmail());
             user.setPassword(UUID.randomUUID().toString()); // password ngẫu nhiên
             user.setFullName(request.getName());
-            user.setImageUrl(request.getImageUrl());
+            // user.setavatarBase64(request.getavatarBase64());
 
             // Lưu user trước để có ID
             Users savedUser = userJpaRepository.save(user);
@@ -321,7 +327,7 @@ public class AuthService {
     u.setUsername(email.length() > 50 ? email.substring(0, 50) : email);
     u.setPassword(UUID.randomUUID().toString());
     u.setFullName((String) payload.get("name"));
-    u.setImageUrl((String) payload.get("picture"));
+    // u.setAvatarBase64((String) payload.get("picture"));
     u.setUserRoles(new ArrayList<>());
     return userJpaRepository.save(u);
 });

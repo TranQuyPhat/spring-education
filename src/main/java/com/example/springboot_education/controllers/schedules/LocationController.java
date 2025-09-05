@@ -4,6 +4,8 @@ package com.example.springboot_education.controllers.schedules;
 
 import com.example.springboot_education.dtos.classschedules.locations.*;
 import com.example.springboot_education.services.schedules.LocationService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +20,14 @@ public class LocationController {
     private final LocationService locationService;
 
     @PostMapping
-    public ResponseEntity<LocationDTO> create(@RequestBody CreateLocationRequest request) {
+    public ResponseEntity<LocationDTO> create(@Valid @RequestBody CreateLocationRequest request) {
         return ResponseEntity.ok(locationService.createLocation(request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LocationDTO> update(
             @PathVariable Integer id,
+            @Valid
             @RequestBody UpdateLocationRequest request) {
         return ResponseEntity.ok(locationService.updateLocation(id, request));
     }

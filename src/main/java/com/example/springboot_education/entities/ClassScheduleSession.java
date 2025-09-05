@@ -1,8 +1,8 @@
 package com.example.springboot_education.entities;
 
 
+import java.time.Instant;
 import java.time.LocalDate;
-
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -59,6 +59,9 @@ public class ClassScheduleSession {
     @Column(name = "note")
     private String note;
 
+
+    @Column(name = "submitted_at")
+    private Instant submittedAt;
 
     public enum SessionStatus {
         SCHEDULED,   // Buổi học theo lịch

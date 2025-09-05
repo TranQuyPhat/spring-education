@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         List<GrantedAuthority> authorities = new ArrayList<>();
        user.getUserRoles().forEach(userRole -> {
     Role role = userRole.getRole();
-            // Nếu dùng @PreAuthorize("hasAuthority('Administrators')") thì
+            
             authorities.add(new SimpleGrantedAuthority(role.getName()));
         });
 

@@ -47,23 +47,24 @@ public class AssignmentController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AssignmentResponseDto> createAssignment(
-            @RequestParam Integer classId,
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
-            @RequestParam BigDecimal maxScore,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
-        CreateAssignmentRequestDto dto = new CreateAssignmentRequestDto();
-        dto.setClassId(classId);
-        dto.setTitle(title);
-        dto.setDescription(description);
-        dto.setDueDate(dueDate);
-        dto.setMaxScore(maxScore);
+public ResponseEntity<AssignmentResponseDto> createAssignment(
+        @RequestParam("classId") Integer classId,
+        @RequestParam("title") String title,
+        @RequestParam(value = "description", required = false) String description,
+        @RequestParam(value = "dueDate") 
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
+        @RequestParam("maxScore") BigDecimal maxScore,
+        @RequestPart(value = "file", required = false) MultipartFile file
+) throws IOException {
+    CreateAssignmentRequestDto dto = new CreateAssignmentRequestDto();
+    dto.setClassId(classId);
+    dto.setTitle(title);
+    dto.setDescription(description);
+    dto.setDueDate(dueDate);
+    dto.setMaxScore(maxScore);
 
-        return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));
-    }
+    return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));
+}
 
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AssignmentResponseDto> updateAssignment(

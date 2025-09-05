@@ -13,10 +13,11 @@ import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
 import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityDuplicateException;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,11 +37,15 @@ public class SubjectService {
     public SubjectResponseDTO findById(Integer id) {
         return subjectRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Subject with id: " + id));
     }
 
     @LoggableAction(value = "CREATE", entity = "subjects", description = "Create new subject")
     public SubjectResponseDTO create(CreateSubjectDTO dto) {
+        // Check duplicate subject name
+        if (subjectRepository.existsBySubjectName(dto.getSubjectName())) {
+            throw new EntityDuplicateException("Subject with name '" + dto.getSubjectName() + "'");
+        }
         Subject subject = new Subject();
         subject.setSubjectName(dto.getSubjectName());
         subject.setDescription(dto.getDescription());
@@ -48,7 +53,7 @@ public class SubjectService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Users creator = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User with username " + username));
         subject.setCreatedBy(creator);
 
         Subject saved = subjectRepository.save(subject);
@@ -58,8 +63,12 @@ public class SubjectService {
     @LoggableAction(value = "UPDATE", entity = "subjects", description = "Update subject")
     public SubjectResponseDTO update(Integer id, UpdateSubjectDTO dto) {
         Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
-
+                .orElseThrow(() -> new EntityNotFoundException("Subject with id " + id));
+        // Check duplicate if subjectName changed
+        if (!subject.getSubjectName().equals(dto.getSubjectName()) &&
+                subjectRepository.existsBySubjectName(dto.getSubjectName())) {
+            throw new EntityDuplicateException("Subject with name '" + dto.getSubjectName() + "'");
+        }
         subject.setSubjectName(dto.getSubjectName());
         subject.setDescription(dto.getDescription());
 
@@ -71,7 +80,7 @@ public class SubjectService {
     @LoggableAction(value = "DELETE", entity = "subjects", description = "Delete subject")
     public void delete(Integer id) {
         Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Subject with id " + id));
 
         subjectRepository.delete(subject);
     }

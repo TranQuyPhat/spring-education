@@ -28,8 +28,8 @@ public class UpdateUserRequestDto {
     @Email(message = "Email is invalid")
     private String email;
     
-    @JsonAlias("image_url")
-    private String imageUrl;
+    @JsonAlias("avatar")
+     private String avatarBase64;
 
         private List<Integer> roles; 
     

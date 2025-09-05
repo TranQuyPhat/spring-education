@@ -38,6 +38,6 @@ public class SubmissionResponseDto {
         private Integer id;
         private String fullName;
         private String email;
-        private String imageUrl;
+        private String avatarBase64;
     }
 }

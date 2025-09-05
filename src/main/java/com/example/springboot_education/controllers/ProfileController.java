@@ -15,9 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus; 
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
+
 @RequiredArgsConstructor
 @Slf4j
 @RestController
@@ -34,7 +35,7 @@ public class ProfileController {
         return ResponseEntity.ok(userService.convertToDtoPublic(user));
     }
 
-    // Update profile (fullName and imageUrl)
+    // Update profile (fullName and avatarBase64)
     @PatchMapping("")
     public ResponseEntity<UserResponseDto> updateProfile(@RequestBody UpdateProfileRequestDto dto) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -52,11 +53,11 @@ public class ProfileController {
         return ResponseEntity.ok().build();
     }
 
-@PostMapping("/avatar")
+   @PostMapping("/avatar")
 @Transactional
 public ResponseEntity<UserResponseDto> uploadAvatar(@RequestBody Map<String, String> payload) {
     try {
-        String base64 = payload.get("imageUrl");
+        String base64 = payload.get("avatarBase64"); 
         if (base64 == null || base64.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -73,7 +74,7 @@ public ResponseEntity<UserResponseDto> uploadAvatar(@RequestBody Map<String, Str
         return ResponseEntity.ok(
             userService.updateProfileByUser(
                 user.getId(),
-                new UpdateProfileRequestDto(user.getFullName(), base64)
+                new UpdateProfileRequestDto(user.getFullName(), base64) 
             )
         );
     } catch (Exception e) {

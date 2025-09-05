@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import java.sql.Timestamp;
 import java.util.List;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,17 +17,12 @@ import java.util.List;
 public class UserResponseDto {
     private Integer id;
     private String username;
-
     @JsonProperty("full_name")
     private String fullName;
-
-    @JsonProperty("image_url")
-    private String imageUrl;
-
+    private String avatarBase64;
     private String email;
     private List<RoleResponseDto> roles;
     private Timestamp createdAt;
     private Timestamp updatedAt;
-
 
 }

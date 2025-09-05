@@ -4,6 +4,8 @@ import com.example.springboot_education.dtos.subjects.CreateSubjectDTO;
 import com.example.springboot_education.dtos.subjects.SubjectResponseDTO;
 import com.example.springboot_education.dtos.subjects.UpdateSubjectDTO;
 import com.example.springboot_education.services.SubjectService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +30,12 @@ public class SubjectController {
     }
 
     @PostMapping
-    public ResponseEntity<SubjectResponseDTO> createSubject(@RequestBody CreateSubjectDTO dto) {
+    public ResponseEntity<SubjectResponseDTO> createSubject(@Valid @RequestBody CreateSubjectDTO dto) {
         return ResponseEntity.ok(subjectService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SubjectResponseDTO> updateSubject(@PathVariable("id") Integer id, @RequestBody UpdateSubjectDTO dto) {
+    public ResponseEntity<SubjectResponseDTO> updateSubject(@PathVariable("id") Integer id, @Valid @RequestBody UpdateSubjectDTO dto) {
         return ResponseEntity.ok(subjectService.update(id, dto));
     }
 
