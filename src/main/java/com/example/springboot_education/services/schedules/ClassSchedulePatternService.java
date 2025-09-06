@@ -4,15 +4,16 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternUpdateDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Location;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.entities.ClassSchedulePattern;
 import com.example.springboot_education.entities.ClassScheduleSession;
 import com.example.springboot_education.repositories.classes.ClassesJpaRepository;
@@ -20,7 +21,6 @@ import com.example.springboot_education.repositories.schedules.ClassSchedulePatt
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
 import com.example.springboot_education.repositories.schedules.LocationRepository;
 
-import jakarta.transaction.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -44,7 +44,7 @@ public class ClassSchedulePatternService {
 
         boolean exists = patternRepository.existsByClassEntity(classEntity);
         if (exists) {
-            throw new RuntimeException("Class already has a schedule");
+            throw new HttpException("Class already has a schedule", HttpStatus.CONFLICT);
         }
 
         List<ClassSchedulePatternResponseDTO> result = new ArrayList<>();
