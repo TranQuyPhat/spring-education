@@ -4,21 +4,23 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternCreateDTO;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternResponseDTO;
 import com.example.springboot_education.dtos.classschedules.ClassSchedulePatternUpdateDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Location;
-
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.entities.ClassSchedulePattern;
 import com.example.springboot_education.entities.ClassScheduleSession;
 import com.example.springboot_education.repositories.classes.ClassesJpaRepository;
 import com.example.springboot_education.repositories.schedules.ClassSchedulePatternRepository;
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
 import com.example.springboot_education.repositories.schedules.LocationRepository;
+
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -34,21 +36,22 @@ public class ClassSchedulePatternService {
     private final LocationRepository locationRepository;
     private final ClassScheduleSessionRepository sessionRepository;
 
-    // @LoggableAction(value = "CREATE", entity = "class_schedules", description = "Tạo nhiều pattern cho 1 lớp")
+    // @LoggableAction(value = "CREATE", entity = "class_schedules", description =
+    // "Tạo nhiều pattern cho 1 lớp")
     public List<ClassSchedulePatternResponseDTO> createBatch(ClassSchedulePatternCreateDTO dto) {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         boolean exists = patternRepository.existsByClassEntity(classEntity);
         if (exists) {
-            throw new RuntimeException("Class already has a schedule");
+            throw new HttpException("Class already has a schedule", HttpStatus.CONFLICT);
         }
 
         List<ClassSchedulePatternResponseDTO> result = new ArrayList<>();
 
         for (ClassSchedulePatternCreateDTO.SlotDTO slot : dto.getSlots()) {
             Location location = locationRepository.findById(slot.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("Location not found: " + slot.getLocationId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Location" + slot.getLocationId()));
 
             // Tạo pattern
             ClassSchedulePattern pattern = new ClassSchedulePattern();
@@ -90,7 +93,11 @@ public class ClassSchedulePatternService {
             current = current.plusDays(1);
         }
     }
+
     public List<ClassSchedulePatternResponseDTO> getAllByClass(Integer classId) {
+        classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
+
         return patternRepository.findByClassEntity_Id(classId)
                 .stream()
                 .map(this::mapToDTO)
@@ -106,10 +113,16 @@ public class ClassSchedulePatternService {
 
         for (ClassSchedulePatternUpdateDTO.PatternUpdateDTO item : dto.getPatterns()) {
             ClassSchedulePattern pattern = patternRepository.findById(item.getId())
-                    .orElseThrow(() -> new RuntimeException("Pattern not found: " + item.getId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Pattern" + item.getId()));
 
             Location location = locationRepository.findById(item.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("Location not found: " + item.getLocationId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Location" + item.getLocationId()));
+
+            if (pattern.getClassEntity() == null ||
+                    !classRepository.existsById(pattern.getClassEntity().getId())) {
+                throw new EntityNotFoundException(
+                        "ClassEntity for pattern " + item.getId());
+            }
 
             if (item.getDayOfWeek() != null) {
                 pattern.setDayOfWeek(DayOfWeek.valueOf(item.getDayOfWeek().toUpperCase()));
@@ -123,7 +136,7 @@ public class ClassSchedulePatternService {
             pattern = patternRepository.save(pattern);
 
             // Xoá session cũ
-            sessionRepository.deleteByPatternId(pattern.getId());
+            patternRepository.deleteByPatternId(pattern.getId());
 
             // Generate session mới
             generateSessions(pattern, pattern.getStartDate(), pattern.getEndDate());
@@ -136,10 +149,10 @@ public class ClassSchedulePatternService {
 
     public void delete(Integer id) {
         ClassSchedulePattern pattern = patternRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pattern not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Pattern"));
 
         // Xoá tất cả session gắn với pattern
-        sessionRepository.deleteByPatternId(pattern.getId());
+        patternRepository.deleteByPatternId(pattern.getId());
 
         // Xoá pattern
         patternRepository.delete(pattern);

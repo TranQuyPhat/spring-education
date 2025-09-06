@@ -13,6 +13,8 @@ import com.example.springboot_education.services.quiz.QuizService;
 import com.example.springboot_education.services.quiz.impl.QuizServiceImpl;
 import com.example.springboot_education.untils.JwtTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +29,7 @@ public class QuizController {
     private final QuizService quizService;
     private final JwtTokenUtil jwtTokenUtil;
     @PostMapping
-    public ResponseEntity<QuizBaseDTO> createQuiz(@RequestBody QuizRequestDTO request) {
+    public ResponseEntity<QuizBaseDTO> createQuiz(@Valid @RequestBody QuizRequestDTO request) {
         return ResponseEntity.ok(quizService.createQuiz(request));
     }
     @GetMapping("/{quizId}")
@@ -149,20 +151,20 @@ public class QuizController {
 
     @PatchMapping("/{id}")
     public QuizResponseTeacherDTO updateMeta(@PathVariable Integer id,
-                                             @RequestBody QuizBaseDTO dto) {
+                                             @Valid @RequestBody QuizBaseDTO dto) {
         return quizService.updateQuizMeta(id, dto);
     }
 
     @PutMapping("/{id}/content")
     public QuizResponseTeacherDTO replaceContent(@PathVariable Integer id,
-                                                 @RequestBody QuizContentUpdateDTO dto) {
+                                                @Valid @RequestBody QuizContentUpdateDTO dto) {
         dto.setReplaceAll(true);
         return quizService.updateQuizContent(id, dto);
     }
 
     @PatchMapping("/{id}/content")
     public QuizResponseTeacherDTO upsertContent(@PathVariable Integer id,
-                                                @RequestBody QuizContentUpdateDTO dto) {
+                                               @Valid @RequestBody QuizContentUpdateDTO dto) {
         dto.setReplaceAll(false);
         return quizService.updateQuizContent(id, dto);
     }

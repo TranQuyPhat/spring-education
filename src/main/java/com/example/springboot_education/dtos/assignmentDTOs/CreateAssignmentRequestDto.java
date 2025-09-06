@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CreateAssignmentRequestDto {
 
+    @NotNull(message = "Title is required")
     private String title;
     private String description;
 

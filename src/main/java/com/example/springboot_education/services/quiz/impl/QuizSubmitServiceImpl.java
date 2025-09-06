@@ -3,6 +3,7 @@ package com.example.springboot_education.services.quiz.impl;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.*;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.ResourceNotFoundException;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
@@ -21,7 +22,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
 @Service
 @RequiredArgsConstructor
 public class QuizSubmitServiceImpl implements QuizSubmitService {
@@ -31,6 +31,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     private final QuizAnswerRepository quizAnswerRepository;
     private final UsersJpaRepository userRepository;
     private final QuizAccessService quizAccessService;
+
     @Override
     public List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId) {
         List<QuizSubmission> submissions = quizSubmissionRepository.findAllByQuizIdWithDetails(quizId);
@@ -47,8 +48,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
             res.setQuizTitle(quiz.getTitle());
             res.setSubjectName(quiz.getSubject());
             res.setClassName(
-                    quiz.getClassField() != null ? quiz.getClassField().getClassName() : "Unknown"
-            );
+                    quiz.getClassField() != null ? quiz.getClassField().getClassName() : "Unknown");
             res.setScore(submission.getScore());
             res.setStartAt(submission.getStartAt());
             res.setEndAt(submission.getEndAt());
@@ -60,10 +60,10 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
 
     @Override
     @Transactional
-    public QuizSubmissionBaseDTO submitQuiz(Integer quizId, Integer studentId,QuizSubmitReqDTO request) {
+    public QuizSubmissionBaseDTO submitQuiz(Integer quizId, Integer studentId, QuizSubmitReqDTO request) {
         Quiz quiz = quizAccessService.assertStudentCanAccess(quizId, studentId);
         Users student = userRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Student"));
 
         QuizSubmission submission = new QuizSubmission();
         submission.setQuiz(quiz);
@@ -81,8 +81,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         for (QuizQuestion question : quiz.getQuestions()) {
             List<String> userAnswers = request.getAnswers().get(question.getId());
 
-            String userAnswerStr = userAnswers != null ?
-                    String.join(",", userAnswers) : null;
+            String userAnswerStr = userAnswers != null ? String.join(",", userAnswers) : null;
 
             boolean isCorrect = checkAnswer(userAnswers, question.getCorrectOptions());
 
@@ -98,7 +97,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
             answers.add(answer);
         }
         double percentage = (double) correctCount / totalQuestions;
-         totalScore = BigDecimal.valueOf(percentage * 10).setScale(2, RoundingMode.HALF_UP);
+        totalScore = BigDecimal.valueOf(percentage * 10).setScale(2, RoundingMode.HALF_UP);
         quizAnswerRepository.saveAll(answers);
         submission.setScore(totalScore);
         submission.setGradedAt(Instant.now());
@@ -136,6 +135,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
                 .map(String::toUpperCase)
                 .collect(Collectors.toSet());
     }
+
     private QuizSubmissionBaseDTO mapToDTO(QuizSubmission sub, int totalQ, int correctQ) {
         QuizSubmissionBaseDTO dto = new QuizSubmissionBaseDTO();
         dto.setId(sub.getId());
@@ -147,8 +147,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         dto.setClassName(
                 sub.getQuiz().getClassField() != null
                         ? sub.getQuiz().getClassField().getClassName()
-                        : "Unknown"
-        );
+                        : "Unknown");
         dto.setScore(sub.getScore());
         dto.setStartAt(sub.getStartAt());
         dto.setEndAt(sub.getEndAt());

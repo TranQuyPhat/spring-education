@@ -38,7 +38,7 @@ public class ClassScheduleSessionService {
         ClassSchedulePattern pattern = patternRepository.findById(dto.getPatternId())
                 .orElseThrow(() -> new EntityNotFoundException("Pattern"));
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found"));     
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         ClassScheduleSession session = new ClassScheduleSession();
         session.setPattern(pattern);

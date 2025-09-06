@@ -5,6 +5,8 @@ import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.services.quiz.QuizSubmitService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,7 @@ public class QuizSubmitController {
     private final QuizSubmitService quizSubmitService;
     @PostMapping
     public QuizSubmissionBaseDTO submitQuiz(
-            @RequestBody QuizSubmitReqDTO dto,
+           @Valid @RequestBody QuizSubmitReqDTO dto,
             @CurrentUser Users currentUser
     ) {
         return quizSubmitService.submitQuiz(dto.getQuizId(), currentUser.getId(), dto);
