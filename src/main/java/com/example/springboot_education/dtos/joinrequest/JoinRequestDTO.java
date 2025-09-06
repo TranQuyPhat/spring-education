@@ -7,6 +7,8 @@ import java.time.Instant;
 
 import com.example.springboot_education.entities.ClassJoinRequest.Status;
 
+import jakarta.validation.constraints.NotNull;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,8 +16,11 @@ import com.example.springboot_education.entities.ClassJoinRequest.Status;
 @Builder
 public class JoinRequestDTO {
     private Integer requestId;
-    private Integer classId;
+    @NotNull(message = "Student ID is required")
     private Integer studentId;
+
+    @NotNull(message = "Class ID is required")
+    private Integer classId;
     private String studentName;
     private String className;
     private Status status;

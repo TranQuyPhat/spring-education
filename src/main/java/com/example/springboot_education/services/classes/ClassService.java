@@ -17,6 +17,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,8 @@ import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
 import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassEntity.JoinMode;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.entities.ClassUser;
 import com.example.springboot_education.entities.ClassUserId;
 import com.example.springboot_education.entities.Subject;
@@ -67,59 +70,60 @@ public class ClassService {
 
     public ClassEntity getClassEntityById(Integer id) {
         return classRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Class not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id " + id));
     }
 
     @Transactional
     @LoggableAction(value = "CREATE", entity = "classes", description = "Tạo lớp học mới")
     // @CacheEvict(value = "classesOfTeacher", key = "#dto.teacherId")
     public ClassResponseDTO createClass(CreateClassDTO dto) {
-    Users teacher = userRepository.findById(dto.getTeacherId())
-            .orElseThrow();
-    Subject subject = subjectRepository.findById(dto.getSubjectId())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+        Users teacher = userRepository.findById(dto.getTeacherId())
+                .orElseThrow();
+        Subject subject = subjectRepository.findById(dto.getSubjectId())
+                .orElseThrow(() -> new EntityNotFoundException("Subject"));
 
-    String yearPart = String.valueOf(dto.getSchoolYear());
-    String semesterPart = "01";
-    if ("Học kỳ 2".equalsIgnoreCase(dto.getSemester())) {
-        semesterPart = "02";
+        String yearPart = String.valueOf(dto.getSchoolYear());
+        String semesterPart = "01";
+        if ("Học kỳ 2".equalsIgnoreCase(dto.getSemester())) {
+            semesterPart = "02";
+        }
+        String prefix = yearPart + semesterPart;
+
+        // Lấy maxId hiện tại (lock row để tránh race condition)
+        Integer maxId = classRepository.findMaxIdByPrefixForUpdate(Integer.parseInt(prefix + "000"));
+        int nextNumber = (maxId != null) ? (maxId % 1000) + 1 : 1;
+
+        Integer newId;
+        // Lặp cho đến khi tìm được ID chưa tồn tại
+        do {
+            newId = Integer.parseInt(prefix + String.format("%03d", nextNumber));
+            nextNumber++;
+        } while (classRepository.existsById(newId));
+
+        ClassEntity clazz = new ClassEntity();
+        clazz.setId(newId);
+        clazz.setClassName(dto.getClassName());
+        clazz.setSchoolYear(dto.getSchoolYear());
+        clazz.setSemester(dto.getSemester());
+        clazz.setDescription(dto.getDescription());
+        clazz.setTeacher(teacher);
+        clazz.setSubject(subject);
+        clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : JoinMode.AUTO);
+        clazz.setCreatedAt(Instant.now());
+
+        ClassEntity saved = classRepository.save(clazz);
+
+        return toDTO(saved);
     }
-    String prefix = yearPart + semesterPart;
-
-    // Lấy maxId hiện tại (lock row để tránh race condition)
-    Integer maxId = classRepository.findMaxIdByPrefixForUpdate(Integer.parseInt(prefix + "000"));
-    int nextNumber = (maxId != null) ? (maxId % 1000) + 1 : 1;
-
-    Integer newId;
-    // Lặp cho đến khi tìm được ID chưa tồn tại
-    do {
-        newId = Integer.parseInt(prefix + String.format("%03d", nextNumber));
-        nextNumber++;
-    } while (classRepository.existsById(newId));
-
-    ClassEntity clazz = new ClassEntity();
-    clazz.setId(newId);
-    clazz.setClassName(dto.getClassName());
-    clazz.setSchoolYear(dto.getSchoolYear());
-    clazz.setSemester(dto.getSemester());
-    clazz.setDescription(dto.getDescription());
-    clazz.setTeacher(teacher);
-    clazz.setSubject(subject);
-    clazz.setJoinMode(dto.getJoinMode() != null ? dto.getJoinMode() : JoinMode.AUTO);
-    clazz.setCreatedAt(Instant.now());
-
-    ClassEntity saved = classRepository.save(clazz);
-
-    return toDTO(saved);
-}
 
     @LoggableAction(value = "UPDATE", entity = "classes", description = "Update class")
     public ClassResponseDTO updateClass(Integer id, CreateClassDTO dto) {
-        ClassEntity clazz = classRepository.findById(id).orElseThrow();
+        ClassEntity clazz = classRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Class with id " + id));
         Subject subject = subjectRepository.findById(dto.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Subject"));
         Users teacher = userRepository.findById(dto.getTeacherId())
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Teacher"));
 
         clazz.setClassName(dto.getClassName());
         clazz.setSchoolYear(dto.getSchoolYear());
@@ -138,7 +142,7 @@ public class ClassService {
     @LoggableAction(value = "DELETE", entity = "classes", description = "Delete class")
     public void deleteClass(Integer id) {
         ClassEntity clazz = classRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Class does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         classRepository.deleteById(id);
     }
@@ -147,14 +151,14 @@ public class ClassService {
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Check if the student already exists in the class
         if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
-            throw new RuntimeException("Student already exists in this class!");
+            throw new HttpException("Student already exists in this class!", HttpStatus.CONFLICT);
         }
 
         ClassEntity clazz = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         Users student = userRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Student"));
 
         ClassUser member = new ClassUser();
         ClassUserId id = new ClassUserId();
@@ -196,7 +200,7 @@ public class ClassService {
         return dto;
     }
 
-    @Cacheable(value = "classesOfTeacher", key = "#teacherId")
+    // @Cacheable(value = "classesOfTeacher", key = "#teacherId")
     public List<ClassResponseDTO> getAllClassesOfTeacher(Integer teacherId) {
         List<ClassEntity> classes = classRepository.findByTeacher_Id(teacherId);
 
@@ -226,16 +230,16 @@ public class ClassService {
         return response;
     }
 
-    //websocket
+    // websocket
     public Integer getTeacherIdOfClass(Integer classId) {
         return classRepository.findById(classId).map(c -> c.getTeacher().getId()) // lấy id từ quan hệ
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp với ID: " + classId));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id " + classId));
     }
 
     public String getClassName(Integer classId) {
         return classRepository.findById(classId)
                 .map(ClassEntity::getClassName)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp với ID: " + classId));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id " + classId));
     }
 
 }

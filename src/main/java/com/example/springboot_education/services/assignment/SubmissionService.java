@@ -9,15 +9,17 @@ import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Submission;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
 import com.example.springboot_education.untils.FileUtils;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,21 +86,21 @@ public class SubmissionService {
     public SubmissionResponseDto submitAssignment(SubmissionRequestDto requestDto, MultipartFile file)
             throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(requestDto.getAssignmentId())
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment"));
 
         // Kiểm tra hạn nộp
         LocalDateTime now = LocalDateTime.now();
         if (assignment.getDueDate() != null && now.isAfter(assignment.getDueDate())) {
-            throw new IllegalStateException("Submission deadline has passed");
+            throw new HttpException("Submission deadline has passed", HttpStatus.BAD_REQUEST);
         }
 
         Users student = usersJpaRepository.findById(requestDto.getStudentId())
-                .orElseThrow(() -> new EntityNotFoundException("Student not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Student"));
 
         // Kiểm tra đã nộp chưa
         submissionJpaRepository.findByAssignmentIdAndStudentId(
                 requestDto.getAssignmentId(), requestDto.getStudentId()).ifPresent(existing -> {
-                    throw new IllegalStateException("You have already submitted this assignment");
+                    throw new HttpException("You have already submitted this assignment", HttpStatus.CONFLICT);
                 });
 
         String uploadDir = "uploads/submissions";
@@ -126,11 +128,11 @@ public class SubmissionService {
     public SubmissionResponseDto updateSubmission(Integer submissionId, SubmissionRequestDto requestDto,
             MultipartFile newFile) throws IOException {
         Submission submission = submissionJpaRepository.findById(submissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Submission"));
 
         // Không cho chỉnh sửa nếu đã chấm
         if (submission.getStatus() == Submission.SubmissionStatus.GRADED) {
-            throw new IllegalStateException("Bài nộp đã được chấm, không thể chỉnh sửa!");
+            throw new HttpException("Bài nộp đã được chấm, không thể chỉnh sửa!", HttpStatus.FORBIDDEN);
         }
 
         // Nếu có file mới thì thay thế
@@ -140,7 +142,7 @@ public class SubmissionService {
                 Path oldPath = Paths.get(submission.getFilePath());
                 Files.deleteIfExists(oldPath);
             } catch (IOException e) {
-                throw new RuntimeException("Không thể xóa file cũ", e);
+                throw new HttpException("Không thể xóa file cũ", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             // Lưu file mới
@@ -174,7 +176,7 @@ public class SubmissionService {
     @LoggableAction(value = "GRADE", entity = "Submission", description = "Graded an assignment")
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Submission"));
 
         submission.setScore(score);
         submission.setTeacherComment(comment);
@@ -188,10 +190,10 @@ public class SubmissionService {
     // Chỉnh sửa điểm
     public SubmissionResponseDto updateGradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Submission"));
 
         if (submission.getStatus() != Submission.SubmissionStatus.GRADED) {
-            throw new IllegalStateException("Bài nộp chưa được chấm!");
+            throw new HttpException("Bài nộp chưa được chấm!", HttpStatus.BAD_REQUEST);
         }
 
         submission.setScore(score);
@@ -216,14 +218,14 @@ public class SubmissionService {
 
     public SubmissionResponseDto getSubmission(Integer assignmentId, Integer studentId) {
         Submission submission = submissionJpaRepository.findByAssignmentIdAndStudentId(assignmentId, studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Submission"));
         return convertToDto(submission);
     }
 
     // Get submission by class
     public List<SubmissionResponseDto> getSubmissionsByClassId(Integer classId) {
         ClassEntity classEntity = classRepository.findById(classId)
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + classId));
 
         return submissionJpaRepository.findByClassId(classId)
                 .stream()
@@ -239,7 +241,7 @@ public class SubmissionService {
                         contentType.equals("application/msword") ||
                         contentType
                                 .equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
-            throw new IllegalArgumentException("Invalid file type");
+            throw new HttpException("File type is not supported. Allowed: PDF, DOC, DOCX", HttpStatus.BAD_REQUEST);
         }
 
         String uploadDir = System.getProperty("user.dir") + "/uploads/assignments";
@@ -256,14 +258,14 @@ public class SubmissionService {
     public DownloadFileDTO downloadSubmission(Integer id) throws Exception {
         // 1. Lấy thông tin bài nộp
         Submission submission = submissionJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Submission with id: " + id));
 
         // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
         Path path = Paths.get(submission.getFilePath());
         Resource resource = new UrlResource(path.toUri());
 
         if (!resource.exists()) {
-            throw new RuntimeException("File not found");
+            throw new EntityNotFoundException("File");
         }
 
         // 3. Trả DTO chứa file và metadata
@@ -276,14 +278,14 @@ public class SubmissionService {
     @LoggableAction(value = "DELETE", entity = "Submission", description = "Deleted a submission")
     public void deleteSubmission(Integer submissionId) {
         Submission submission = submissionJpaRepository.findById(submissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Submission"));
 
         // Xóa file vật lý nếu tồn tại
         try {
             Path filePath = Paths.get(submission.getFilePath());
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to delete file", e);
+            throw new HttpException("Failed to delete file", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // Xóa dữ liệu trong DB

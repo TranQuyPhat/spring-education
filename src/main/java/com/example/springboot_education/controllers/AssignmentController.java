@@ -5,6 +5,7 @@ import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequ
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.Assignment;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.services.assignment.AssignmentService;
 import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
@@ -46,43 +47,63 @@ public class AssignmentController {
         return assignmentService.getAssignmentById(id);
     }
 
+    // @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // public ResponseEntity<AssignmentResponseDto> createAssignment(
+    // @Valid @RequestParam("classId") Integer classId,
+    // @Valid @RequestParam("title") String title,
+    // @Valid @RequestParam(value = "description", required = false) String
+    // description,
+    // @Valid @RequestParam(value = "dueDate") @DateTimeFormat(iso =
+    // DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
+    // @Valid @RequestParam("maxScore") BigDecimal maxScore,
+    // @RequestPart(value = "file", required = false) MultipartFile file) throws
+    // IOException {
+    // CreateAssignmentRequestDto dto = new CreateAssignmentRequestDto();
+    // dto.setClassId(classId);
+    // dto.setTitle(title);
+    // dto.setDescription(description);
+    // dto.setDueDate(dueDate);
+    // dto.setMaxScore(maxScore);
+
+    // return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto,
+    // file));
+    // }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<AssignmentResponseDto> createAssignment(
-        @RequestParam("classId") Integer classId,
-        @RequestParam("title") String title,
-        @RequestParam(value = "description", required = false) String description,
-        @RequestParam(value = "dueDate") 
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
-        @RequestParam("maxScore") BigDecimal maxScore,
-        @RequestPart(value = "file", required = false) MultipartFile file
-) throws IOException {
-    CreateAssignmentRequestDto dto = new CreateAssignmentRequestDto();
-    dto.setClassId(classId);
-    dto.setTitle(title);
-    dto.setDescription(description);
-    dto.setDueDate(dueDate);
-    dto.setMaxScore(maxScore);
+    public ResponseEntity<AssignmentResponseDto> createAssignment(
+            @Valid @ModelAttribute CreateAssignmentRequestDto dto,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+        return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));
+    }
 
-    return ResponseEntity.ok(assignmentService.createAssignmentWithFile(dto, file));
-}
+    // @PatchMapping(value = "/{id}", consumes =
+    // MediaType.MULTIPART_FORM_DATA_VALUE)
+    // public ResponseEntity<AssignmentResponseDto> updateAssignment(
+    // @PathVariable("id") Integer id,
+    // @Valid @RequestParam Integer classId,
+    // @Valid @RequestParam String title,
+    // @Valid @RequestParam(required = false) String description,
+    // @Valid @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    // LocalDateTime dueDate,
+    // @Valid @RequestParam BigDecimal maxScore,
+    // @RequestPart(value = "file", required = false) MultipartFile file) throws
+    // IOException {
+    // UpdateAssignmentRequestDto dto = new UpdateAssignmentRequestDto();
+    // dto.setClassId(classId);
+    // dto.setTitle(title);
+    // dto.setDescription(description);
+    // dto.setDueDate(dueDate);
+    // dto.setMaxScore(maxScore);
 
+    // AssignmentResponseDto updated = assignmentService.updateAssignment(id, dto,
+    // file);
+    // return ResponseEntity.ok(updated);
+    // }
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AssignmentResponseDto> updateAssignment(
-            @PathVariable("id") Integer id,
-            @RequestParam Integer classId,
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
-            @RequestParam BigDecimal maxScore,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
-        UpdateAssignmentRequestDto dto = new UpdateAssignmentRequestDto();
-        dto.setClassId(classId);
-        dto.setTitle(title);
-        dto.setDescription(description);
-        dto.setDueDate(dueDate);
-        dto.setMaxScore(maxScore);
-
+            @PathVariable Integer id,
+            @Valid @ModelAttribute UpdateAssignmentRequestDto dto,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
         AssignmentResponseDto updated = assignmentService.updateAssignment(id, dto, file);
         return ResponseEntity.ok(updated);
     }
@@ -93,12 +114,13 @@ public ResponseEntity<AssignmentResponseDto> createAssignment(
     }
 
     @GetMapping("/{assignmentId}/download")
-    public ResponseEntity<Resource> downloadAssignmentFile(@PathVariable("assignmentId") Integer assignmentId) throws IOException {
+    public ResponseEntity<Resource> downloadAssignmentFile(@PathVariable("assignmentId") Integer assignmentId)
+            throws IOException {
         Assignment assignment = assignmentService.getAssignmentEntityById(assignmentId);
 
         Path filePath = Paths.get(assignment.getFilePath());
         if (!Files.exists(filePath)) {
-            throw new FileNotFoundException("File not found");
+            throw new EntityNotFoundException("File");
         }
 
         Resource resource = new UrlResource(filePath.toUri());
@@ -115,7 +137,8 @@ public ResponseEntity<AssignmentResponseDto> createAssignment(
     }
 
     @GetMapping("/class/{classId}")
-    public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(@PathVariable("classId") Integer classId) {
+    public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(
+            @PathVariable("classId") Integer classId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsByClassId(classId));
     }
 

@@ -21,7 +21,7 @@ import com.example.springboot_education.dtos.classschedules.ClassSchedulePattern
 
 import com.example.springboot_education.services.schedules.ClassSchedulePatternService;
 
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -34,7 +34,7 @@ public class ClassSchedulePatternController {
     // Tạo nhiều pattern cho 1 lớp
     @PostMapping
     public ResponseEntity<List<ClassSchedulePatternResponseDTO>> createBatch(
-            @RequestBody ClassSchedulePatternCreateDTO dto
+          @Valid  @RequestBody ClassSchedulePatternCreateDTO dto
     ) {
         return ResponseEntity.ok(service.createBatch(dto));
     }
@@ -56,7 +56,7 @@ public class ClassSchedulePatternController {
     // Cập nhật pattern
     @PutMapping("/batch")
     public List<ClassSchedulePatternResponseDTO> updateBatch(
-            @RequestBody ClassSchedulePatternUpdateDTO dto) {
+           @Valid @RequestBody ClassSchedulePatternUpdateDTO dto) {
         return service.updateBatch(dto);
     }
 

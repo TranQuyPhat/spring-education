@@ -14,6 +14,9 @@ import com.example.springboot_education.entities.ClassUser;
 import com.example.springboot_education.entities.ClassUserId;
 // import com.example.springboot_education.entities.ClassMember;
 import com.example.springboot_education.entities.Users;
+import com.example.springboot_education.exceptions.EntityDuplicateException;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 // import com.example.springboot_education.repositories.ClassMemberRepository;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
@@ -44,7 +47,11 @@ public class ClassUserService {
 
 
     public List<ClassMemberDTO> getStudentsInClass(Integer classId) {
+
+         classRepository.findById(classId)
+        .orElseThrow(() -> new EntityNotFoundException("Class"));
         List<ClassUser> members = classUserRepository.findByClassField_Id(classId);
+
 
         return members.stream()
                 .map(member -> {
@@ -101,14 +108,14 @@ public class ClassUserService {
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Kiểm tra xem đã tồn tại chưa
         if (classUserRepository.existsByClassField_IdAndStudent_Id(dto.getClassId(), dto.getStudentId())) {
-            throw new RuntimeException("Học sinh đã có trong lớp này!");
+            throw new EntityDuplicateException("Student" );
         }
 
         ClassEntity clazz = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Lớp học không tồn tại"));
+                .orElseThrow(() -> new EntityNotFoundException("Class"));
 
         Users student = userRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Học sinh không tồn tại"));
+                .orElseThrow(() -> new EntityNotFoundException("Student"));
 
         ClassUser member = new ClassUser();
         ClassUserId id = new ClassUserId();

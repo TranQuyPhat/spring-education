@@ -14,6 +14,8 @@ import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.services.classes.ClassUserService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -33,7 +35,7 @@ public class ClassUserController {
         return ResponseEntity.ok(classes);
     }
     @PostMapping("/add-student")
-    public ResponseEntity<?> addStudentToClass(@RequestBody AddStudentToClassDTO dto) {
+    public ResponseEntity<?> addStudentToClass(@Valid @RequestBody AddStudentToClassDTO dto) {
         classUserService.addStudentToClass(dto);
         return ResponseEntity.ok("Thêm học sinh vào lớp thành công");
     }

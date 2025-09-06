@@ -3,6 +3,8 @@ package com.example.springboot_education.controllers;
 import com.example.springboot_education.dtos.assignmentCommentDTOs.AssignmentCommentResponseDto;
 import com.example.springboot_education.dtos.assignmentCommentDTOs.CreateAssignmentCommentRequestDto;
 import com.example.springboot_education.services.assignment.AssignmentCommentService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,7 @@ public class AssignmentCommentController {
 
     @PostMapping
     public ResponseEntity<AssignmentCommentResponseDto> createComment(
-            @RequestBody CreateAssignmentCommentRequestDto dto) {
+            @Valid @RequestBody CreateAssignmentCommentRequestDto dto) {
         return ResponseEntity.ok(assignmentCommentService.create(dto));
     }
 
@@ -36,9 +38,7 @@ public class AssignmentCommentController {
 
     @GetMapping("/assignment/{assignmentId}/tree")
     public ResponseEntity<List<AssignmentCommentResponseDto>> getCommentsTreeByAssignment(
-            @PathVariable Integer assignmentId
-    ) {
+            @PathVariable Integer assignmentId) {
         return ResponseEntity.ok(assignmentCommentService.getCommentsTreeByAssignment(assignmentId));
     }
 }
-

@@ -3,6 +3,7 @@ package com.example.springboot_education.services.quiz.impl;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.*;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.ResourceNotFoundException;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
@@ -63,9 +64,9 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     @Transactional
     public QuizSubmissionBaseDTO submitQuiz(QuizSubmitReqDTO request) {
         Quiz quiz = quizRepository.findById(request.getQuizId())
-                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz"));
         Users student = userRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Student"));
 
         QuizSubmission submission = new QuizSubmission();
         submission.setQuiz(quiz);

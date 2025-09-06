@@ -8,6 +8,7 @@ import com.example.springboot_education.dtos.quiz.student.QuizResponseStudentDTO
 import com.example.springboot_education.dtos.quiz.teacher.QuestionTeacherDTO;
 import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO;
 import com.example.springboot_education.entities.*;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.classes.ClassUserRepository;
@@ -88,10 +89,10 @@ public class QuizMapper2 {
         quiz.setStartDate(dto.getStartDate());
         quiz.setEndDate(dto.getEndDate());
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new RuntimeException("Class not found with ID: " + dto.getClassId()));
+                .orElseThrow(() -> new EntityNotFoundException("Class with ID: " + dto.getClassId()));
         quiz.setClassField(classEntity);
         Users creator = userRepository.findById(dto.getCreatedBy())
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getCreatedBy()));
+                .orElseThrow(() -> new EntityNotFoundException("User with ID: " + dto.getCreatedBy()));
         quiz.setCreatedBy(creator);
 
         quiz.setGrade(dto.getGrade());

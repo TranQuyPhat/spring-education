@@ -12,6 +12,8 @@ import com.example.springboot_education.dtos.quiz.teacher.QuizResponseTeacherDTO
 import com.example.springboot_education.entities.Quiz;
 import com.example.springboot_education.entities.QuizOption;
 import com.example.springboot_education.entities.QuizQuestion;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.mapper.QuizMapper2;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
@@ -25,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,7 +81,6 @@ public class QuizServiceImpl implements QuizService {
         return getQuizForTeacher(quiz.getId());
     }
 
-
     @Override
     public List<QuizResponseTeacherDTO> getAllQuizzes() {
         return quizRepository.findAll().stream()
@@ -88,7 +90,8 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional(readOnly = true)
-    public QuestionsPageResponseDTO<QuestionTeacherDTO> getQuizQuestionsPageForTeacher(Integer quizId, int page, int size) {
+    public QuestionsPageResponseDTO<QuestionTeacherDTO> getQuizQuestionsPageForTeacher(Integer quizId, int page,
+            int size) {
         return getQuizQuestionsPage(
                 quizId,
                 page,
@@ -96,12 +99,13 @@ public class QuizServiceImpl implements QuizService {
                 (q, optsByQid) -> {
                     List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
                     return quizMapper2.toTeacherQuestionDto(q, opts);
-                }
-        );
+                });
     }
+
     @Override
     @Transactional(readOnly = true)
-    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(Integer quizId, int page, int size) {
+    public QuestionsPageResponseDTO<QuestionStudentDTO> getQuizQuestionsPageForStudent(Integer quizId, int page,
+            int size) {
         return getQuizQuestionsPage(
                 quizId,
                 page,
@@ -109,8 +113,7 @@ public class QuizServiceImpl implements QuizService {
                 (q, optsByQid) -> {
                     List<OptionDTO> opts = optsByQid.getOrDefault(q.getId(), List.of());
                     return quizMapper2.toStudentQuestionDto(q, opts);
-                }
-        );
+                });
     }
 
     @Override
@@ -121,21 +124,23 @@ public class QuizServiceImpl implements QuizService {
                 .map(this::mapToStudentQuizDTO)
                 .collect(Collectors.toList());
     }
+
     private StudentQuizDto mapToStudentQuizDTO(Object[] row) {
         return new StudentQuizDto(
-                (Integer) row[0],                                 // quizId
-                (String) row[1],                                  // title
-                (String) row[2],                                  // description
+                (Integer) row[0], // quizId
+                (String) row[1], // title
+                (String) row[2], // description
                 row[3] != null ? ((Number) row[3]).intValue() : null, // timeLimit
                 row[4] != null ? convertToLocalDateTime(row[4]) : null, // startDate
                 row[5] != null ? convertToLocalDateTime(row[5]) : null, // endDate
-                (String) row[6],                                  // grade
-                (String) row[7],                                  // subject
-                (String) row[8],                                  // className
-                row[9] != null ? convertToLocalDateTime(row[9]) : null  ,// createdAt
-                row[10] != null ? convertToLocalDateTime(row[10]) : null  // createdAt
+                (String) row[6], // grade
+                (String) row[7], // subject
+                (String) row[8], // className
+                row[9] != null ? convertToLocalDateTime(row[9]) : null, // createdAt
+                row[10] != null ? convertToLocalDateTime(row[10]) : null // createdAt
         );
     }
+
     private LocalDateTime convertToLocalDateTime(Object value) {
         if (value instanceof java.sql.Timestamp) {
             return ((java.sql.Timestamp) value).toLocalDateTime();
@@ -158,7 +163,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponseTeacherDTO getQuizForTeacher(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz with id " + quizId));
 
         List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
 
@@ -178,7 +183,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponseStudentDTO getQuizForStudent(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz with id: " + quizId));
 
         List<QuizQuestion> questions = questionRepository.findByQuiz_Id(quizId);
 
@@ -200,25 +205,33 @@ public class QuizServiceImpl implements QuizService {
     @LoggableAction(value = "UPDATE", entity = "quizzes", description = "Update quiz")
     public QuizResponseTeacherDTO updateQuizMeta(Integer quizId, QuizBaseDTO dto) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz"));
 
-        if (dto.getTitle() != null) quiz.setTitle(dto.getTitle());
-        if (dto.getDescription() != null) quiz.setDescription(dto.getDescription());
-        if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());
-        if (dto.getStartDate() != null) quiz.setStartDate(dto.getStartDate());
-        if (dto.getEndDate() != null) quiz.setEndDate(dto.getEndDate());
-        if (dto.getGrade() != null) quiz.setGrade(dto.getGrade());
-        if (dto.getSubject() != null) quiz.setSubject(dto.getSubject());
+        if (dto.getTitle() != null)
+            quiz.setTitle(dto.getTitle());
+        if (dto.getDescription() != null)
+            quiz.setDescription(dto.getDescription());
+        if (dto.getTimeLimit() != null)
+            quiz.setTimeLimit(dto.getTimeLimit());
+        if (dto.getStartDate() != null)
+            quiz.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null)
+            quiz.setEndDate(dto.getEndDate());
+        if (dto.getGrade() != null)
+            quiz.setGrade(dto.getGrade());
+        if (dto.getSubject() != null)
+            quiz.setSubject(dto.getSubject());
 
         quiz.setUpdatedAt(Instant.now());
         quizRepository.save(quiz);
         return getQuizForTeacher(quizId);
     }
+
     @Override
     @Transactional
     public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz"));
 
         // Map các question/option hiện có để tiện tra cứu
         List<QuizQuestion> existedQuestions = questionRepository.findByQuiz_Id(quizId);
@@ -235,7 +248,8 @@ public class QuizServiceImpl implements QuizService {
                 q.setCreatedAt(Instant.now());
             } else {
                 q = qMap.get(qdto.getId());
-                if (q == null) throw new RuntimeException("Question not found: " + qdto.getId());
+                if (q == null)
+                    throw new EntityNotFoundException("Question" + qdto.getId());
                 seenQuestionIds.add(q.getId());
             }
             q.setQuestionText(qdto.getQuestionText());
@@ -258,7 +272,8 @@ public class QuizServiceImpl implements QuizService {
                     opt.setCreatedAt(Instant.now());
                 } else {
                     opt = oMap.get(odto.getId());
-                    if (opt == null) throw new RuntimeException("Option not found: " + odto.getId());
+                    if (opt == null)
+                        throw new EntityNotFoundException("Option" + odto.getId());
                     seenOptIds.add(opt.getId());
                 }
                 opt.setOptionLabel(odto.getOptionLabel());
@@ -288,13 +303,14 @@ public class QuizServiceImpl implements QuizService {
 
         return getQuizForTeacher(quizId);
     }
+
     @Override
     @Transactional
     public void deleteQuestion(Integer quizId, Integer questionId) {
         QuizQuestion q = questionRepository.findById(questionId)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Question"));
         if (!q.getQuiz().getId().equals(quizId)) {
-            throw new RuntimeException("Question does not belong to quiz");
+            throw new HttpException("Question does not belong to quiz", HttpStatus.CONFLICT);
         }
         // orphanRemoval + OnDelete CASCADE ở options sẽ lo phần con
         questionRepository.delete(q);
@@ -305,7 +321,7 @@ public class QuizServiceImpl implements QuizService {
     @Transactional
     public void deleteQuiz(Integer quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Quiz"));
 
         quizSubmissionRepository.deleteAll(quizSubmissionRepository.findByQuiz_Id(quizId));
         quizRepository.delete(quiz);
@@ -315,10 +331,11 @@ public class QuizServiceImpl implements QuizService {
             Integer quizId,
             int page,
             int size,
-            BiFunction<QuizQuestion, Map<Integer, List<OptionDTO>>, T> mapper
-    ) {
-        if (page < 1) page = 1;
-        if (size < 1) size = 10;
+            BiFunction<QuizQuestion, Map<Integer, List<OptionDTO>>, T> mapper) {
+        if (page < 1)
+            page = 1;
+        if (size < 1)
+            size = 10;
 
         Sort sort = Sort.by("id");
         Pageable pageable = PageRequest.of(page - 1, size, sort);
@@ -334,8 +351,7 @@ public class QuizServiceImpl implements QuizService {
         Map<Integer, List<OptionDTO>> optionsByQid = options.stream()
                 .collect(Collectors.groupingBy(
                         o -> o.getQuestion().getId(),
-                        Collectors.mapping(quizMapper2::toOptionDto, Collectors.toList())
-                ));
+                        Collectors.mapping(quizMapper2::toOptionDto, Collectors.toList())));
 
         List<T> items = questionPage.getContent().stream()
                 .map(q -> mapper.apply(q, optionsByQid))
@@ -343,6 +359,5 @@ public class QuizServiceImpl implements QuizService {
 
         return new QuestionsPageResponseDTO<>(quizId, page, size, questionPage.getTotalElements(), items);
     }
-
 
 }

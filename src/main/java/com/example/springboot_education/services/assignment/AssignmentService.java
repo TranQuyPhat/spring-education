@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.ClassMaterial;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.untils.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -34,7 +35,6 @@ import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -72,7 +72,7 @@ public class AssignmentService {
 
     public AssignmentResponseDto getAssignmentById(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
         return convertToDto(assignment);
     }
 
@@ -80,7 +80,7 @@ public class AssignmentService {
     public AssignmentResponseDto createAssignmentWithFile(CreateAssignmentRequestDto dto, MultipartFile file)
             throws IOException {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + dto.getClassId()));
 
         String uploadDir = "uploads/assignments";
         Files.createDirectories(Paths.get(uploadDir));
@@ -120,10 +120,10 @@ public class AssignmentService {
     @LoggableAction(value = "UPDATE", entity = "assignments", description = "Updated an assignment")
     public AssignmentResponseDto updateAssignment(Integer id, UpdateAssignmentRequestDto dto, MultipartFile file) throws IOException {
         Assignment assignment = assignmentJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
 
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + dto.getClassId()));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + dto.getClassId()));
 
         assignment.setTitle(dto.getTitle());
         assignment.setClassField(classEntity);
@@ -152,7 +152,7 @@ public class AssignmentService {
     @LoggableAction(value = "DELETE", entity = "assignments", description = "Deleted an assignment")
     public void deleteAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
 
         // Xóa code ghi log thủ công
         // activityLogService.log(...);
@@ -162,13 +162,13 @@ public class AssignmentService {
 
     public Assignment getAssignmentEntityById(Integer id) {
         return assignmentJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
     }
 
     // Get assignment by class
     public List<AssignmentResponseDto> getAssignmentsByClassId(Integer classId) {
         ClassEntity classEntity = classRepository.findById(classId)
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + classId));
 
         return assignmentJpaRepository.findByClassField_Id(classId)
                 .stream()
@@ -180,14 +180,14 @@ public class AssignmentService {
     public DownloadFileDTO downloadAssignment(Integer id) throws Exception {
         // 1. Lấy thông tin bài tập
         Assignment assignment = assignmentJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
 
         // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
         Path path = Paths.get(assignment.getFilePath());
         Resource resource = new UrlResource(path.toUri());
 
         if (!resource.exists()) {
-            throw new RuntimeException("File not found");
+            throw new EntityNotFoundException("File");
         }
 
         // 3. Trả DTO chứa file và metadata
