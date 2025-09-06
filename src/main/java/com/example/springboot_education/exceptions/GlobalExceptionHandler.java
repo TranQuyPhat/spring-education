@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new APIResponse<>(false, ex.getMessage(), null));
+                .body(new APIResponse<>(false, ex.getMessage(), null));}
 
      @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, Object>> handleMaxSizeException(MaxUploadSizeExceededException ex) {
