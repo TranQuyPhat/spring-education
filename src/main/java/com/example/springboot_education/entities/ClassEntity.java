@@ -11,6 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -51,7 +52,7 @@ public class ClassEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-        @OneToMany(mappedBy = "classField", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "classField", fetch = FetchType.LAZY)
     private List<ClassUser> classUsers;
 
     // @OneToMany(mappedBy = "classRoom")
@@ -67,6 +68,9 @@ public class ClassEntity {
     @Enumerated(EnumType.STRING) // Lưu bằng tên enum (AUTO, APPROVAL)
     @Column(name = "join_mode", nullable = false, length = 20)
     private JoinMode joinMode ; // default = AUTO
+
+    @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClassSchedulePattern> schedulePatterns = new ArrayList<>();
 
     public enum JoinMode {
         AUTO,      // Học sinh vào không cần xác nhận

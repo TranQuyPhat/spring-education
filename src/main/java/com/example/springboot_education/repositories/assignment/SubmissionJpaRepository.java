@@ -192,6 +192,7 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
         s.student.fullName,
         null,
         AVG(s.score),
+        null,
         null
     )
     FROM Submission s

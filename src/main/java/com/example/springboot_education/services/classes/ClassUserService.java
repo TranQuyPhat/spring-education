@@ -9,6 +9,7 @@ import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.dtos.classDTOs.SubjectDTO;
 import com.example.springboot_education.dtos.classDTOs.TeacherDTO;
+import com.example.springboot_education.entities.Attendance;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassUser;
 import com.example.springboot_education.entities.ClassUserId;
@@ -17,6 +18,7 @@ import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.exceptions.EntityDuplicateException;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.HttpException;
+import com.example.springboot_education.repositories.AttendanceRepository;
 // import com.example.springboot_education.repositories.ClassMemberRepository;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
@@ -43,6 +45,8 @@ public class ClassUserService {
     private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final ActivityLogService activityLogService;
+    private final AttendanceRepository attendanceRepository;
+
 
 
 
@@ -168,5 +172,46 @@ public class ClassUserService {
             dto.setSubject(subjectDTO);
         }
         return dto;
-    }   
+    } 
+    
+    
+
+    public void finalizeAttendanceScore(Integer classId) {
+        List<ClassUser> classUsers = classUserRepository.findByClassField_Id(classId);
+
+        for (ClassUser classUser : classUsers) {
+            List<Attendance> attendances = attendanceRepository
+                    .findByStudent_IdAndSession_ClassEntity_Id(
+                            classUser.getStudent().getId(),
+                            classId
+                    );
+
+            long totalSessions = attendances.size();
+            long absentCount = attendances.stream()
+                    .filter(a -> a.getStatus() == Attendance.AttendanceStatus.ABSENT)
+                    .count();
+            long excusedCount = attendances.stream()
+                    .filter(a -> a.getStatus() == Attendance.AttendanceStatus.EXCUSED)
+                    .count();
+
+            // Ví dụ công thức: điểm = 10 - 0.5 * vắng - 0.25 * vắng phép
+            double score = 10 - (absentCount * 1) - (excusedCount * 0.5);
+            score = Math.max(score, 0);
+
+            classUser.setAttendanceScore(score);
+        }
+
+        classUserRepository.saveAll(classUsers);
+    }
+
+
+    public Double getAttendanceScore(Integer classId, Integer studentId) {
+        ClassUser classUser = classUserRepository
+                .findByClassField_IdAndStudent_Id(classId, studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found in this class"));
+
+        return classUser.getAttendanceScore();
+    }
+
+
 }

@@ -108,7 +108,7 @@ public class QuizServiceImpl implements QuizService {
 
         return getQuizForTeacher(quiz.getId());
     }
-    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
+    // @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
     @Override
     public List<QuizResponseTeacherDTO> getQuizzesByTeacherId(Integer teacherId) {
         List<Quiz> quizzes = quizRepository.findByCreatedBy_Id(teacherId);
@@ -138,7 +138,7 @@ public class QuizServiceImpl implements QuizService {
                 .toList();
     }
 
-    @Cacheable(value = "quizzesByStudent", key = "#studentId")
+    // @Cacheable(value = "quizzesByStudent", key = "#studentId")
     @Override
     public List<QuizResponseStudentDTO> getQuizzesByStudentId(Integer studentId) {
         List<Object[]> rows = quizRepository.findBasicQuizzesByStudentId(studentId);

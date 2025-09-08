@@ -32,4 +32,7 @@ public class ClassUser {
     @Column(name = "joined_at", updatable = false)
     private Instant joinedAt;
 
+    @Column(name = "attendance_score")
+    private Double attendanceScore;
+
 }
