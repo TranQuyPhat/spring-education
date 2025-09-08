@@ -1,9 +1,20 @@
 package com.example.springboot_education.services.material;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
@@ -38,8 +49,7 @@ public class ClassMaterialService {
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
-    private final ActivityLogService activityLogService;
-   
+
     @LoggableAction(value = "CREATE", entity = "class_materials", description = "Created a new material")
     public ClassMaterialResponseDto createMaterial(ClassMaterialRequestDto dto, MultipartFile file) throws IOException {
         Users user = usersJpaRepository.findById(dto.getCreatedBy())
@@ -74,7 +84,7 @@ public class ClassMaterialService {
                 .stream().map(this::toResponseDto)
                 .collect(Collectors.toList());
     }
-    // Get all materials
+
     public List<ClassMaterialResponseDto> getAllMaterials() {
         return classMaterialJpaRepository.findAll()
                 .stream()
@@ -83,14 +93,24 @@ public class ClassMaterialService {
     }
 
     @LoggableAction(value = "UPDATE", entity = "class_materials", description = "Updated a material")
-    public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto) {
+    public ClassMaterialResponseDto updateMaterial(Integer id, ClassMaterialRequestDto dto, MultipartFile file) throws IOException {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         material.setTitle(dto.getTitle());
         material.setDescription(dto.getDescription());
-        material.setFilePath(dto.getFilePath());
-        material.setFileType(dto.getFileType());
+
+        if (file != null && !file.isEmpty()) {
+            String uploadDir = "uploads/documents";
+            Files.createDirectories(Paths.get(uploadDir));
+
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir, filename);
+            Files.write(filePath, file.getBytes());
+
+            material.setFilePath("uploads/documents/" + filename);
+            material.setFileType(file.getContentType());
+        }
 
         ClassMaterial updated = classMaterialJpaRepository.save(material);
         return toResponseDto(updated);
@@ -112,23 +132,19 @@ public class ClassMaterialService {
     }
 
     public DownloadFileDTO downloadMaterial(Integer id) throws Exception {
-        // 1. Lấy thông tin tài liệu
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material"));
 
-        // 2. Tăng lượt tải
         material.setDownloadCount(material.getDownloadCount() + 1);
         classMaterialJpaRepository.save(material);
 
-        // 3. Lấy file từ đường dẫn (dùng path tuyệt đối)
-        Path path = Paths.get(material.getFilePath());
+        Path path = Paths.get(System.getProperty("user.dir")).resolve(material.getFilePath());
         Resource resource = new UrlResource(path.toUri());
 
         if (!resource.exists()) {
             throw new EntityNotFoundException("File");
         }
 
-        // 4. Trả DTO chứa file và metadata
         return new DownloadFileDTO(
                 resource,
                 material.getFileType() != null ? material.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
