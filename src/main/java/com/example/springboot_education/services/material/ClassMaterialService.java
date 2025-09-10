@@ -1,20 +1,9 @@
 package com.example.springboot_education.services.material;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
@@ -27,7 +16,6 @@ import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.material.ClassMaterialJpaRepository;
-import com.example.springboot_education.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -39,8 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -63,7 +49,6 @@ public class ClassMaterialService {
         material.setDescription(dto.getDescription());
         material.setCreatedBy(user);
         material.setClassField(classEntity);
-
         String uploadDir = "uploads/documents";
         Files.createDirectories(Paths.get(uploadDir));
 
@@ -133,7 +118,7 @@ public class ClassMaterialService {
 
     public DownloadFileDTO downloadMaterial(Integer id) throws Exception {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Material"));
+        .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         material.setDownloadCount(material.getDownloadCount() + 1);
         classMaterialJpaRepository.save(material);
