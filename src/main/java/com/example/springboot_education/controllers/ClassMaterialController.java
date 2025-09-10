@@ -7,8 +7,6 @@ import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.services.material.ClassMaterialService;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,29 +22,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/materials")
 public class ClassMaterialController {
+
     private final ClassMaterialService materialService;
 
-    // @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    // public ResponseEntity<ClassMaterialResponseDto> create(
-    // @RequestParam("title") @NotBlank String title,
-    // @RequestParam(value = "description", required = false) String description,
-    // @RequestParam("classId") @NotNull Integer classId,
-    // @RequestParam("createdBy") @NotNull Integer createdBy,
-    // @RequestParam("file") MultipartFile file) throws IOException {
-
-    // if (file == null || file.isEmpty()) {
-    // throw new HttpException("File must not be empty", HttpStatus.BAD_REQUEST);
-    // }
-
-    // ClassMaterialRequestDto dto = new ClassMaterialRequestDto();
-    // dto.setTitle(title);
-    // dto.setDescription(description);
-    // dto.setClassId(classId);
-    // dto.setCreatedBy(createdBy);
-
-    // return ResponseEntity.ok(materialService.createMaterial(dto, file));
-    // }
-
+    // Create new material
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClassMaterialResponseDto> create(
             @Valid ClassMaterialRequestDto dto,
@@ -56,26 +35,64 @@ public class ClassMaterialController {
             throw new HttpException("File must not be empty", HttpStatus.BAD_REQUEST);
         }
 
-        return ResponseEntity.ok(materialService.createMaterial(dto, file));
+        ClassMaterialResponseDto response = materialService.createMaterial(dto, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // Update existing material (file optional)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ClassMaterialResponseDto> update(
+            @PathVariable("id") Integer id,
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) throws IOException {
+        ClassMaterialRequestDto dto = new ClassMaterialRequestDto();
+        dto.setTitle(title);
+        dto.setDescription(description);
+
+        ClassMaterialResponseDto updated = materialService.updateMaterial(id, dto, file);
+        return ResponseEntity.ok(updated);
+    }
+
+    // Delete material by ID
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
+        materialService.deleteMaterial(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Get materials by class
     @GetMapping("/class/{classId}")
     public ResponseEntity<List<ClassMaterialResponseDto>> getByClass(@PathVariable("classId") Integer classId) {
-        return ResponseEntity.ok(materialService.getMaterialsByClass(classId));
+        List<ClassMaterialResponseDto> list = materialService.getMaterialsByClass(classId);
+        return ResponseEntity.ok(list);
     }
 
-    @GetMapping()
-    public List<ClassMaterialResponseDto> getAllMaterials() {
-        return materialService.getAllMaterials();
+    // Get all materials
+    @GetMapping
+    public ResponseEntity<List<ClassMaterialResponseDto>> getAllMaterials() {
+        List<ClassMaterialResponseDto> list = materialService.getAllMaterials();
+        return ResponseEntity.ok(list);
     }
 
+    // Download file with error handling
     @GetMapping("/download/{id}")
-    public ResponseEntity<?> downloadMaterial(@PathVariable("id") Integer id) throws Exception {
-        DownloadFileDTO fileDto = materialService.downloadMaterial(id);
+    public ResponseEntity<?> downloadMaterial(@PathVariable("id") Integer id) {
+        try {
+            DownloadFileDTO fileDto = materialService.downloadMaterial(id);
+            if (fileDto == null || fileDto.getResource() == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
+            }
 
-        return ResponseEntity.ok()
-                .contentType(org.springframework.http.MediaType.parseMediaType(fileDto.getFileType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
-                .body(fileDto.getResource());
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(fileDto.getFileType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
+                    .body(fileDto.getResource());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error downloading file: " + e.getMessage());
+        }
     }
 }

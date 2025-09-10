@@ -53,6 +53,7 @@ public class ClassService {
         ClassEntity clazz = classRepository.findById(id).orElseThrow();
         return toDTO(clazz);
     }
+
     public ClassEntity getClassEntityById(Integer id) {
         return classRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Class with id " + id));
@@ -131,7 +132,7 @@ public class ClassService {
 
         classRepository.deleteById(id);
     }
-    
+
     @LoggableAction(value = "CREATE", entity = "class_users", description = "Add student to class")
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Check if the student already exists in the class
