@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter @Setter
@@ -18,8 +18,8 @@ public class QuizRequestDTO {
     private String grade;
     private String description;
     private Integer timeLimit;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private OffsetDateTime startDate;
+    private OffsetDateTime endDate;
     private Integer classId;
     private Integer createdBy;
     @Valid

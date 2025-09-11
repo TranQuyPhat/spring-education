@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 public class PasswordController {
 
     private final PasswordService passwordService;
-
-    // --- CHANGE (đã đăng nhập, nhưng ở đây chỉ yêu cầu email+OTP+old/new) ---
     @PostMapping("/change/request-otp")
     public ResponseEntity<?> requestChangePasswordOtp(@RequestBody @Valid PasswordDtos.ChangePasswordOtpRequest req) {
         passwordService.sendChangePasswordOtp(req.getEmail());

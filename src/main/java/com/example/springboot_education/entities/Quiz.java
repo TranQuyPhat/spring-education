@@ -9,7 +9,6 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -35,10 +34,10 @@ public class Quiz {
     private Integer timeLimit;
 
     @Column(name = "start_date")
-    private LocalDateTime startDate;
+    private Instant  startDate;
 
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private Instant  endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
@@ -66,4 +65,6 @@ public class Quiz {
     }
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<QuizQuestion> questions;
+
+
 }

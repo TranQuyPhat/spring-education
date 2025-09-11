@@ -19,5 +19,5 @@ public interface QuizQuestionRepository extends JpaRepository<QuizQuestion,Integ
     List<QuizQuestion> findQuestionsWithOptionsByQuizId(@Param("quizId") Integer quizId);
     Page<QuizQuestion> findByQuiz_Id(Integer quizId, Pageable pageable);
 
-    long countByQuiz_Id(Integer quizId);
+    int countByQuiz_Id(Integer quizId);
 }

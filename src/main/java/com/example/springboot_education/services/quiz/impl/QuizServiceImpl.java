@@ -16,7 +16,6 @@ import com.example.springboot_education.entities.Quiz;
 import com.example.springboot_education.entities.QuizOption;
 import com.example.springboot_education.entities.QuizQuestion;
 import com.example.springboot_education.mapper.QuizMapper2;
-import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.classes.ClassUserRepository;
 import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
@@ -28,7 +27,6 @@ import com.example.springboot_education.untils.QuizUtils;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +48,6 @@ public class QuizServiceImpl implements QuizService {
     private final QuizOptionRepository optionRepository;
     private final QuizMapper2 quizMapper2;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private final UsersJpaRepository usersJpaRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizAccessService quizAccessService;
     @Override
@@ -108,7 +105,7 @@ public class QuizServiceImpl implements QuizService {
 
         return getQuizForTeacher(quiz.getId());
     }
-    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
+//    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
     @Override
     public List<QuizResponseTeacherDTO> getQuizzesByTeacherId(Integer teacherId) {
         List<Quiz> quizzes = quizRepository.findByCreatedBy_Id(teacherId);
@@ -119,13 +116,13 @@ public class QuizServiceImpl implements QuizService {
             dto.setClassId(quiz.getClassField().getId());
             dto.setCreatedBy(teacherId);
             dto.setClassName(quiz.getClassField().getClassName());
-
             int totalStudents = classUserRepository.countByClassField_Id(quiz.getClassField().getId());
             int submitted = quizSubmissionRepository.countByQuiz_Id(quiz.getId());
             dto.setTotalStudents(totalStudents);
             dto.setStudentsSubmitted(submitted);
             dto.setStudentsUnSubmitted(Math.max(0, totalStudents - submitted));
-            dto.setQuestions(null); // Không trả về câu hỏi
+            int totalQuestion=questionRepository.countByQuiz_Id(quiz.getId());
+            dto.setTotalQuestion(totalQuestion);
 
             return dto;
         }).toList();
@@ -138,7 +135,7 @@ public class QuizServiceImpl implements QuizService {
                 .toList();
     }
 
-    @Cacheable(value = "quizzesByStudent", key = "#studentId")
+//    @Cacheable(value = "quizzesByStudent", key = "#studentId")
     @Override
     public List<QuizResponseStudentDTO> getQuizzesByStudentId(Integer studentId) {
         List<Object[]> rows = quizRepository.findBasicQuizzesByStudentId(studentId);
@@ -151,8 +148,8 @@ public class QuizServiceImpl implements QuizService {
             dto.setTitle((String) row[1]);
             dto.setDescription((String) row[2]);
             dto.setTimeLimit(row[3] != null ? ((Number) row[3]).intValue() : null);
-            dto.setStartDate(QuizUtils.convertToLocalDateTime(row[4])); // LocalDateTime
-            dto.setEndDate(QuizUtils.convertToLocalDateTime(row[5]));
+            dto.setStartDate(QuizUtils.convertToOffsetDateTime(row[4]));
+            dto.setEndDate(QuizUtils.convertToOffsetDateTime(row[5]));
             dto.setSubject((String) row[6]);
             dto.setClassName((String) row[7]);
             dto.setTotalQuestion(row[8] != null ? ((Number) row[8]).intValue() : 0);
@@ -239,9 +236,11 @@ public class QuizServiceImpl implements QuizService {
 
         if (dto.getTitle() != null) quiz.setTitle(dto.getTitle());
         if (dto.getDescription() != null) quiz.setDescription(dto.getDescription());
-        if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());
-        if (dto.getStartDate() != null) quiz.setStartDate(dto.getStartDate());
-        if (dto.getEndDate() != null) quiz.setEndDate(dto.getEndDate());
+        if (dto.getTimeLimit() != null) quiz.setTimeLimit(dto.getTimeLimit());if (dto.getStartDate() != null)
+            quiz.setStartDate(dto.getStartDate().toInstant());
+
+        if (dto.getEndDate() != null)
+            quiz.setEndDate(dto.getEndDate().toInstant());
 
         quiz.setUpdatedAt(Instant.now());
         quizRepository.save(quiz);

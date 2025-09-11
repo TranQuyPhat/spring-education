@@ -3,16 +3,37 @@ package com.example.springboot_education.untils;
 import com.example.springboot_education.entities.QuestionType;
 import jakarta.validation.ValidationException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.sql.Timestamp;
+import java.time.*;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public final class QuizUtils {
 
     private QuizUtils() {} // chặn new
+    public static OffsetDateTime convertToOffsetDateTime(Object value) {
+        if (value == null) return null;
 
+        if (value instanceof Timestamp ts) {
+            return ts.toInstant().atOffset(ZoneOffset.ofHours(7)); // Giờ Việt Nam
+        }
+
+        if (value instanceof java.util.Date d) {
+            return d.toInstant().atOffset(ZoneOffset.ofHours(7));
+        }
+
+        if (value instanceof String s) {
+            // Nếu value là chuỗi ISO-8601 (đã có offset)
+            try {
+                return OffsetDateTime.parse(s); // Ưu tiên nếu đã đúng định dạng
+            } catch (Exception e) {
+                // Nếu sai format ISO → fallback sang parse Instant
+                return Instant.parse(s).atOffset(ZoneOffset.ofHours(7));
+            }
+        }
+
+        throw new IllegalArgumentException("Cannot convert to OffsetDateTime: " + value);
+    }
     public static String normalizeCorrectOptions(String raw) {
         if (raw == null || raw.isBlank()) return null;
         return Arrays.stream(raw.split(","))

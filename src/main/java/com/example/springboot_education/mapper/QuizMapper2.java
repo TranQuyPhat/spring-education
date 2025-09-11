@@ -15,7 +15,7 @@ import com.example.springboot_education.repositories.quiz.QuizSubmissionReposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -26,13 +26,18 @@ public class QuizMapper2 {
     private final ClassRepository classRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizSubmissionRepository quizSubmissionRepository;
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     public void mapBaseFields(Quiz quiz, QuizBaseDTO dto) {
         dto.setId(quiz.getId());
         dto.setTitle(quiz.getTitle());
         dto.setDescription(quiz.getDescription());
         dto.setTimeLimit(quiz.getTimeLimit());
-        dto.setStartDate(quiz.getStartDate());
-        dto.setEndDate(quiz.getEndDate());
+        dto.setStartDate(quiz.getStartDate() != null ?
+                quiz.getStartDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
+
+        dto.setEndDate(quiz.getEndDate() != null ?
+                quiz.getEndDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
+
         dto.setSubject(quiz.getSubject());
     }
     public QuizResponseTeacherDTO toTeacherDto(Quiz quiz, List<QuestionTeacherDTO> questions) {
@@ -90,21 +95,32 @@ public class QuizMapper2 {
         return dto;
     }
 
+
     public Quiz toEntity(QuizRequestDTO dto) {
         Quiz quiz = new Quiz();
         quiz.setTitle(dto.getTitle());
         quiz.setDescription(dto.getDescription());
         quiz.setTimeLimit(dto.getTimeLimit());
-        quiz.setStartDate(dto.getStartDate());
-        quiz.setEndDate(dto.getEndDate());
+
+        // OffsetDateTime → Instant
+        quiz.setStartDate(dto.getStartDate() != null ? dto.getStartDate().toInstant() : null);
+        quiz.setEndDate(dto.getEndDate() != null ? dto.getEndDate().toInstant() : null);
+
+        // Lấy class
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found with ID: " + dto.getClassId()));
         quiz.setClassField(classEntity);
+
+        // Lấy user tạo
         Users creator = userRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getCreatedBy()));
         quiz.setCreatedBy(creator);
-        quiz.setCreatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
-        quiz.setUpdatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
+
+        // createdAt, updatedAt = now (UTC)
+        Instant now = Instant.now();
+        quiz.setCreatedAt(now);
+        quiz.setUpdatedAt(now);
+
         return quiz;
     }
 

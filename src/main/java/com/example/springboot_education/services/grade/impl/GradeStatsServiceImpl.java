@@ -148,6 +148,7 @@ public class GradeStatsServiceImpl implements GradeStatsService {
                     total
             );
             result.add(entry);
+            System.out.println("diem :"+result);
         }
 
         return result;

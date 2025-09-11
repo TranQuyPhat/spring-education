@@ -3,23 +3,31 @@ package com.example.springboot_education.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Getter
-@Setter
+@Getter @Setter
 @Entity
-@Table(name = "assignment_comments")
+@Table(
+        name = "assignment_comments",
+        indexes = {
+                @Index(name = "ix_ac_assignment_parent_created", columnList = "assignment_id,parent_id,created_at"),
+                @Index(name = "ix_ac_parent_created", columnList = "parent_id,created_at"),
+                @Index(name = "ix_ac_assignment_created", columnList = "assignment_id,created_at"),
+                @Index(name = "ix_ac_root_created", columnList = "root_id,created_at")
+        }
+)
 public class AssignmentComment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
     @NotNull
@@ -39,17 +47,34 @@ public class AssignmentComment {
     @Column(name = "comment", nullable = false)
     private String comment;
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = new Timestamp(System.currentTimeMillis());
-    }
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Timestamp updatedAt;
+
+    @Column(name = "edited", nullable = false)
+    private boolean edited;
+
+    @Column(name = "deleted_at")
+    private Timestamp deletedAt; // soft delete
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "parent_id", referencedColumnName = "id")
+    @JoinColumn(name = "parent_id")
     private AssignmentComment parent;
 
+    // id của comment gốc trong thread (root = chính nó)
+    @Column(name = "root_id")
+    private Integer rootId;
+
+    // 0 = root, 1 = reply cấp 1...
+    @Column(name = "depth", nullable = false)
+    private int depth;
+
+    // số reply trực tiếp
+    @Column(name = "children_count", nullable = false)
+    private int childrenCount;
 }
