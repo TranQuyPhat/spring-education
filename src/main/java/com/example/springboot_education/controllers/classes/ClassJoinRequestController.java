@@ -12,6 +12,8 @@ import com.example.springboot_education.dtos.joinrequest.JoinRequestResponseDTO;
 import com.example.springboot_education.entities.ClassJoinRequest;
 import com.example.springboot_education.services.classes.ClassJoinRequestService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -23,7 +25,7 @@ public class ClassJoinRequestController {
 
     @PostMapping("/{classId}/join-request")
     public ResponseEntity<JoinRequestDTO> createJoinRequest(
-            @PathVariable("classId") Integer classId,
+            @PathVariable("classId") Integer classId, @Valid
             @RequestBody CreateJoinRequestRequest body) {
 
         return ResponseEntity.ok(service.joinClass(classId, body.getStudentId()));
@@ -59,7 +61,7 @@ public class ClassJoinRequestController {
 
     @PostMapping("/join-requests/{requestId}/reject")
     public ResponseEntity<JoinRequestResponseDTO> reject(
-            @PathVariable("requestId") Integer requestId,
+            @PathVariable("requestId") Integer requestId, @Valid
             @RequestBody(required = false) String reason) {
         return ResponseEntity.ok(service.reject(requestId, 2, reason));
     }

@@ -10,10 +10,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateClassMemberRequestDto {
-      @NotNull(message = "student_id is required")
-    private Integer student_id;
+  @NotNull(message = "student_id is required")
+  private Integer student_id;
 
-    @NotNull(message = "class_id is required")
-    private Integer class_id;
-    private Timestamp joined_at; 
+  @NotNull(message = "class_id is required")
+  private Integer class_id;
+  private Timestamp joined_at;
 }

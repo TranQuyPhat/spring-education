@@ -13,5 +13,6 @@ public class WeightedScorePerClassDTO {
     private String studentName;
     private Double quizAvg;       // nullable
     private Double assignmentAvg; // nullable
+    private Double attendanceScore;
     private Double totalScore;    // đã tính theo hệ số
 }

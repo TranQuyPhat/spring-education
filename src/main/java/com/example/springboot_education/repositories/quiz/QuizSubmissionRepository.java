@@ -62,6 +62,7 @@ public interface QuizSubmissionRepository extends JpaRepository<QuizSubmission, 
         qs.student.fullName,
         AVG(qs.score),
         null,
+        null,
         null
     )
     FROM QuizSubmission qs

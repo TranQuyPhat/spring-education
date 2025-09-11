@@ -13,5 +13,6 @@ import com.example.springboot_education.entities.Attendance;
 public interface AttendanceRepository extends JpaRepository<Attendance, Integer> {
     List<Attendance> findBySession_Id(Integer sessionId);
     Optional<Attendance> findBySessionIdAndStudentId(Integer sessionId, Integer studentId);
+    List<Attendance> findByStudent_IdAndSession_ClassEntity_Id(Integer studentId, Integer classId);
 
 }

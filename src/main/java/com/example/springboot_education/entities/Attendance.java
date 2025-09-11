@@ -43,7 +43,7 @@ public class Attendance {
     @JoinColumn(name = "session_id", nullable = false)
     private ClassScheduleSession session;
 
-     @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AttendanceStatus status = AttendanceStatus.ABSENT;
 

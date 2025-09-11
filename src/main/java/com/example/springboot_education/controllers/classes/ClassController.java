@@ -1,12 +1,9 @@
 package com.example.springboot_education.controllers.classes;
 
-
-
 import lombok.RequiredArgsConstructor;
 
 // import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
@@ -35,12 +32,12 @@ public class ClassController {
     }
 
     @PostMapping
-    public ClassResponseDTO createClass(@RequestBody CreateClassDTO dto) {
+    public ClassResponseDTO createClass(@Valid @RequestBody CreateClassDTO dto) {
         return classService.createClass(dto);
     }
 
     @PutMapping("/{id}")
-    public ClassResponseDTO updateClass(@PathVariable("id") Integer id, @RequestBody CreateClassDTO dto) {
+    public ClassResponseDTO updateClass(@PathVariable("id") Integer id, @Valid @RequestBody CreateClassDTO dto) {
         return classService.updateClass(id, dto);
     }
 
@@ -48,25 +45,24 @@ public class ClassController {
     public void deleteClass(@PathVariable("id") Integer id) {
         classService.deleteClass(id);
     }
+
     @GetMapping("/teachers/{teacherId}")
     public List<ClassResponseDTO> getAllClassesOfTeacher(
-            @PathVariable("teacherId") Integer teacherId
-    ) {
+            @PathVariable("teacherId") Integer teacherId) {
         return classService.getAllClassesOfTeacher(teacherId);
     }
-    
+
     @GetMapping("/teacher/{teacherId}")
     public PaginatedClassResponseDto getClassesOfTeacher(
             @PathVariable("teacherId") Integer teacherId,
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "6") int size
-    ) {
+            @RequestParam(name = "size", defaultValue = "6") int size) {
         return classService.getClassesOfTeacher(teacherId, page, size);
     }
-    @PostMapping("/test")  
-public String test(@RequestBody CreateClassDTO dto) {
-    return "OK - TeacherId: " + dto.getTeacherId();
-}
 
-    
+    @PostMapping("/test")
+    public String test(@Valid @RequestBody CreateClassDTO dto) {
+        return "OK - TeacherId: " + dto.getTeacherId();
+    }
+
 }

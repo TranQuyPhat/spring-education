@@ -1,6 +1,7 @@
 package com.example.springboot_education.repositories.classes;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
 import com.example.springboot_education.entities.ClassUser;
 import com.example.springboot_education.entities.ClassUserId;
 
@@ -20,6 +22,8 @@ public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserI
     // Lấy danh sách class theo student
     List<ClassUser> findByStudent_Id(Integer studentId);
     Page<ClassUser> findByStudent_Id(Integer studentId, Pageable pageable);
+
+    Optional<ClassUser> findByClassField_IdAndStudent_Id(Integer classId, Integer studentId);
 
     // Kiểm tra xem student đã thuộc class chưa
     boolean existsByClassField_IdAndStudent_Id(Integer classId, Integer studentId);
@@ -51,5 +55,21 @@ public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserI
       ) t
     """)
     Double classWeightedAvg(@Param("classId") Integer classId, @Param("subjectId") Integer subjectId);
+
+    @Query("""
+      SELECT new com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO(
+          cu.classField.id,
+          cu.classField.className,
+          u.fullName,
+          null,
+          null,
+          cu.attendanceScore,
+          null
+      )
+      FROM ClassUser cu
+      JOIN cu.student u
+      WHERE u.id = :studentId
+    """)
+    List<WeightedScorePerClassDTO> findAttendanceScoreByStudent(@Param("studentId") Integer studentId);
 
 }
