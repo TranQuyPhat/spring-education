@@ -112,6 +112,14 @@ public class SubmissionController {
         return submissionService.getSubmissionsByClassId(classId);
     }
 
+    // Lấy bài nộp học sinh trong 1 lớp
+    @GetMapping("/class/{classId}/student/{studentId}")
+    public List<SubmissionResponseDto> getByClassAndStudent(
+            @PathVariable Integer classId,
+            @PathVariable Integer studentId) {
+        return submissionService.getSubmissionsByClassIdAndStudentId(classId, studentId);
+    }
+
     // Tải file nộp bài về
     @GetMapping("/download/{id}")
     public ResponseEntity<?> downloadSubmission(@PathVariable("id") Integer id) throws Exception {

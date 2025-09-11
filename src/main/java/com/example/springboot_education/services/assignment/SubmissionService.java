@@ -71,6 +71,15 @@ public class SubmissionService {
             dto.setStudent(studentDto);
         }
 
+        if (submission.getAssignment() != null) {
+            SubmissionResponseDto.AssignmentDto assignmentDto = SubmissionResponseDto.AssignmentDto.builder()
+                    .id(submission.getAssignment().getId())
+                    .title(submission.getAssignment().getTitle())
+                    .build();
+
+            dto.setAssignment(assignmentDto);
+        }
+
         return dto;
     }
 
@@ -226,6 +235,17 @@ public class SubmissionService {
                 .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
 
         return submissionJpaRepository.findByClassId(classId)
+                .stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    // Get submission by student, class
+    public List<SubmissionResponseDto> getSubmissionsByClassIdAndStudentId(Integer classId, Integer studentId) {
+        classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with id: " + classId));
+
+        return submissionJpaRepository.findByClassIdAndStudentId(classId, studentId)
                 .stream()
                 .map(this::convertToDto)
                 .toList();
