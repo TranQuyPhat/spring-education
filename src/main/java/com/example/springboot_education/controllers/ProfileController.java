@@ -53,35 +53,32 @@ public class ProfileController {
         return ResponseEntity.ok().build();
     }
 
-   @PostMapping("/avatar")
-@Transactional
-public ResponseEntity<UserResponseDto> uploadAvatar(@RequestBody Map<String, String> payload) {
-    try {
-        String base64 = payload.get("avatarBase64"); 
-        if (base64 == null || base64.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+    @PostMapping("/avatar")
+    @Transactional
+    public ResponseEntity<UserResponseDto> uploadAvatar(@RequestBody Map<String, String> payload) {
+        try {
+            String base64 = payload.get("avatarBase64");
+            if (base64 == null || base64.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Validate Base64 format
+            if (!base64.startsWith("data:image/")) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            Users user = userService.getUserEntityByUsername(username);
+
+            return ResponseEntity.ok(
+                    userService.updateProfileByUser(
+                            user.getId(),
+                            new UpdateProfileRequestDto(user.getFullName(), base64)));
+        } catch (Exception e) {
+            log.error("Error uploading avatar: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        // Validate Base64 format
-        if (!base64.startsWith("data:image/")) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        Users user = userService.getUserEntityByUsername(username);
-
-        return ResponseEntity.ok(
-            userService.updateProfileByUser(
-                user.getId(),
-                new UpdateProfileRequestDto(user.getFullName(), base64) 
-            )
-        );
-    } catch (Exception e) {
-        log.error("Error uploading avatar: ", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-}
-
 
 }

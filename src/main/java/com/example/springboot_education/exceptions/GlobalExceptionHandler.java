@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-   // Data validation error handler
+    // Data validation error handler
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
         List<String> errorMessages = new ArrayList<>();
@@ -39,7 +38,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-  // Access denied error handler
+    // Access denied error handler
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
         Map<String, Object> errorResponse = new HashMap<>();
@@ -76,16 +75,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, ex.getStatus());
     }
 
-     // Custom HTTP exception handler
+    // Custom HTTP exception handler
     @ExceptionHandler(HttpException.class)
     public ResponseEntity<ErrorResponse> handleHttpException(HttpException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 ex.getStatus().value(),
                 List.of(ex.getMessage()),
-                ex.getStatus().getReasonPhrase()
-        );
+                ex.getStatus().getReasonPhrase());
         return new ResponseEntity<>(errorResponse, ex.getStatus());
     }
+
     // Generic exception handler for uncaught exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
@@ -93,21 +92,41 @@ public class GlobalExceptionHandler {
                 List.of(ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // @ExceptionHandler(UnauthorizedException.class)
+    // public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex) {
+    // return ResponseEntity
+    // .status(HttpStatus.UNAUTHORIZED)
+    // .body(new APIResponse<>(false, ex.getMessage(), null));
+    // }
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new APIResponse<>(false, ex.getMessage(), null));}
+    public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                List.of(ex.getMessage()),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
 
-     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<Map<String, Object>> handleMaxSizeException(MaxUploadSizeExceededException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", 413); 
-        response.put("error", "Payload Too Large");
-        response.put("message", "File size exceeds the allowed limit. Please upload a smaller file.");
+    // @ExceptionHandler(MaxUploadSizeExceededException.class)
+    // public ResponseEntity<Map<String, Object>>
+    // handleMaxSizeException(MaxUploadSizeExceededException ex) {
+    // Map<String, Object> response = new HashMap<>();
+    // response.put("status", 413);
+    // response.put("error", "Payload Too Large");
+    // response.put("message", "File size exceeds the allowed limit. Please upload a
+    // smaller file.");
 
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(response);
+    // return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(response);
+    // }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxSizeException(MaxUploadSizeExceededException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                List.of("File size exceeds the allowed limit. Please upload a smaller file."),
+                HttpStatus.PAYLOAD_TOO_LARGE.getReasonPhrase());
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorResponse);
     }
 
 }
-

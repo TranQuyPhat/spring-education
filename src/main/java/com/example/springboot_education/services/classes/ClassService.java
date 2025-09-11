@@ -29,7 +29,6 @@ import com.example.springboot_education.entities.ClassUserId;
 import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
 
-
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,9 +49,11 @@ public class ClassService {
     }
 
     public ClassResponseDTO getClassById(Integer id) {
-        ClassEntity clazz = classRepository.findById(id).orElseThrow();
+        ClassEntity clazz = classRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Class with id " + id));
         return toDTO(clazz);
     }
+
     public ClassEntity getClassEntityById(Integer id) {
         return classRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Class with id " + id));
@@ -63,7 +64,7 @@ public class ClassService {
     // @CacheEvict(value = "classesOfTeacher", key = "#dto.teacherId")
     public ClassResponseDTO createClass(CreateClassDTO dto) {
         Users teacher = userRepository.findById(dto.getTeacherId())
-                .orElseThrow();
+                .orElseThrow(() -> new EntityNotFoundException("Teacher"));
         Subject subject = subjectRepository.findById(dto.getSubjectId())
                 .orElseThrow(() -> new EntityNotFoundException("Subject"));
 
@@ -131,7 +132,7 @@ public class ClassService {
 
         classRepository.deleteById(id);
     }
-    
+
     @LoggableAction(value = "CREATE", entity = "class_users", description = "Add student to class")
     public void addStudentToClass(AddStudentToClassDTO dto) {
         // Check if the student already exists in the class
