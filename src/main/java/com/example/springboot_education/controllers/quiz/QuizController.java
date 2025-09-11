@@ -34,7 +34,7 @@ public class QuizController {
     }
     @GetMapping("/{quizId}")
     public ResponseEntity<?> getQuizByRole(
-            @PathVariable Integer quizId,
+            @PathVariable("quizId") Integer quizId,
             @CurrentUser Users currentUser) {
         try {
             var roles = currentUser.getUserRoles();
