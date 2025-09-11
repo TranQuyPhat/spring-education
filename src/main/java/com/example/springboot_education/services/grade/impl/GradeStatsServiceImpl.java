@@ -6,6 +6,7 @@ import com.example.springboot_education.dtos.gradeDTOs.GradeBase.QuizAverageScor
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
 import com.example.springboot_education.repositories.DashboardRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
+import com.example.springboot_education.repositories.classes.ClassUserRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.services.grade.GradeStatsService;
@@ -21,6 +22,7 @@ public class GradeStatsServiceImpl implements GradeStatsService {
 
     private final QuizSubmissionRepository quizRepo;
     private final SubmissionJpaRepository submissionRepo;
+    private final ClassUserRepository classUserRepo;
     private final DashboardRepository dashboardRepository;
     private final AssignmentService assignmentService;
 
@@ -114,41 +116,49 @@ public class GradeStatsServiceImpl implements GradeStatsService {
     public List<WeightedScorePerClassDTO> getWeightedAveragePerClassByStudent(Integer studentId) {
         List<WeightedScorePerClassDTO> quizList = quizRepo.findQuizAvgByClassAndStudent(studentId);
         List<WeightedScorePerClassDTO> assignList = submissionRepo.findAssignmentAvgByClassAndStudent(studentId);
+        List<WeightedScorePerClassDTO> attendanceList = classUserRepo.findAttendanceScoreByStudent(studentId);
 
         Map<Integer, WeightedScorePerClassDTO> quizMap = quizList.stream()
                 .collect(Collectors.toMap(WeightedScorePerClassDTO::getClassId, q -> q));
-
         Map<Integer, WeightedScorePerClassDTO> assignMap = assignList.stream()
                 .collect(Collectors.toMap(WeightedScorePerClassDTO::getClassId, a -> a));
+        Map<Integer, WeightedScorePerClassDTO> attendanceMap = attendanceList.stream()
+                .collect(Collectors.toMap(WeightedScorePerClassDTO::getClassId, at -> at));
 
         // Tập hợp tất cả classId
         Set<Integer> allClassIds = new HashSet<>();
         allClassIds.addAll(quizMap.keySet());
         allClassIds.addAll(assignMap.keySet());
+        allClassIds.addAll(attendanceMap.keySet());
 
         List<WeightedScorePerClassDTO> result = new ArrayList<>();
 
         for (Integer classId : allClassIds) {
             WeightedScorePerClassDTO quiz = quizMap.get(classId);
             WeightedScorePerClassDTO ass = assignMap.get(classId);
+            WeightedScorePerClassDTO att = attendanceMap.get(classId);
 
             Double quizAvg = quiz != null ? quiz.getQuizAvg() : null;
             Double assignAvg = ass != null ? ass.getAssignmentAvg() : null;
+            Double attendanceAvg = att != null ? att.getAttendanceScore() : null;
 
             double quizPart = quizAvg != null ? quizAvg * 0.5 : 10.0 * 0.5;
             double assignPart = assignAvg != null ? assignAvg * 0.4 : 10.0 * 0.4;
-            double total = Math.round((quizPart + assignPart) * 100.0) / 100.0;
+            double attendancePart = attendanceAvg != null ? attendanceAvg * 0.1 : 0;
+
+            double total = Math.round((quizPart + assignPart + attendancePart) * 100.0) / 100.0;
 
             WeightedScorePerClassDTO entry = new WeightedScorePerClassDTO(
                     classId,
-                    quiz != null ? quiz.getClassName() : ass.getClassName(),
-                    quiz != null ? quiz.getStudentName() : ass.getStudentName(),
+                    quiz != null ? quiz.getClassName() : (ass != null ? ass.getClassName() : att.getClassName()),
+                    quiz != null ? quiz.getStudentName() : (ass != null ? ass.getStudentName() : att.getStudentName()),
                     quizAvg,
                     assignAvg,
+                    attendanceAvg,
                     total
             );
             result.add(entry);
-            System.out.println("diem :"+result);
+            // System.out.println("diem: " + result);
         }
 
         return result;
