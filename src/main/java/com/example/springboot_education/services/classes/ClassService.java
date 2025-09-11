@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -226,6 +227,19 @@ public class ClassService {
         return classRepository.findById(classId)
                 .map(ClassEntity::getClassName)
                 .orElseThrow(() -> new EntityNotFoundException("Class with id " + classId));
+    }
+
+
+    public List<ClassResponseDTO> searchClasses(String keyword) {
+        return classRepository.findByClassNameContainingIgnoreCaseOrderByCreatedAtDesc(keyword)
+                    .stream().map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+
+    public List<ClassResponseDTO> getLatestClasses() {
+        return classRepository.findTop10ByOrderByCreatedAtDesc()
+                .stream().map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
 }

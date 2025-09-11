@@ -21,4 +21,7 @@ public interface ClassRepository extends JpaRepository<ClassEntity, Integer> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT MAX(c.id) FROM ClassEntity c WHERE c.id >= :prefixStart")
     Integer findMaxIdByPrefixForUpdate(@Param("prefixStart") Integer prefixStart);
+    List<ClassEntity> findByClassNameContainingIgnoreCaseOrderByCreatedAtDesc(String keyword);
+
+    List<ClassEntity> findTop10ByOrderByCreatedAtDesc();
 }
