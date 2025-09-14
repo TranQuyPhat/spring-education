@@ -13,7 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false) // thêm dòng này để Lombok không gọi super
 public class QuestionTeacherDTO extends QuestionBaseDTO {
-    private String correctOption;
+    private String correctOptions;
     private Set<String> correctAnswerTexts;
     private String correctAnswerRegex;
     private boolean caseSensitive;

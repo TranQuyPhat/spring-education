@@ -66,7 +66,7 @@ public class QuizServiceImpl implements QuizService {
             question.setScore(qdto.getScore());
             question.setCreatedAt(Instant.now());
             question.setUpdatedAt(Instant.now());
-            String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOption());
+            String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOptions());
             QuizUtils.validateByType(qdto.getQuestionType(), normalized);
             question.setCorrectOptions(normalized);
             if (qdto.getQuestionType() == QuestionType.TRUE_FALSE) {
@@ -270,7 +270,7 @@ public class QuizServiceImpl implements QuizService {
                 seenQuestionIds.add(q.getId());
             }
             q.setQuestionText(qdto.getQuestionText());
-            q.setCorrectOptions(qdto.getCorrectOption());
+            q.setCorrectOptions(qdto.getCorrectOptions());
             q.setScore(qdto.getScore());
             q.setUpdatedAt(Instant.now());
             q = questionRepository.save(q);

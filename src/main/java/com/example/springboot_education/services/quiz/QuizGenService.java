@@ -57,19 +57,20 @@ public class QuizGenService {
                 .properties(Map.of(
                         "questionText", Schema.builder().type(Type.Known.STRING).build(),
                         "options", Schema.builder().type(Type.Known.ARRAY)
-                                .minItems(4L).maxItems(4L)
+                                .minItems(2L).maxItems(4L) // TRUE_FALSE chỉ cần 2, MCQ thì 4
                                 .items(optionSchema)
                                 .build(),
-                        // Giữ correctIndex để tương thích backend (0..3)
                         "correctIndex", Schema.builder().type(Type.Known.INTEGER)
                                 .minimum(0.0).maximum(3.0).build(),
                         "explanation", Schema.builder().type(Type.Known.STRING).build(),
                         "topic", Schema.builder().type(Type.Known.STRING).build(),
                         "difficulty", Schema.builder().type(Type.Known.STRING)
-                                .enum_(List.of("easy","medium","hard")).build()
+                                .enum_(List.of("easy","medium","hard")).build(),
+                        "questionType", Schema.builder().type(Type.Known.STRING)
+                                .enum_(List.of("ONE_CHOICE","MULTI_CHOICE","TRUE_FALSE","FILL_BLANK")).build()
                 ))
-                .required(List.of("questionText","options","correctIndex"))
-                .propertyOrdering(List.of("questionText","options","correctIndex","explanation","topic","difficulty"))
+                .required(List.of("questionText","options","correctIndex","questionType"))
+                .propertyOrdering(List.of("questionText","options","correctIndex","explanation","topic","difficulty","questionType"))
                 .build();
 
         Schema quizSchema = Schema.builder()
@@ -78,7 +79,7 @@ public class QuizGenService {
                         "quizTitle", Schema.builder().type(Type.Known.STRING).build(),
                         "questions", Schema.builder().type(Type.Known.ARRAY).items(questionSchema).build()
                 ))
-                .required(List.of("questions"))
+                .required(List.of("quizTitle","questions"))
                 .propertyOrdering(List.of("quizTitle","questions"))
                 .build();
 
