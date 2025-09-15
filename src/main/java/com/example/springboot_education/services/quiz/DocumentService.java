@@ -18,9 +18,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Service xử lý file PDF/TXT -> trích text -> gọi LLM nhiều lần theo chunk -> gộp JSON theo schema QuestionResponse.
- */
 @Service
 public class DocumentService {
 
@@ -93,13 +90,11 @@ public class DocumentService {
         // Common ligatures
         s = s.replace("ﬁ", "fi").replace("ﬂ", "fl");
 
-        // Join hyphenated words at line breaks: "từ-\n tiếp" -> "từtiếp"
         s = s.replaceAll("([\\p{L}\\p{N}])\\-\\R([\\p{L}\\p{N}])", "$1$2");
 
         // Normalize newlines
         s = s.replace("\r\n", "\n").replace("\r", "\n");
 
-        // Collapse whitespace runs (except newline)
         s = s.replaceAll("[ \\t\\x0B\\f]+", " ");
 
         // Trim empty lines

@@ -1,11 +1,9 @@
 package com.example.springboot_education.dtos.classDTOs;
 
+import com.example.springboot_education.entities.ClassEntity.JoinMode;
 import lombok.Data;
 
-
 import java.time.Instant;
-
-import com.example.springboot_education.entities.ClassEntity.JoinMode;
 
 @Data
 public class ClassResponseDTO {
@@ -19,5 +17,6 @@ public class ClassResponseDTO {
     private TeacherDTO teacher;
     private SubjectDTO subject;
     private JoinMode joinMode;
+    private String slackInviteLink;
 }
 

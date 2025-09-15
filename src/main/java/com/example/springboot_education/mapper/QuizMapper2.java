@@ -91,6 +91,7 @@ public class QuizMapper2 {
 
     public OptionDTO toOptionDto(QuizOption opt) {
         OptionDTO dto = new OptionDTO();
+        dto.setId(opt.getId());
         dto.setOptionLabel(opt.getOptionLabel());
         dto.setOptionText(opt.getOptionText());
         return dto;

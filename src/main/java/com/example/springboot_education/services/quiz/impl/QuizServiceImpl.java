@@ -246,17 +246,17 @@ public class QuizServiceImpl implements QuizService {
         quizRepository.save(quiz);
         return getQuizForTeacher(quizId);
     }
-    @Override
-    @Transactional
-    public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+        @Override
+        @Transactional
+        public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
+            Quiz quiz = quizRepository.findById(quizId)
+                    .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        List<QuizQuestion> existedQuestions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
-        Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
-                .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
+            List<QuizQuestion> existedQuestions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
+            Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
+                    .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
 
-        Set<Integer> seenQuestionIds = new HashSet<>();
+            Set<Integer> seenQuestionIds = new HashSet<>();
 
         for (QuestionTeacherDTO qdto : body.getQuestions()) {
             QuizQuestion q;

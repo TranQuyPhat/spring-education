@@ -2,12 +2,19 @@
 package com.example.springboot_education.services.classes;
 
 import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.classDTOs.*;
+import com.example.springboot_education.entities.*;
 import com.example.springboot_education.entities.ClassEntity.JoinMode;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.SubjectRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.classes.ClassUserRepository;
+import com.example.springboot_education.services.SlackService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,10 +37,12 @@ import com.example.springboot_education.entities.ClassUserId;
 import com.example.springboot_education.entities.Subject;
 import com.example.springboot_education.entities.Users;
 
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClassService {
@@ -42,7 +51,8 @@ public class ClassService {
     private final UsersJpaRepository userRepository;
     private final ClassUserRepository classUserRepository;
     private final SubjectRepository subjectRepository;
-
+    @Autowired
+    private SlackService slackService;
     public List<ClassResponseDTO> getAllClasses() {
         return classRepository.findAll()
                 .stream().map(this::toDTO)
@@ -99,6 +109,36 @@ public class ClassService {
         clazz.setCreatedAt(Instant.now());
 
         ClassEntity saved = classRepository.save(clazz);
+
+
+        String channelName = generateChannelName(saved);
+        String channelDescription = String.format("Lớp %s - %s (%d - %s)",
+                saved.getClassName(),
+                saved.getSubject().getSubjectName(),
+                saved.getSchoolYear(),
+                saved.getSemester());
+
+        log.info("Creating Slack PRIVATE channel for class {}: {}", saved.getId(), channelName);
+
+        // 🔹 Tạo private channel
+        SlackService.SlackChannelResult channelResult =
+                slackService.createPrivateChannel(channelName, channelDescription);
+
+        if (channelResult.isSuccess()) {
+            saved.setSlackChannelId(channelResult.getChannelId());
+            saved.setSlackInviteLink(channelResult.getInviteLink());
+            classRepository.save(saved);
+
+            // 🔹 Add teacher (nếu đã trong workspace)
+            String teacherSlackId = slackService.lookupUserIdByEmail(teacher.getEmail());
+            if (teacherSlackId != null) {
+                slackService.inviteUserToChannel(channelResult.getChannelId(), teacherSlackId);
+            }
+
+            log.info("Created Slack channel {} for class {}", channelResult.getChannelName(), saved.getId());
+        } else {
+            log.error("Failed to create Slack channel for class {}: {}", saved.getId(), channelResult.getError());
+        }
 
         return toDTO(saved);
     }
@@ -184,6 +224,7 @@ public class ClassService {
             subjectDTO.setName(clazz.getSubject().getSubjectName());
             dto.setSubject(subjectDTO);
         }
+        dto.setSlackInviteLink(clazz.getSlackInviteLink());
         return dto;
     }
 
@@ -227,6 +268,32 @@ public class ClassService {
         return classRepository.findById(classId)
                 .map(ClassEntity::getClassName)
                 .orElseThrow(() -> new EntityNotFoundException("Class with id " + classId));
+    }
+
+
+    private String generateChannelName(ClassEntity clazz) {
+        // 1. Ghép tên lớp + môn học
+        String raw = String.format("%s-%s",
+                clazz.getClassName(),
+                clazz.getSubject().getSubjectName()
+        );
+
+        // 2. Chuyển thành không dấu (remove accents)
+        String normalized = Normalizer.normalize(raw, Normalizer.Form.NFD);
+        String withoutAccents = normalized.replaceAll("\\p{M}", "");
+
+        // 3. Chuyển thành lowercase, thay khoảng trắng & ký tự đặc biệt bằng "-"
+        String name = withoutAccents.toLowerCase()
+                .replaceAll("[^a-z0-9]", "-")
+                .replaceAll("-+", "-")   // bỏ dấu --- liên tiếp
+                .replaceAll("^-|-$", ""); // bỏ dấu - ở đầu/cuối
+
+        // 4. Giới hạn 21 ký tự
+        if (name.length() > 21) {
+            name = name.substring(0, 21);
+        }
+
+        return name;
     }
 
 
