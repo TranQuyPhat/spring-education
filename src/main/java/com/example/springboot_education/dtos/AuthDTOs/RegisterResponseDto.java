@@ -14,4 +14,5 @@ public class RegisterResponseDto {
     private String username;
     private String email;
     private String accessToken;
+    private String workspaceInviteLink;
 }

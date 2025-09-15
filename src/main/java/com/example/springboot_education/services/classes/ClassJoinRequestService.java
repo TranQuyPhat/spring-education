@@ -1,7 +1,9 @@
 package com.example.springboot_education.services.classes;
 
+import com.example.springboot_education.services.SlackService;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClassJoinRequestService {
 
         private final ClassJoinRequestRepository repo;
@@ -27,6 +30,7 @@ public class ClassJoinRequestService {
         private final ClassService classService;
         private final ClassUserService classUserService;
         private final UserService userService;
+        private final SlackService slackService;
 
         @Transactional
         public JoinRequestDTO joinClass(Integer classId, Integer studentId) {
@@ -101,32 +105,58 @@ public class ClassJoinRequestService {
                 return convertListToDTOs(requests);
         }
 
-        @Transactional
-        public JoinRequestResponseDTO approve(Integer requestId, Integer teacherId) {
-                ClassJoinRequest req = repo.findById(requestId)
-                                .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));
+    @Transactional
+    public JoinRequestResponseDTO approve(Integer requestId, Integer teacherId) {
 
-                req.setStatus(ClassJoinRequest.Status.APPROVED);
-                classUserService.addStudentToClass(req.getClassEntity().getId(), req.getStudent().getId());
+        ClassJoinRequest req = repo.findById(requestId)
+                .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));
 
-                notificationService.notifyStudent(req.getStudent().getId(),
-                                ApprovalResponseDTO.builder()
-                                                .requestId(req.getId())
-                                                .approved(true)
-                                                .message("Yêu cầu của bạn đã được duyệt.")
-                                                .build());
+        req.setStatus(ClassJoinRequest.Status.APPROVED);
 
-                return JoinRequestResponseDTO.builder()
-                                .requestId(req.getId())
-                                .classId(req.getClassEntity().getId())
-                                .studentId(req.getStudent().getId())
-                                .studentName(req.getStudent().getFullName())
-                                .status(req.getStatus())
-                                .message("Yêu cầu đã được duyệt thành công")
-                                .build();
+        // 1. Thêm học sinh vào bảng quan hệ lớp – user
+        classUserService.addStudentToClass(req.getClassEntity().getId(), req.getStudent().getId());
+
+        // 2. Gửi thông báo nội bộ
+        notificationService.notifyStudent(req.getStudent().getId(),
+                ApprovalResponseDTO.builder()
+                        .requestId(req.getId())
+                        .approved(true)
+                        .message("Yêu cầu của bạn đã được duyệt.")
+                        .build());
+
+        // 3. Mời học sinh vào Slack channel của lớp
+        String channelId = req.getClassEntity().getSlackChannelId();
+        if (channelId != null) {
+            // Lấy user_id của Slack từ email học sinh
+            String email = req.getStudent().getEmail();
+            String slackUserId = slackService.lookupUserIdByEmail(email); // bạn viết hàm này dùng users.lookupByEmail
+
+            if (slackUserId != null) {
+                boolean invited = slackService.inviteUserToChannel(channelId, slackUserId);
+                if (invited) {
+                    log.info("Invited {} to Slack channel {}", email, channelId);
+                } else {
+                    log.warn("Failed to invite {} to Slack channel {}", email, channelId);
+                }
+            } else {
+                log.warn("No Slack user found for email {}", email);
+            }
+        } else {
+            log.warn("Class {} has no Slack channel ID", req.getClassEntity().getId());
         }
 
-        @Transactional
+        return JoinRequestResponseDTO.builder()
+                .requestId(req.getId())
+                .classId(req.getClassEntity().getId())
+                .studentId(req.getStudent().getId())
+                .studentName(req.getStudent().getFullName())
+                .status(req.getStatus())
+                .message("Yêu cầu đã được duyệt thành công")
+                .build();
+    }
+
+
+    @Transactional
         public JoinRequestResponseDTO reject(Integer requestId, Integer teacherId, String reason) {
                 ClassJoinRequest req = repo.findById(requestId)
                                 .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));

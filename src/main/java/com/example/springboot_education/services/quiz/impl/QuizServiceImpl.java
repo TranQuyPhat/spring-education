@@ -66,7 +66,7 @@ public class QuizServiceImpl implements QuizService {
             question.setScore(qdto.getScore());
             question.setCreatedAt(Instant.now());
             question.setUpdatedAt(Instant.now());
-            String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOption());
+            String normalized = QuizUtils.normalizeCorrectOptions(qdto.getCorrectOptions());
             QuizUtils.validateByType(qdto.getQuestionType(), normalized);
             question.setCorrectOptions(normalized);
             if (qdto.getQuestionType() == QuestionType.TRUE_FALSE) {
@@ -246,79 +246,79 @@ public class QuizServiceImpl implements QuizService {
         quizRepository.save(quiz);
         return getQuizForTeacher(quizId);
     }
-    @Override
-    @Transactional
-    public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+        @Override
+        @Transactional
+        public QuizResponseTeacherDTO updateQuizContent(Integer quizId, QuizContentUpdateDTO body) {
+            Quiz quiz = quizRepository.findById(quizId)
+                    .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
-        List<QuizQuestion> existedQuestions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
-        Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
-                .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
+            List<QuizQuestion> existedQuestions = questionRepository.findQuestionsWithOptionsByQuizId(quizId);
+            Map<Integer, QuizQuestion> qMap = existedQuestions.stream()
+                    .collect(Collectors.toMap(QuizQuestion::getId, q -> q));
 
-        Set<Integer> seenQuestionIds = new HashSet<>();
+            Set<Integer> seenQuestionIds = new HashSet<>();
 
-        for (QuestionTeacherDTO qdto : body.getQuestions()) {
-            QuizQuestion q;
-            if (qdto.getId() == null) {
-                q = new QuizQuestion();
-                q.setQuiz(quiz);
-                q.setCreatedAt(Instant.now());
-            } else {
-                q = qMap.get(qdto.getId());
-                if (q == null) throw new RuntimeException("Question not found: " + qdto.getId());
-                seenQuestionIds.add(q.getId());
-            }
-            q.setQuestionText(qdto.getQuestionText());
-            q.setCorrectOptions(qdto.getCorrectOption());
-            q.setScore(qdto.getScore());
-            q.setUpdatedAt(Instant.now());
-            q = questionRepository.save(q);
-
-            // --- xử lý options ---
-            List<QuizOption> existedOpts = optionRepository.findByQuestion_Id(q.getId());
-            Map<Integer, QuizOption> oMap = existedOpts.stream()
-                    .collect(Collectors.toMap(QuizOption::getId, o -> o));
-            Set<Integer> seenOptIds = new HashSet<>();
-
-            for (OptionDTO odto : qdto.getOptions()) {
-                QuizOption opt;
-                if (odto.getId() == null) {
-                    opt = new QuizOption();
-                    opt.setQuestion(q);
-                    opt.setCreatedAt(Instant.now());
+            for (QuestionTeacherDTO qdto : body.getQuestions()) {
+                QuizQuestion q;
+                if (qdto.getId() == null) {
+                    q = new QuizQuestion();
+                    q.setQuiz(quiz);
+                    q.setCreatedAt(Instant.now());
                 } else {
-                    opt = oMap.get(odto.getId());
-                    if (opt == null) throw new RuntimeException("Option not found: " + odto.getId());
-                    seenOptIds.add(opt.getId());
+                    q = qMap.get(qdto.getId());
+                    if (q == null) throw new RuntimeException("Question not found: " + qdto.getId());
+                    seenQuestionIds.add(q.getId());
                 }
-                opt.setOptionLabel(odto.getOptionLabel());
-                opt.setOptionText(odto.getOptionText());
-                opt.setUpdatedAt(Instant.now());
-                optionRepository.save(opt);
+                q.setQuestionText(qdto.getQuestionText());
+                q.setCorrectOptions(qdto.getCorrectOptions());
+                q.setScore(qdto.getScore());
+                q.setUpdatedAt(Instant.now());
+                q = questionRepository.save(q);
+
+                // --- xử lý options ---
+                List<QuizOption> existedOpts = optionRepository.findByQuestion_Id(q.getId());
+                Map<Integer, QuizOption> oMap = existedOpts.stream()
+                        .collect(Collectors.toMap(QuizOption::getId, o -> o));
+                Set<Integer> seenOptIds = new HashSet<>();
+
+                for (OptionDTO odto : qdto.getOptions()) {
+                    QuizOption opt;
+                    if (odto.getId() == null) {
+                        opt = new QuizOption();
+                        opt.setQuestion(q);
+                        opt.setCreatedAt(Instant.now());
+                    } else {
+                        opt = oMap.get(odto.getId());
+                        if (opt == null) throw new RuntimeException("Option not found: " + odto.getId());
+                        seenOptIds.add(opt.getId());
+                    }
+                    opt.setOptionLabel(odto.getOptionLabel());
+                    opt.setOptionText(odto.getOptionText());
+                    opt.setUpdatedAt(Instant.now());
+                    optionRepository.save(opt);
+                }
+
+                // Xóa option thừa nếu replaceAll
+                if (body.isReplaceAll()) {
+                    existedOpts.stream()
+                            .filter(o -> !seenOptIds.contains(o.getId()))
+                            .forEach(optionRepository::delete);
+                }
             }
 
-            // Xóa option thừa nếu replaceAll
+            // Xóa question thừa nếu replaceAll
             if (body.isReplaceAll()) {
-                existedOpts.stream()
-                        .filter(o -> !seenOptIds.contains(o.getId()))
-                        .forEach(optionRepository::delete);
+                existedQuestions.stream()
+                        .filter(q -> !seenQuestionIds.contains(q.getId())
+                                && body.getQuestions().stream().noneMatch(dto -> Objects.equals(dto.getId(), q.getId())))
+                        .forEach(questionRepository::delete);
             }
+
+            quiz.setUpdatedAt(Instant.now());
+            quizRepository.save(quiz);
+
+            return getQuizForTeacher(quizId);
         }
-
-        // Xóa question thừa nếu replaceAll
-        if (body.isReplaceAll()) {
-            existedQuestions.stream()
-                    .filter(q -> !seenQuestionIds.contains(q.getId())
-                            && body.getQuestions().stream().noneMatch(dto -> Objects.equals(dto.getId(), q.getId())))
-                    .forEach(questionRepository::delete);
-        }
-
-        quiz.setUpdatedAt(Instant.now());
-        quizRepository.save(quiz);
-
-        return getQuizForTeacher(quizId);
-    }
     @Override
     @Transactional
     public void deleteQuestion(Integer quizId, Integer questionId) {
