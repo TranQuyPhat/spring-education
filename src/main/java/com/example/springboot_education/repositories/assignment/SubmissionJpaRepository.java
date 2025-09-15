@@ -24,6 +24,9 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
     @Query("SELECT s FROM Submission s WHERE s.assignment.classField.id = :classId")
     List<Submission> findByClassId(@Param("classId") Integer classId);
 
+    @Query("SELECT s FROM Submission s WHERE s.assignment.classField.id = :classId AND s.student.id = :studentId")
+    List<Submission> findByClassIdAndStudentId(@Param("classId") Integer classId,
+                                               @Param("studentId") Integer studentId);
 
     @Query("""
         SELECT COALESCE(AVG(s.score), 0)

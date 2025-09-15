@@ -49,7 +49,7 @@ public class StudentScoreService {
 
     public List<SubjectGradeDTO> getAllClassResults(Integer studentId) {
         List<Object[]> results = studentScoreRepository.findAllResultsByStudentId(studentId);
-
+    System.out.println("Student id:" +studentId);
         // Group by class_id and subject_name
         Map<String, List<Object[]>> groupedResults = results.stream()
                 .collect(Collectors.groupingBy(result ->

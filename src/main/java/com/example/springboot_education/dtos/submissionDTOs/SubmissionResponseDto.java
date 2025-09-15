@@ -40,4 +40,16 @@ public class SubmissionResponseDto {
         private String email;
         private String avatarBase64;
     }
+
+    private AssignmentDto assignment;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AssignmentDto {
+        private Integer id;
+        private String title;
+    }
 }

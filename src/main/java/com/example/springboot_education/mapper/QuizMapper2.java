@@ -65,8 +65,7 @@ public class QuizMapper2 {
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
         dto.setQuestionType(question.getQuestionType());
-        System.out.print(" Correct option "+question.getCorrectOptions());
-        dto.setCorrectOptions(question.getCorrectOptions());
+        dto.setCorrectOptions(question.getCorrectOptions()); // hoặc rename thành correctOptions
         dto.setScore(question.getScore());
         dto.setOptions(options);
 

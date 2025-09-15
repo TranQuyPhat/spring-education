@@ -2,6 +2,8 @@ package com.example.springboot_education.controllers.classes;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 // import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,6 +65,18 @@ public class ClassController {
     @PostMapping("/test")
     public String test(@Valid @RequestBody CreateClassDTO dto) {
         return "OK - TeacherId: " + dto.getTeacherId();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ClassResponseDTO>> searchClasses(
+            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+        return ResponseEntity.ok(classService.searchClasses(keyword));
+    }
+
+    // API lấy 10 lớp mới nhất
+    @GetMapping("/latest")
+    public ResponseEntity<List<ClassResponseDTO>> getLatestClasses() {
+        return ResponseEntity.ok(classService.getLatestClasses());
     }
 
 }
