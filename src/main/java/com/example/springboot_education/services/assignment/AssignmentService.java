@@ -58,6 +58,7 @@ public class AssignmentService {
         dto.setFilePath(assignment.getFilePath());
         dto.setFileType(assignment.getFileType());
         dto.setFileSize(FileUtils.formatFileSize(assignment.getFileSize()));
+        dto.setPublished(assignment.isPublished());
         dto.setCreatedAt(assignment.getCreatedAt());
         dto.setUpdatedAt(assignment.getUpdatedAt());
         return dto;
@@ -271,5 +272,18 @@ public List<UpcomingSubmissionDto> getUpcomingSubmissions(Integer teacherId) {
             }
         }).collect(Collectors.toList());
     }
+
+    // công bố điểm
+    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Published assignment results")
+    public AssignmentResponseDto publishAssignment(Integer id) {
+        Assignment assignment = assignmentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
+
+        assignment.setPublished(true);  // set isPublished = true
+        Assignment updated = assignmentJpaRepository.save(assignment);
+
+        return convertToDto(updated);
+    }
+
 
 }

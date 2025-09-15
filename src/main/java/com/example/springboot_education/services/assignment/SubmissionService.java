@@ -77,6 +77,7 @@ public class SubmissionService {
             SubmissionResponseDto.AssignmentDto assignmentDto = SubmissionResponseDto.AssignmentDto.builder()
                     .id(submission.getAssignment().getId())
                     .title(submission.getAssignment().getTitle())
+                    .published(submission.getAssignment().isPublished())
                     .build();
 
             dto.setAssignment(assignmentDto);
