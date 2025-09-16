@@ -69,6 +69,15 @@ public class SecurityConfig {
                     .requestMatchers("/ws/**").permitAll()
                     .requestMatchers("/api/public/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
+                    // 🔑 Cho phép Swagger UI
+                    .requestMatchers(
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/v2/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                    ).permitAll()
                     .requestMatchers("/api/profile/**").authenticated()
                     .requestMatchers("/api/users/**").hasAnyAuthority("admin")
                     .requestMatchers("/api/security/roles/**").hasAnyAuthority("admin")

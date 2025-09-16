@@ -77,6 +77,8 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.1")
     implementation 'org.apache.pdfbox:pdfbox:2.0.29'
     implementation 'org.apache.pdfbox:fontbox:2.0.29'
+
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
 }
 
 tasks.named('test') {

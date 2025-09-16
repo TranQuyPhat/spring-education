@@ -51,5 +51,6 @@ public class SubmissionResponseDto {
     public static class AssignmentDto {
         private Integer id;
         private String title;
+        private boolean published;
     }
 }

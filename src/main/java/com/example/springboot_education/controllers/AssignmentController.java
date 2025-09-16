@@ -152,5 +152,12 @@ public class AssignmentController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
                 .body(fileDto.getResource());
     }
+    // Công bố điểm
+    @PatchMapping("/{id}/publish")
+    public ResponseEntity<AssignmentResponseDto> publishAssignment(@PathVariable("id") Integer id) {
+        AssignmentResponseDto updated = assignmentService.publishAssignment(id);
+        return ResponseEntity.ok(updated);
+    }
+
 
 }
