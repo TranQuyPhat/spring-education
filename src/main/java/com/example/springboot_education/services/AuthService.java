@@ -11,8 +11,10 @@ import com.example.springboot_education.repositories.PendingUserRepository;
 import com.example.springboot_education.repositories.RoleJpaRepository;
 import com.example.springboot_education.repositories.UserRoleRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.services.mail.EmailService;
 import com.example.springboot_education.services.mail.OtpService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final PendingUserRepository pendingUserRepository;
     private final OtpService otpService;
+    @Autowired
+    private EmailService emailService;
     @Value("${INVITE_LINK_SLACK}")
     private  String inviteLink;
     @Transactional
@@ -129,6 +133,11 @@ public class AuthService {
         pendingUserRepository.deleteByEmail(request.getEmail());
 
         String token = jwtService.generateAccessToken(savedUser);
+        emailService.sendSlackWorkspaceInviteEmail(
+                savedUser.getEmail(),
+                savedUser.getFullName(),
+                inviteLink
+        );
 
 
         return RegisterResponseDto.builder()

@@ -1,27 +1,22 @@
 package com.example.springboot_education.services.schedules;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionCreateDTO;
-import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionResponseDTO;
-import com.example.springboot_education.dtos.classschedules.ClassScheduleSessionUpdateDTO;
-import com.example.springboot_education.dtos.classschedules.SessionLocationUpdateDTO;
-import com.example.springboot_education.dtos.classschedules.SessionStatusUpdateDTO;
+import com.example.springboot_education.dtos.classschedules.*;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.ClassSchedulePattern;
 import com.example.springboot_education.entities.ClassScheduleSession;
-import com.example.springboot_education.entities.Location;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.classes.ClassesJpaRepository;
 import com.example.springboot_education.repositories.schedules.ClassSchedulePatternRepository;
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
 import com.example.springboot_education.repositories.schedules.LocationRepository;
-
-import jakarta.persistence.criteria.CriteriaBuilder.In;
+import com.example.springboot_education.services.SlackService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +26,8 @@ public class ClassScheduleSessionService {
     private final ClassSchedulePatternRepository patternRepository;
     private final ClassesJpaRepository classRepository;
     private final LocationRepository locationRepository;
-
+    @Autowired
+    private SlackService slackService;
 
     @LoggableAction(value = "CREATE", entity = "class_schedule_sessions", description = "Tạo buổi học")
     public ClassScheduleSessionResponseDTO create(ClassScheduleSessionCreateDTO dto) {
@@ -50,7 +46,20 @@ public class ClassScheduleSessionService {
         session.setStatus(ClassScheduleSession.SessionStatus.valueOf(dto.getStatus()));
         session.setNote(dto.getNote());
 
-        return mapToDTO(sessionRepository.save(session));
+        ClassScheduleSession saved = sessionRepository.save(session);
+        if (saved.getStatus() == ClassScheduleSession.SessionStatus.MAKEUP) {
+            Map<String,Object> payload = Map.of(
+                    "date", saved.getSessionDate(),
+                    "note", saved.getNote() == null ? "" : saved.getNote()
+            );
+            slackService.sendSlackNotification(
+                    saved.getClassEntity().getId(),
+                    SlackService.ClassEventType.MAKEUP_CLASS,
+                    payload
+            );
+        }
+
+        return mapToDTO(saved);
     }
     public ClassScheduleSessionResponseDTO getSessionById(Integer sessionId) {
         ClassScheduleSession session = sessionRepository.findById(sessionId)
@@ -97,8 +106,39 @@ public class ClassScheduleSessionService {
     public ClassScheduleSessionResponseDTO updateStatus(Integer id, SessionStatusUpdateDTO dto) {
         ClassScheduleSession session = sessionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
-        session.setStatus(ClassScheduleSession.SessionStatus.valueOf(dto.getStatus()));
-        return mapToDTO(sessionRepository.save(session));
+
+        ClassScheduleSession.SessionStatus newStatus =
+                ClassScheduleSession.SessionStatus.valueOf(dto.getStatus());
+
+        session.setStatus(newStatus);
+        ClassScheduleSession saved = sessionRepository.save(session);
+
+        // 🔔 Gửi Slack notification nếu status khác SCHEDULED
+        if (newStatus != ClassScheduleSession.SessionStatus.SCHEDULED) {
+
+            Map<String,Object> payload = Map.of(
+                    "date", saved.getSessionDate(),
+                    "note", saved.getNote() == null ? "" : saved.getNote()
+            );
+
+            if (newStatus == ClassScheduleSession.SessionStatus.CANCELLED
+                    || newStatus == ClassScheduleSession.SessionStatus.HOLIDAY) {
+                slackService.sendSlackNotification(
+                        saved.getClassEntity().getId(),
+                        SlackService.ClassEventType.CLASS_CANCELLED,
+                        payload
+                );
+            }
+            else if (newStatus == ClassScheduleSession.SessionStatus.MAKEUP) {
+                slackService.sendSlackNotification(
+                        saved.getClassEntity().getId(),
+                        SlackService.ClassEventType.MAKEUP_CLASS,
+                        payload
+                );
+            }
+        }
+
+        return mapToDTO(saved);
     }
 
     public ClassScheduleSessionResponseDTO updateLocation(Integer id, SessionLocationUpdateDTO dto) {

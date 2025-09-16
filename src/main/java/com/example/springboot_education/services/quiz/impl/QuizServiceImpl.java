@@ -21,6 +21,7 @@ import com.example.springboot_education.repositories.quiz.QuizOptionRepository;
 import com.example.springboot_education.repositories.quiz.QuizQuestionRepository;
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
+import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizService;
 import com.example.springboot_education.untils.QuizUtils;
@@ -50,6 +51,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizAccessService quizAccessService;
+    private final SlackService slackService;
     @Override
     @Transactional
     @LoggableAction(value = "CREATE", entity = "quizzes", description = "Created new quiz")
@@ -102,7 +104,14 @@ public class QuizServiceImpl implements QuizService {
             }
             order++;
         }
-
+        Map<String,Object> payload = Map.of(
+                "quizTitle", quiz.getTitle()
+        );
+        slackService.sendSlackNotification(
+                quiz.getClassField().getId(),
+                SlackService.ClassEventType.QUIZ_CREATED,
+                payload
+        );
         return getQuizForTeacher(quiz.getId());
     }
 //    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")

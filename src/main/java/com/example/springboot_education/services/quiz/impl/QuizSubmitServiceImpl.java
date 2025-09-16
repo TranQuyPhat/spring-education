@@ -4,10 +4,10 @@ import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.*;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
-import com.example.springboot_education.exceptions.ResourceNotFoundException;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
+import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizSubmitService;
 import jakarta.transaction.Transactional;
@@ -31,6 +31,7 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     private final QuizAnswerRepository quizAnswerRepository;
     private final UsersJpaRepository userRepository;
     private final QuizAccessService quizAccessService;
+    private final SlackService slackService;
 
     @Override
     public List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId) {
@@ -102,6 +103,15 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
         submission.setScore(totalScore);
         submission.setGradedAt(Instant.now());
         submission = quizSubmissionRepository.save(submission);
+        Map<String,Object> payload = Map.of(
+                "student",   student.getFullName(),
+                "quizTitle", quiz.getTitle()
+        );
+        slackService.sendSlackNotification(
+                quiz.getClassField().getId(),
+                SlackService.ClassEventType.QUIZ_SUBMITTED,
+                payload
+        );
 
         return mapToDTO(submission, totalQuestions, correctCount);
     }

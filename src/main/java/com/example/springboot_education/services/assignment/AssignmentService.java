@@ -1,46 +1,38 @@
 package com.example.springboot_education.services.assignment;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.assignmentDTOs.*;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
-import com.example.springboot_education.entities.ClassMaterial;
+import com.example.springboot_education.entities.Assignment;
+import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.repositories.ClassRepository;
+import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
+import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.untils.FileUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.springboot_education.annotations.LoggableAction; // Import annotation
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
-import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
-import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
-import com.example.springboot_education.dtos.dashboard.student.AssignmentDTO;
-import com.example.springboot_education.entities.Assignment;
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class AssignmentService {
     private final NotificationServiceAssignment notificationService;
+    private final SlackService slackService;
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
@@ -100,8 +92,15 @@ public class AssignmentService {
         assignment.setFileSize(file.getSize());
 
         Assignment saved = assignmentJpaRepository.save(assignment);
-
-
+        Map<String,Object> payload = Map.of(
+                "teacher", saved.getClassField().getTeacher().getFullName(),
+                "title",   saved.getTitle()
+        );
+        slackService.sendSlackNotification(
+                saved.getClassField().getId(),
+                SlackService.ClassEventType.ASSIGNMENT_CREATED,
+                payload
+        );
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
             .classId(dto.getClassId())
             .title(saved.getTitle())

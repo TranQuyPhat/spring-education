@@ -1,5 +1,6 @@
 package com.example.springboot_education.services;
 
+import com.example.springboot_education.repositories.ClassRepository;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.request.auth.AuthTestRequest;
 import com.slack.api.methods.request.chat.ChatPostMessageRequest;
@@ -15,11 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.Map;
 
-    @Service
+@Service
     @Slf4j
     public class SlackService {
-
+    @Autowired
+    private ClassRepository classRepository;
         @Autowired
         private MethodsClient slack;
         public SlackChannelResult createPublicChannel(String channelName, String description) {
@@ -235,6 +238,63 @@ import java.util.Arrays;
             formatted = formatted.replaceAll("-$", "");
 
             return formatted;
+        }
+        public void sendSlackNotification(Integer classId,
+                                          ClassEventType eventType,
+                                          Map<String, Object> data) {
+
+            String channelId = classRepository.findSlackChannelIdById(classId);
+            if (channelId == null) {
+                System.err.println("Class " + classId + " chưa có Slack channel ID");
+                return;
+            }
+
+            String message = buildMessage(eventType, data);
+
+            try {
+                ChatPostMessageResponse resp = slack.chatPostMessage(
+                        ChatPostMessageRequest.builder()
+                                .channel(channelId)
+                                .text(message)
+                                .build()
+                );
+                if (!resp.isOk()) {
+                    System.err.println("Slack send error: " + resp.getError());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private String buildMessage(ClassEventType type, Map<String, Object> data) {
+            switch (type) {
+                case ASSIGNMENT_CREATED:
+                    return "Giáo viên " + data.get("teacher")
+                            + " vừa giao bài tập: *" + data.get("title") + "*";
+                case ASSIGNMENT_SUBMITTED:
+                    return " Sinh viên " + data.get("student")
+                            + " đã nộp bài tập: " + data.get("title");
+                case QUIZ_CREATED:
+                    return " Quiz mới: *" + data.get("quizTitle") + "* - Hãy vào làm nhé!";
+                case QUIZ_SUBMITTED:
+                    return " Sinh viên " + data.get("student")
+                            + " đã nộp quiz: " + data.get("quizTitle");
+                case MAKEUP_CLASS:
+                    return " Lịch học bù: " + data.get("date") + " - " + data.get("note");
+                case CLASS_CANCELLED:
+                    return " Buổi học ngày " + data.get("date") + " đã bị huỷ.";
+                default:
+                    return " Có sự kiện mới trong lớp!";
+            }
+        }
+
+        public enum ClassEventType {
+            ASSIGNMENT_CREATED,
+            ASSIGNMENT_SUBMITTED,
+            QUIZ_CREATED,
+            QUIZ_SUBMITTED,
+            MAKEUP_CLASS,
+            CLASS_CANCELLED
         }
 
         public static class SlackChannelResult {

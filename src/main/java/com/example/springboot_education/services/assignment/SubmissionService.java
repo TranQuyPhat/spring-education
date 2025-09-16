@@ -1,7 +1,6 @@
 package com.example.springboot_education.services.assignment;
 
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
@@ -15,6 +14,7 @@ import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
+import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -29,10 +29,10 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -43,6 +43,7 @@ public class SubmissionService {
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
+    private final SlackService slackService;
 
     private SubmissionResponseDto convertToDto(Submission submission) {
         SubmissionResponseDto dto = new SubmissionResponseDto();
@@ -130,6 +131,16 @@ public class SubmissionService {
         submission.setSubmittedAt(now);
 
         Submission saved = submissionJpaRepository.save(submission);
+
+        Map<String, Object> payload = Map.of(
+                "student", student.getFullName(),
+                "title",   submission.getAssignment().getTitle()
+        );
+        slackService.sendSlackNotification(
+                assignment.getClassField().getId(),
+                SlackService.ClassEventType.ASSIGNMENT_SUBMITTED,
+                payload
+        );
         return convertToDto(saved);
     }
 

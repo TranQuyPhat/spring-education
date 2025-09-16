@@ -259,4 +259,59 @@ public class EmailService {
             </html>
             """;
     }
+    public void sendSlackWorkspaceInviteEmail(String toEmail, String fullName, String inviteLink) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "Education System");
+            helper.setTo(toEmail);
+            helper.setSubject("Tham gia Slack Workspace - Education System");
+
+            String htmlContent = buildSlackInviteTemplate(fullName, inviteLink);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Slack workspace invite email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send Slack workspace invite email to: {}", toEmail, e);
+            throw new HttpException("Failed to send Slack invite email", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String buildSlackInviteTemplate(String fullName, String inviteLink) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Tham gia Slack Workspace</title>
+                <style>
+                    body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }
+                    .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 10px;
+                                 box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    h1 { color: #4A154B; text-align: center; }
+                    a.join-btn { display: inline-block; padding: 12px 24px; background-color: #4A154B; color: white;
+                                 text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }
+                    p { color: #333; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Chào mừng %s!</h1>
+                    <p>Bạn đã đăng ký tài khoản thành công trên <strong>Education System</strong>.</p>
+                    <p>Để nhận thông báo từ lớp học, vui lòng tham gia Slack Workspace của hệ thống:</p>
+                    <p style="text-align:center;">
+                        <a class="join-btn" href="%s">Tham gia ngay</a>
+                    </p>
+                    <p>Nếu nút trên không hoạt động, bạn có thể copy link này vào trình duyệt:<br>
+                        <a href="%s">%s</a></p>
+                    <p style="margin-top:30px;font-size:14px;color:#666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                </div>
+            </body>
+            </html>
+            """, fullName, inviteLink, inviteLink, inviteLink);
+    }
+
+
 }
