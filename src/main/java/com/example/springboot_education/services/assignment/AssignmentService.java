@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -281,6 +282,16 @@ public List<UpcomingSubmissionDto> getUpcomingSubmissions(Integer teacherId) {
 
         assignment.setPublished(true);  // set isPublished = true
         Assignment updated = assignmentJpaRepository.save(assignment);
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(assignment.getClassField().getId())
+            .title(assignment.getTitle())
+            .description(assignment.getDescription())
+            .dueDate(assignment.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Bài tập đã chấm xong, vui lòng kiểm tra!")
+            .build();
+        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+
+        notificationService.notifyClass(assignment.getClassField().getId(), notifyPayload);
 
         return convertToDto(updated);
     }
