@@ -217,4 +217,13 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Integ
 """)
     List<BaseScoreStatsDTO> findAssignmentAverageByTeacher(@Param("teacherId") Integer teacherId);
 
+
+    //Tất cả bài nộp hôm nay
+    @Query("""
+    SELECT s.student.fullName
+    FROM Submission s
+    WHERE s.assignment.id = :assignmentId
+""")
+List<String> findSubmittedStudentsByAssignment(@Param("assignmentId") Integer assignmentId);
+
 }

@@ -48,6 +48,13 @@ List<Assignment> findAssignmentsByStudentId(@Param("studentId") Integer studentI
  @Query("SELECT a FROM Assignment a JOIN a.classField c WHERE c.teacher.id = :teacherId ORDER BY a.dueDate ASC")
     List<Assignment> findAssignmentsByTeacherId(@Param("teacherId") Integer teacherId);
 
+  //Bài tập hết hạn hôm nay
+    @Query("""
+    SELECT a FROM Assignment a
+    WHERE a.dueDate = CURRENT_DATE
+""")
+List<Assignment> findAssignmentsDueToday();
+
 }
 
  
