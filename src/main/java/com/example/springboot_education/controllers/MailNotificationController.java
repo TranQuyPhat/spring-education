@@ -4,6 +4,9 @@ import com.example.springboot_education.dtos.mail.ClassChangeRequestDto;
 import com.example.springboot_education.dtos.mail.DailyReportRequestDto;
 import com.example.springboot_education.services.mail.EmailService;
 import lombok.RequiredArgsConstructor;
+
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +24,8 @@ public class MailNotificationController {
                 request.getFullName(),
                 request.getClassName(),
                 request.getType(),
-                request.getDate(),
-                request.getNote()
-        );
+                request.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                request.getNote());
         String subject = "Thông báo " + (request.getType().equalsIgnoreCase("cancel") ? "Nghỉ học" : "Học bù");
         emailService.sendEmail(request.getTo(), subject, html);
         return ResponseEntity.ok("Class change mail sent to " + request.getTo());
@@ -35,8 +37,7 @@ public class MailNotificationController {
         String html = emailService.buildAssignmentDueReportTemplate(
                 request.getTeacherName(),
                 request.getClassName(),
-                request.getSubmissions()
-        );
+                request.getSubmissions());
         emailService.sendEmail(request.getTo(), "Báo cáo bài tập đến hạn hôm nay", html);
         return ResponseEntity.ok("Assignment due report sent to " + request.getTo());
     }
