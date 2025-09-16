@@ -30,6 +30,7 @@ public class QuizController {
     private final JwtTokenUtil jwtTokenUtil;
     @PostMapping
     public ResponseEntity<QuizBaseDTO> createQuiz(@Valid @RequestBody QuizRequestDTO request) {
+        System.out.println("---- Incoming Quiz Request DTO ----");
         return ResponseEntity.ok(quizService.createQuiz(request));
     }
     @GetMapping("/{quizId}")

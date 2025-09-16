@@ -76,6 +76,7 @@ public class ClassJoinRequestService {
                                                         .classEntity(classEntity)
                                                         .student(student)
                                                         .status(ClassJoinRequest.Status.PENDING)
+                                                        // .message("Yêu cầu tham gia lớp học.")
                                                         .build());
 
                         Integer teacherId = classService.getTeacherIdOfClass(classId);
@@ -181,15 +182,23 @@ public class ClassJoinRequestService {
         }
 
         private JoinRequestDTO convertToDTO(ClassJoinRequest r) {
-                return JoinRequestDTO.builder()
-                                .requestId(r.getId())
-                                .classId(r.getClassEntity().getId())
-                                .className(r.getClassEntity().getClassName())
-                                .studentId(r.getStudent().getId())
-                                .studentName(r.getStudent().getFullName())
-                                .status(r.getStatus())
-                                .createdAt(r.getCreatedAt())
-                                .build();
+        String message = switch (r.getStatus()) {
+                case PENDING -> "Yêu cầu tham gia lớp học đang chờ duyệt.";
+                case APPROVED -> "Bạn đã được chấp nhận vào lớp.";
+                case REJECTED -> "Yêu cầu của bạn đã bị từ chối.";
+                default -> null;
+        };
+
+        return JoinRequestDTO.builder()
+                .requestId(r.getId())
+                .classId(r.getClassEntity().getId())
+                .className(r.getClassEntity().getClassName())
+                .studentId(r.getStudent().getId())
+                .studentName(r.getStudent().getFullName())
+                .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .message(message) // ✅ chỉ tồn tại trong payload, không lưu DB
+                .build();
         }
 
         private List<JoinRequestDTO> convertListToDTOs(List<ClassJoinRequest> requests) {

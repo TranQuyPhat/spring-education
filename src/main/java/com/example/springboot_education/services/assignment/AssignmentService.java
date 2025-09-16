@@ -106,7 +106,8 @@ public class AssignmentService {
             .classId(dto.getClassId())
             .title(saved.getTitle())
             .description(saved.getDescription())
-            .dueDate(saved.getDueDate())
+            .dueDate(saved.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Có bài tập mới được giao, vui lòng kiểm tra!")
             .build();
 
         notificationService.notifyClass(dto.getClassId(), notifyPayload);

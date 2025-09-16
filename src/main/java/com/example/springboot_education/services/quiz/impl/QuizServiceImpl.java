@@ -1,6 +1,7 @@
 package com.example.springboot_education.services.quiz.impl;
 
 import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
 import com.example.springboot_education.dtos.quiz.OptionDTO;
 import com.example.springboot_education.dtos.quiz.QuestionsPageResponseDTO;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
@@ -22,6 +23,7 @@ import com.example.springboot_education.repositories.quiz.QuizQuestionRepository
 import com.example.springboot_education.repositories.quiz.QuizRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.services.assignment.NotificationServiceAssignment;
 import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizService;
 import com.example.springboot_education.untils.QuizUtils;
@@ -52,13 +54,15 @@ public class QuizServiceImpl implements QuizService {
     private final ClassUserRepository classUserRepository;
     private final QuizAccessService quizAccessService;
     private final SlackService slackService;
+    private final NotificationServiceAssignment notificationService;
     @Override
     @Transactional
     @LoggableAction(value = "CREATE", entity = "quizzes", description = "Created new quiz")
     public QuizBaseDTO createQuiz(QuizRequestDTO quizReqDTO) {
+        System.out.println("---- Incoming Quiz Request DTO ----");
         Quiz quiz = quizMapper2.toEntity(quizReqDTO);
+        System.out.println("Quiz to be created: " + quiz);
         quiz = quizRepository.save(quiz);
-
         int order = 1;
         for (QuestionTeacherDTO qdto : quizReqDTO.getQuestions()) {
             QuizQuestion question = new QuizQuestion();
@@ -112,6 +116,18 @@ public class QuizServiceImpl implements QuizService {
                 SlackService.ClassEventType.QUIZ_CREATED,
                 payload
         );
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(quiz.getClassField().getId())
+            .title(quiz.getTitle())
+            .description(quiz.getDescription())
+            .dueDate(quiz.getEndDate())
+            .message("Có Quiz mới được giao, vui lòng kiểm tra!")
+            .build();
+        System.out.println("---- Quiz Created Notification Payload ----");
+        System.out.println(notifyPayload);
+        System.out.println("classIdquiz: " + quiz.getClassField().getId());
+
+        notificationService.notifyClass(quiz.getClassField().getId(), notifyPayload);
         return getQuizForTeacher(quiz.getId());
     }
 //    @Cacheable(value = "quizzesByTeacher", key = "#teacherId")
