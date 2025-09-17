@@ -1,8 +1,6 @@
 package com.example.springboot_education.services.assignment;
 
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.assignmentDTOs.*;
-import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
@@ -11,14 +9,12 @@ import com.example.springboot_education.repositories.assignment.AssignmentJpaRep
 import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +24,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.untils.CloudinaryUtils;
-import com.example.springboot_education.untils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,8 +52,6 @@ public class AssignmentService {
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
-    // Xóa ActivityLogService khỏi đây
-    // private final ActivityLogService activityLogService;
 
     private AssignmentResponseDto convertToDto(Assignment assignment) {
         AssignmentResponseDto dto = new AssignmentResponseDto();
