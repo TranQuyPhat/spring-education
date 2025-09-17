@@ -1,5 +1,7 @@
 package com.example.springboot_education.services.assignment;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
@@ -15,8 +17,10 @@ import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
+import com.example.springboot_education.untils.CloudinaryUtils;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -26,6 +30,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,16 +40,19 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SubmissionService {
 
     private final SubmissionJpaRepository submissionJpaRepository;
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
+    private final Cloudinary cloudinary;
 
     private SubmissionResponseDto convertToDto(Submission submission) {
         SubmissionResponseDto dto = new SubmissionResponseDto();
@@ -51,6 +61,7 @@ public class SubmissionService {
         dto.setFilePath(submission.getFilePath());
         dto.setFileType(submission.getFileType());
         dto.setFileSize(FileUtils.formatFileSize(submission.getFileSize()));
+        dto.setFileName(submission.getFileName());
         dto.setDescription(submission.getDescription());
         dto.setStatus(submission.getStatus());
         dto.setScore(submission.getScore());
@@ -113,19 +124,29 @@ public class SubmissionService {
                     throw new HttpException("You have already submitted this assignment", HttpStatus.CONFLICT);
                 });
 
-        String uploadDir = "uploads/submissions";
-        Files.createDirectories(Paths.get(uploadDir));
-
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.write(filePath, file.getBytes());
+        // Upload file lên Cloudinary
+        Map<String, Object> uploadResult;
+        try {
+            uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "resource_type", "auto",
+                            "folder", "submissions/" + assignment.getId() // gom theo assignment
+                    )
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload submission file to Cloudinary: " + e.getMessage(), e);
+        }
+        String fileUrl = (String) uploadResult.get("secure_url");
+        String originalFilename = file.getOriginalFilename();
 
         Submission submission = new Submission();
         submission.setAssignment(assignment);
         submission.setStudent(student);
-        submission.setFilePath(filePath.toString());
+        submission.setFilePath(fileUrl);
         submission.setFileType(file.getContentType());
         submission.setFileSize(file.getSize());
+        submission.setFileName(originalFilename); // ✅ Lưu vào DB
         submission.setDescription(requestDto.getDescription());
         submission.setStatus(Submission.SubmissionStatus.SUBMITTED);
         submission.setSubmittedAt(now);
@@ -145,27 +166,35 @@ public class SubmissionService {
             throw new HttpException("Bài nộp đã được chấm, không thể chỉnh sửa!", HttpStatus.FORBIDDEN);
         }
 
-        // Nếu có file mới thì thay thế
+        // Nếu có file mới thì thay thế file cũ
         if (newFile != null && !newFile.isEmpty()) {
-            // Xóa file cũ
-            try {
-                Path oldPath = Paths.get(submission.getFilePath());
-                Files.deleteIfExists(oldPath);
-            } catch (IOException e) {
-                throw new HttpException("Không thể xóa file cũ", HttpStatus.INTERNAL_SERVER_ERROR);
+            // Xóa file cũ trên Cloudinary (nếu có)
+            if (submission.getFilePath() != null && !submission.getFilePath().isBlank()) {
+                try {
+                    String publicId = CloudinaryUtils.extractPublicId(submission.getFilePath());
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                } catch (Exception e) {
+                    log.warn("Không thể xóa file cũ trên Cloudinary: {}", submission.getFilePath(), e);
+                }
             }
 
-            // Lưu file mới
-            String uploadDir = "uploads/submissions";
-            Files.createDirectories(Paths.get(uploadDir));
+            // Upload file mới lên Cloudinary
+            try {
+                Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                        newFile.getBytes(),
+                        ObjectUtils.asMap(
+                                "resource_type", "auto",
+                                "folder", "submissions/" + submission.getAssignment().getId()
+                        )
+                );
 
-            String filename = UUID.randomUUID() + "_" + newFile.getOriginalFilename();
-            Path newPath = Paths.get(uploadDir, filename);
-            Files.write(newPath, newFile.getBytes());
-
-            submission.setFilePath(newPath.toString());
-            submission.setFileType(newFile.getContentType());
-            submission.setFileSize(newFile.getSize());
+                submission.setFilePath(uploadResult.get("secure_url").toString());
+                submission.setFileType(newFile.getContentType());
+                submission.setFileSize(newFile.getSize());
+                submission.setFileName(newFile.getOriginalFilename());
+            } catch (Exception e) {
+                throw new RuntimeException("Không thể upload file mới lên Cloudinary: " + e.getMessage(), e);
+            }
         }
 
         // Cập nhật mô tả nếu có
@@ -182,7 +211,6 @@ public class SubmissionService {
     }
 
     // Chấm điểm
-
     @LoggableAction(value = "GRADE", entity = "Submission", description = "Graded an assignment")
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
@@ -254,46 +282,30 @@ public class SubmissionService {
                 .toList();
     }
 
-    public String storeFile(MultipartFile file) throws IOException {
-        // Validate loại file
-        String contentType = file.getContentType();
-        if (contentType == null ||
-                !(contentType.equals("application/pdf") ||
-                        contentType.equals("application/msword") ||
-                        contentType
-                                .equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
-            throw new HttpException("File type is not supported. Allowed: PDF, DOC, DOCX", HttpStatus.BAD_REQUEST);
-        }
-
-        String uploadDir = System.getProperty("user.dir") + "/uploads/assignments";
-        Files.createDirectories(Paths.get(uploadDir)); // tạo thư mục nếu chưa có
-
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.write(filePath, file.getBytes());
-
-        return "/uploads/assignments/" + filename; // lưu đường dẫn vào DB
-    }
-
     // Tải tệp đính kèm bài nộp về máy
     public DownloadFileDTO downloadSubmission(Integer id) throws Exception {
         // 1. Lấy thông tin bài nộp
         Submission submission = submissionJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Submission with id: " + id));
 
-        // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
-        Path path = Paths.get(submission.getFilePath());
-        Resource resource = new UrlResource(path.toUri());
+        String fileUrl = submission.getFilePath();
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new EntityNotFoundException("File not found for submission " + id);
+        }
+
+        // 2. Lấy file từ Cloudinary URL
+        UrlResource resource = new UrlResource(new URL(fileUrl));
 
         if (!resource.exists()) {
-            throw new EntityNotFoundException("File");
+            throw new EntityNotFoundException("File not found at " + fileUrl);
         }
 
         // 3. Trả DTO chứa file và metadata
         return new DownloadFileDTO(
                 resource,
                 submission.getFileType() != null ? submission.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                path.getFileName().toString());
+                submission.getFileName() != null ? submission.getFileName() : "file"
+        );
     }
 
     @LoggableAction(value = "DELETE", entity = "Submission", description = "Deleted a submission")
@@ -301,12 +313,14 @@ public class SubmissionService {
         Submission submission = submissionJpaRepository.findById(submissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Submission"));
 
-        // Xóa file vật lý nếu tồn tại
-        try {
-            Path filePath = Paths.get(submission.getFilePath());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            throw new HttpException("Failed to delete file", HttpStatus.INTERNAL_SERVER_ERROR);
+        // ✅ Xóa file Cloudinary
+        if (submission.getFilePath() != null && !submission.getFilePath().isBlank()) {
+            try {
+                String publicId = CloudinaryUtils.extractPublicId(submission.getFilePath());
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            } catch (Exception e) {
+                log.warn("Không thể xóa file trên Cloudinary: {}", submission.getFilePath(), e);
+            }
         }
 
         // Xóa dữ liệu trong DB
