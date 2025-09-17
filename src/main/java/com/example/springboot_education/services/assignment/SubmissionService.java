@@ -3,8 +3,8 @@ package com.example.springboot_education.services.assignment;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.springboot_education.annotations.LoggableAction;
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
+import com.example.springboot_education.dtos.notification.NotificationTeacherDTO;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionRequestDto;
 import com.example.springboot_education.dtos.submissionDTOs.SubmissionResponseDto;
 import com.example.springboot_education.entities.Assignment;
@@ -18,6 +18,8 @@ import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
 import com.example.springboot_education.untils.CloudinaryUtils;
+import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.services.classes.NotificationService;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -53,6 +54,8 @@ public class SubmissionService {
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
     private final Cloudinary cloudinary;
+    private final SlackService slackService;
+    private final NotificationService notificationService;
 
     private SubmissionResponseDto convertToDto(Submission submission) {
         SubmissionResponseDto dto = new SubmissionResponseDto();
@@ -152,6 +155,24 @@ public class SubmissionService {
         submission.setSubmittedAt(now);
 
         Submission saved = submissionJpaRepository.save(submission);
+
+        Map<String, Object> payload = Map.of(
+                "student", student.getFullName(),
+                "title",   submission.getAssignment().getTitle()
+        );
+        slackService.sendSlackNotification(
+                assignment.getClassField().getId(),
+                SlackService.ClassEventType.ASSIGNMENT_SUBMITTED,
+                payload
+        );
+        NotificationTeacherDTO notifyPayload = NotificationTeacherDTO.builder()
+                        .classId(assignment.getClassField().getId())
+                        .studentName(student.getFullName())
+                        .message("Có học sinh nộp bài tập: " + assignment.getTitle())
+                        .build();
+        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+
+        notificationService.notifyTeacher(assignment.getClassField().getTeacher().getId(), notifyPayload);
         return convertToDto(saved);
     }
 

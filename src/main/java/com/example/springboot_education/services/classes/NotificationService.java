@@ -8,13 +8,14 @@ import org.springframework.stereotype.Service;
 
 import com.example.springboot_education.dtos.joinrequest.ApprovalResponseDTO;
 import com.example.springboot_education.dtos.joinrequest.JoinRequestDTO;
+import com.example.springboot_education.dtos.notification.NotificationTeacherDTO;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void notifyTeacher(Integer teacherId, JoinRequestDTO payload) {
+    public void notifyTeacher(Integer teacherId, NotificationTeacherDTO payload) {
         System.out.println("=== NOTIFICATION DEBUG ===");
         System.out.println("Teacher ID: " + teacherId);
         System.out.println("Payload: " + payload);

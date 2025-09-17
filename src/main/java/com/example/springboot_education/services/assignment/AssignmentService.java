@@ -1,5 +1,22 @@
 package com.example.springboot_education.services.assignment;
 
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.assignmentDTOs.*;
+import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
+import com.example.springboot_education.entities.Assignment;
+import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.repositories.ClassRepository;
+import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
+import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.untils.FileUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -36,6 +53,7 @@ import lombok.RequiredArgsConstructor;
 public class AssignmentService {
     private final Cloudinary cloudinary;
     private final NotificationServiceAssignment notificationService;
+    private final SlackService slackService;
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
@@ -101,14 +119,22 @@ public class AssignmentService {
         assignment.setFileName(originalFilename);
 
         Assignment saved = assignmentJpaRepository.save(assignment);
-
-
+        Map<String,Object> payload = Map.of(
+                "teacher", saved.getClassField().getTeacher().getFullName(),
+                "title",   saved.getTitle()
+        );
+        slackService.sendSlackNotification(
+                saved.getClassField().getId(),
+                SlackService.ClassEventType.ASSIGNMENT_CREATED,
+                payload
+        );
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
-                .classId(dto.getClassId())
-                .title(saved.getTitle())
-                .description(saved.getDescription())
-                .dueDate(saved.getDueDate())
-                .build();
+            .classId(dto.getClassId())
+            .title(saved.getTitle())
+            .description(saved.getDescription())
+            .dueDate(saved.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Có bài tập mới được giao, vui lòng kiểm tra!")
+            .build();
 
         notificationService.notifyClass(dto.getClassId(), notifyPayload);
 
@@ -287,6 +313,16 @@ public class AssignmentService {
 
         assignment.setPublished(true);  // set isPublished = true
         Assignment updated = assignmentJpaRepository.save(assignment);
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(assignment.getClassField().getId())
+            .title(assignment.getTitle())
+            .description(assignment.getDescription())
+            .dueDate(assignment.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Bài tập đã chấm xong, vui lòng kiểm tra!")
+            .build();
+        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+
+        notificationService.notifyClass(assignment.getClassField().getId(), notifyPayload);
 
         return convertToDto(updated);
     }
