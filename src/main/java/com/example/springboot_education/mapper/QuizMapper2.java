@@ -27,7 +27,7 @@ public class QuizMapper2 {
     private final ClassRepository classRepository;
     private final ClassUserRepository classUserRepository;
     private final QuizSubmissionRepository quizSubmissionRepository;
-    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    public static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     public void mapBaseFields(Quiz quiz, QuizBaseDTO dto) {
         dto.setId(quiz.getId());
         dto.setTitle(quiz.getTitle());

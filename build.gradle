@@ -61,7 +61,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
 // JWT dependencies
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
@@ -79,6 +79,8 @@ dependencies {
     implementation 'org.apache.pdfbox:fontbox:2.0.29'
 
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
+
+	implementation 'com.cloudinary:cloudinary-http44:1.36.0'
 }
 
 tasks.named('test') {

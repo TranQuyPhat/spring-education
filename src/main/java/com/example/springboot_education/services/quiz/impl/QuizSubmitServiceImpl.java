@@ -1,5 +1,6 @@
 package com.example.springboot_education.services.quiz.impl;
 
+import com.example.springboot_education.dtos.notification.NotificationTeacherDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmissionBaseDTO;
 import com.example.springboot_education.dtos.quiz.submit.QuizSubmitReqDTO;
 import com.example.springboot_education.entities.*;
@@ -8,6 +9,7 @@ import com.example.springboot_education.repositories.UsersJpaRepository;
 import com.example.springboot_education.repositories.quiz.QuizAnswerRepository;
 import com.example.springboot_education.repositories.quiz.QuizSubmissionRepository;
 import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.services.classes.NotificationService;
 import com.example.springboot_education.services.quiz.QuizAccessService;
 import com.example.springboot_education.services.quiz.QuizSubmitService;
 import jakarta.transaction.Transactional;
@@ -32,6 +34,8 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
     private final UsersJpaRepository userRepository;
     private final QuizAccessService quizAccessService;
     private final SlackService slackService;
+    private final NotificationService notificationService;
+
 
     @Override
     public List<QuizSubmissionBaseDTO> getSubmissionsByQuizId(Integer quizId) {
@@ -112,6 +116,14 @@ public class QuizSubmitServiceImpl implements QuizSubmitService {
                 SlackService.ClassEventType.QUIZ_SUBMITTED,
                 payload
         );
+        NotificationTeacherDTO notifyPayload = NotificationTeacherDTO.builder()
+                        .classId(quiz.getClassField().getId())
+                        .studentName(student.getFullName())
+                        .message("Có học sinh nộp bài quiz: " + quiz.getTitle())
+                        .build();
+        System.out.println("Notifying class ID: " + quiz.getClassField().getId() + " with payload: " + notifyPayload);
+
+        notificationService.notifyTeacher(quiz.getCreatedBy().getId(), notifyPayload);
 
         return mapToDTO(submission, totalQuestions, correctCount);
     }

@@ -12,6 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -113,29 +115,6 @@ public class AssignmentController {
         assignmentService.deleteAssignment(id);
     }
 
-    @GetMapping("/{assignmentId}/download")
-    public ResponseEntity<Resource> downloadAssignmentFile(@PathVariable("assignmentId") Integer assignmentId)
-            throws IOException {
-        Assignment assignment = assignmentService.getAssignmentEntityById(assignmentId);
-
-        Path filePath = Paths.get(assignment.getFilePath());
-        if (!Files.exists(filePath)) {
-            throw new EntityNotFoundException("File");
-        }
-
-        Resource resource = new UrlResource(filePath.toUri());
-        String fileName = filePath.getFileName().toString();
-
-        // Encode tên file để tránh lỗi khi có dấu tiếng Việt
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
-                .body(resource);
-    }
-
     @GetMapping("/class/{classId}")
     public ResponseEntity<List<AssignmentResponseDto>> getAssignmentsByClassId(
             @PathVariable("classId") Integer classId) {
@@ -143,15 +122,22 @@ public class AssignmentController {
     }
 
     // Tải file bài tập
-    @GetMapping("/download/{id}")
-    public ResponseEntity<?> downloadAssignment(@PathVariable("id") Integer id) throws Exception {
-        DownloadFileDTO fileDto = assignmentService.downloadAssignment(id);
+    @GetMapping("/{assignmentId}/download")
+    public ResponseEntity<Void> downloadAssignment(@PathVariable("assignmentId") Integer assignmentId) {
+        Assignment assignment = assignmentService.getAssignmentEntityById(assignmentId);
 
-        return ResponseEntity.ok()
-                .contentType(org.springframework.http.MediaType.parseMediaType(fileDto.getFileType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
-                .body(fileDto.getResource());
+        if (assignment.getFilePath() == null) {
+            throw new EntityNotFoundException("File not found");
+        }
+
+        // Thêm tham số fl_attachment để Cloudinary buộc tải file
+        String fileUrl = assignment.getFilePath() + "?fl_attachment";
+
+        return ResponseEntity.status(HttpStatus.FOUND) // 302 redirect
+                .location(URI.create(fileUrl))
+                .build();
     }
+
     // Công bố điểm
     @PatchMapping("/{id}/publish")
     public ResponseEntity<AssignmentResponseDto> publishAssignment(@PathVariable("id") Integer id) {

@@ -1,17 +1,13 @@
 package com.example.springboot_education.repositories;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.example.springboot_education.dtos.dashboardsClient.ClassProgressDTO;
+import com.example.springboot_education.entities.ClassEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
-import com.example.springboot_education.dtos.dashboardsClient.ClassProgressDTO;
-import com.example.springboot_education.entities.AssignmentComment;
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.entities.Submission;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface DashboardRepository extends JpaRepository<ClassEntity, Long> {
 
@@ -104,4 +100,34 @@ public interface DashboardRepository extends JpaRepository<ClassEntity, Long> {
             """)
     List<ClassProgressDTO> findClassProgressByStudentId(@Param("studentId") Integer studentId);
 
+    @Query(value = """
+        SELECT
+            SUM(CASE WHEN t.avg_score >= 9.0 THEN 1 ELSE 0 END) AS xuatSac,
+            SUM(CASE WHEN t.avg_score BETWEEN 8.0 AND 8.9 THEN 1 ELSE 0 END) AS gioi,
+            SUM(CASE WHEN t.avg_score BETWEEN 6.5 AND 7.9 THEN 1 ELSE 0 END) AS kha,
+            SUM(CASE WHEN t.avg_score < 6.5 THEN 1 ELSE 0 END) AS canCaiThien,
+            COUNT(*) AS totalStudents
+        FROM (
+            SELECT u.id AS student_id,
+                   ROUND(AVG(all_scores.score),2) AS avg_score
+            FROM users u
+            JOIN (
+                   SELECT s.student_id, s.score
+                   FROM submissions s
+                   JOIN assignments a ON s.assignment_id = a.id
+                   JOIN classes c ON a.class_id = c.id
+                   WHERE c.teacher_id = :teacherId
+                     AND s.status = 'graded'
+                   UNION ALL
+                   SELECT qs.student_id, qs.score
+                   FROM quiz_submissions qs
+                   JOIN quizzes q ON qs.quiz_id = q.id
+                   JOIN classes c2 ON q.class_id = c2.id
+                   WHERE c2.teacher_id = :teacherId
+                 ) AS all_scores
+              ON u.id = all_scores.student_id
+            GROUP BY u.id
+        ) AS t
+        """, nativeQuery = true)
+    Object findGradeDistribution(@Param("teacherId") Long teacherId);
 }
