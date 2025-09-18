@@ -6,6 +6,7 @@ import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
+import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
 import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.ClassMaterial;
 import com.example.springboot_education.entities.ClassUser;
+import com.example.springboot_education.entities.Submission;
 import com.example.springboot_education.entities.Users;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
@@ -61,7 +63,7 @@ public class AssignmentService {
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
     private final EmailService emailService;
-
+    private final SubmissionJpaRepository submissionJpaRepository;
 
     private AssignmentResponseDto convertToDto(Assignment assignment) {
         AssignmentResponseDto dto = new AssignmentResponseDto();
@@ -104,8 +106,7 @@ public class AssignmentService {
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap(
                         "folder", "assignments",
-                        "resource_type", "auto"
-                ));
+                        "resource_type", "auto"));
 
         String fileUrl = (String) uploadResult.get("secure_url");
         String originalFilename = file.getOriginalFilename();
@@ -123,22 +124,20 @@ public class AssignmentService {
 
         Assignment saved = assignmentJpaRepository.save(assignment);
 
-        Map<String,Object> payload = Map.of(
+        Map<String, Object> payload = Map.of(
                 "teacher", saved.getClassField().getTeacher().getFullName(),
-                "title",   saved.getTitle()
-        );
+                "title", saved.getTitle());
         slackService.sendSlackNotification(
                 saved.getClassField().getId(),
                 SlackService.ClassEventType.ASSIGNMENT_CREATED,
-                payload
-        );
+                payload);
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
-            .classId(dto.getClassId())
-            .title(saved.getTitle())
-            .description(saved.getDescription())
-            .dueDate(saved.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
-            .message("Có bài tập mới được giao, vui lòng kiểm tra!")
-            .build();
+                .classId(dto.getClassId())
+                .title(saved.getTitle())
+                .description(saved.getDescription())
+                .dueDate(saved.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+                .message("Có bài tập mới được giao, vui lòng kiểm tra!")
+                .build();
 
         notificationService.notifyClass(dto.getClassId(), notifyPayload);
         return convertToDto(saved);
@@ -175,8 +174,7 @@ public class AssignmentService {
             try {
                 Map<String, Object> uploadResult = cloudinary.uploader().upload(
                         file.getBytes(),
-                        ObjectUtils.asMap("resource_type", "auto")
-                );
+                        ObjectUtils.asMap("resource_type", "auto"));
 
                 assignment.setFilePath(uploadResult.get("secure_url").toString());
                 assignment.setFileType(file.getContentType());
@@ -234,7 +232,6 @@ public class AssignmentService {
         return assignment.getFilePath() + "?fl_attachment";
     }
 
-
     public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
         List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
         return assignments.stream()
@@ -277,7 +274,6 @@ public class AssignmentService {
                         ? a.getClassField().getClassUsers().size()
                         : 0;
 
-
                 return UpcomingSubmissionDto.builder()
                         .id(a.getId())
                         .title(a.getTitle())
@@ -300,21 +296,38 @@ public class AssignmentService {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
 
-        assignment.setPublished(true);  // set isPublished = true
+        assignment.setPublished(true); // set isPublished = true
         Assignment updated = assignmentJpaRepository.save(assignment);
+
+        // Lấy danh sách bài nộp
+        List<Submission> submissions = submissionJpaRepository.findByAssignment_Id(id);
+        Users teacher = assignment.getClassField().getTeacher();
+        // Group theo student, giữ submission có id lớn nhất (mới nhất)
+        Map<Integer, Submission> latestSubmissionByStudent = submissions.stream()
+                .filter(s -> s.getStudent() != null && s.getScore() != null).collect(Collectors
+                        .toMap(s -> s.getStudent().getId(), s -> s, (s1, s2) -> s1.getId() > s2.getId() ? s1 : s2));
+        for (Submission submission : latestSubmissionByStudent.values()) {
+            Users student = submission.getStudent();
+            emailService.sendAssignmentGradedEmail(
+                    student.getEmail(),
+                    student.getFullName(),
+                    assignment.getTitle(),
+                    submission.getScore().toString(),
+                    teacher.getFullName());
+        }
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
-            .classId(assignment.getClassField().getId())
-            .title(assignment.getTitle())
-            .description(assignment.getDescription())
-            .dueDate(assignment.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
-            .message("Bài tập đã chấm xong, vui lòng kiểm tra!")
-            .build();
-        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+                .classId(assignment.getClassField().getId())
+                .title(assignment.getTitle())
+                .description(assignment.getDescription())
+                .dueDate(assignment.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+                .message("Bài tập đã chấm xong, vui lòng kiểm tra!")
+                .build();
+        System.out.println(
+                "Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
 
         notificationService.notifyClass(assignment.getClassField().getId(), notifyPayload);
 
         return convertToDto(updated);
     }
-
 
 }
