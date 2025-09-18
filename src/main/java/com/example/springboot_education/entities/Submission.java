@@ -59,6 +59,9 @@ public class Submission {
     @Column(name = "file_size")
     private Long fileSize; // bytes
 
+    @Column(name = "file_name")
+    private String fileName;
+
     @Lob
     @Column(name = "description")
     private String description;

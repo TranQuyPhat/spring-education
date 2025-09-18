@@ -30,11 +30,12 @@ public class QuizController {
     private final JwtTokenUtil jwtTokenUtil;
     @PostMapping
     public ResponseEntity<QuizBaseDTO> createQuiz(@Valid @RequestBody QuizRequestDTO request) {
+        System.out.println("---- Incoming Quiz Request DTO ----");
         return ResponseEntity.ok(quizService.createQuiz(request));
     }
     @GetMapping("/{quizId}")
     public ResponseEntity<?> getQuizByRole(
-            @PathVariable Integer quizId,
+            @PathVariable("quizId") Integer quizId,
             @CurrentUser Users currentUser) {
         try {
             var roles = currentUser.getUserRoles();

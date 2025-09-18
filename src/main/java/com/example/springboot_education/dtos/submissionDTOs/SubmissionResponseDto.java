@@ -19,6 +19,7 @@ public class SubmissionResponseDto {
     private String filePath;
     private String fileType;
     private String fileSize;
+    private String fileName;
     private String description;
     private Submission.SubmissionStatus status;
     private BigDecimal score;

@@ -8,9 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
 import com.example.springboot_education.dtos.joinrequest.ApprovalResponseDTO;
 import com.example.springboot_education.dtos.joinrequest.JoinRequestDTO;
 import com.example.springboot_education.dtos.joinrequest.JoinRequestResponseDTO;
+import com.example.springboot_education.dtos.notification.NotificationTeacherDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.exceptions.HttpException;
@@ -18,6 +20,7 @@ import com.example.springboot_education.entities.ClassJoinRequest;
 import com.example.springboot_education.repositories.ClassJoinRequestRepository;
 import com.example.springboot_education.services.UserService;
 
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -76,12 +79,20 @@ public class ClassJoinRequestService {
                                                         .classEntity(classEntity)
                                                         .student(student)
                                                         .status(ClassJoinRequest.Status.PENDING)
+                                                        // .message("Yêu cầu tham gia lớp học.")
                                                         .build());
 
                         Integer teacherId = classService.getTeacherIdOfClass(classId);
 
                         JoinRequestDTO dto = convertToDTO(saved);
-                        notificationService.notifyTeacher(teacherId, dto);
+                        NotificationTeacherDTO notifyPayload = NotificationTeacherDTO.builder()
+                        .classId(classEntity.getId())
+                        .studentName(student.getFullName())
+                        .message("Có học sinh xin vào lớp, vui lòng kiểm tra!")
+                        .build();
+                        System.out.println("Notifying class ID: " + classEntity.getId() + " with payload: " + notifyPayload);
+
+                        notificationService.notifyTeacher(teacherId, notifyPayload);
 
                         return dto;
                 }
@@ -181,15 +192,23 @@ public class ClassJoinRequestService {
         }
 
         private JoinRequestDTO convertToDTO(ClassJoinRequest r) {
-                return JoinRequestDTO.builder()
-                                .requestId(r.getId())
-                                .classId(r.getClassEntity().getId())
-                                .className(r.getClassEntity().getClassName())
-                                .studentId(r.getStudent().getId())
-                                .studentName(r.getStudent().getFullName())
-                                .status(r.getStatus())
-                                .createdAt(r.getCreatedAt())
-                                .build();
+        String message = switch (r.getStatus()) {
+                case PENDING -> "Yêu cầu tham gia lớp học đang chờ duyệt.";
+                case APPROVED -> "Bạn đã được chấp nhận vào lớp.";
+                case REJECTED -> "Yêu cầu của bạn đã bị từ chối.";
+                default -> null;
+        };
+
+        return JoinRequestDTO.builder()
+                .requestId(r.getId())
+                .classId(r.getClassEntity().getId())
+                .className(r.getClassEntity().getClassName())
+                .studentId(r.getStudent().getId())
+                .studentName(r.getStudent().getFullName())
+                .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .message(message) // ✅ chỉ tồn tại trong payload, không lưu DB
+                .build();
         }
 
         private List<JoinRequestDTO> convertListToDTOs(List<ClassJoinRequest> requests) {
