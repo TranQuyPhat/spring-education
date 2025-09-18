@@ -123,15 +123,6 @@ public class AssignmentService {
 
         Assignment saved = assignmentJpaRepository.save(assignment);
 
-
-        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
-                .classId(dto.getClassId())
-                .title(saved.getTitle())
-                .description(saved.getDescription())
-                .dueDate(saved.getDueDate())
-                .build();
-
-        notificationService.notifyClass(dto.getClassId(), notifyPayload);
         Map<String,Object> payload = Map.of(
                 "teacher", saved.getClassField().getTeacher().getFullName(),
                 "title",   saved.getTitle()
@@ -240,39 +231,9 @@ public class AssignmentService {
             throw new EntityNotFoundException("File not found for assignment id: " + id);
         }
 
-        // 3. Trả DTO chứa file và metadata
-        return new DownloadFileDTO(
-                resource,
-                assignment.getFileType() != null ? assignment.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                path.getFileName().toString());
-    }
         return assignment.getFilePath() + "?fl_attachment";
     }
 
-    public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
-        List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
-
-        return assignments.stream().map(a -> {
-            try {
-                int daysLeft = -1;
-                if (a.getDueDate() != null) {
-                    // do assignment.getDueDate() là LocalDateTime nên chỉ cần toLocalDate()
-                    LocalDate due = a.getDueDate().toLocalDate();
-                    daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
-                }
-                return UpcomingAssignmentDto.builder()
-                        .id(a.getId())
-                        .title(a.getTitle())
-                        .className(a.getClassField() != null ? a.getClassField().getClassName() : "Unknown")
-                        .dueDate(a.getDueDate())
-                        .daysLeft(daysLeft)
-                        .build();
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
-            }
-        }).collect(Collectors.toList());
-    }
 
     public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
         List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
