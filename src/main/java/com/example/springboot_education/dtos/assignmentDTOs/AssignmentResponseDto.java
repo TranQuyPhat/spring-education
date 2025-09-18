@@ -23,6 +23,7 @@ public class AssignmentResponseDto {
     private String filePath;
     private String fileType;
     private String fileSize;
+    private String fileName;
     private boolean published;
     private Timestamp createdAt;
     private Timestamp updatedAt;

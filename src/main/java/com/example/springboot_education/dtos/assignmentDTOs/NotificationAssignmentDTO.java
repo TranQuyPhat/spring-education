@@ -2,9 +2,8 @@ package com.example.springboot_education.dtos.assignmentDTOs;
 
 import lombok.*;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
+
 
 
 @Getter
@@ -17,5 +16,6 @@ public class NotificationAssignmentDTO {
     private String title;
     private String description;
     private Integer classId;
-    private LocalDateTime dueDate;
+    private Instant dueDate;
+    private String message;
 }
