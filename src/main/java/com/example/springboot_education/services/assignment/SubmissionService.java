@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.springboot_education.services.mail.EmailService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -44,6 +45,8 @@ public class SubmissionService {
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
     private final SlackService slackService;
+    private final EmailService emailService;
+
 
     private SubmissionResponseDto convertToDto(Submission submission) {
         SubmissionResponseDto dto = new SubmissionResponseDto();
@@ -193,7 +196,6 @@ public class SubmissionService {
     }
 
     // Chấm điểm
-
     @LoggableAction(value = "GRADE", entity = "Submission", description = "Graded an assignment")
     public SubmissionResponseDto gradeSubmission(Integer submissionId, BigDecimal score, String comment) {
         Submission submission = submissionJpaRepository.findById(submissionId)
@@ -205,6 +207,18 @@ public class SubmissionService {
         submission.setGradedAt(LocalDateTime.now());
 
         Submission graded = submissionJpaRepository.save(submission);
+        Users student = submission.getStudent();
+        Assignment assignment = submission.getAssignment();
+        Users teacher = assignment.getClassField().getTeacher();
+
+        if (student != null && teacher != null) {
+            emailService.sendAssignmentGradedEmail(
+                    student.getEmail(),
+                    student.getFullName(),
+                    assignment.getTitle(),
+                    score.toString(),
+                    teacher.getFullName());
+        }
         return convertToDto(graded);
     }
 

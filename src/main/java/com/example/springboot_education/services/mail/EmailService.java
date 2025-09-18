@@ -103,6 +103,26 @@ public class EmailService {
         }
     }
 
+    public void sendAssignmentGradedEmail(String toEmail, String studentName, String assignmentTitle, String grade, String teacherName) {
+    try {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail, "Education System");
+        helper.setTo(toEmail);
+        helper.setSubject("Bài tập đã được chấm - Education System");
+
+        String htmlContent = buildAssignmentGradedTemplate(studentName, assignmentTitle, grade, teacherName);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+        log.info("Assignment graded email sent successfully to student: {}", toEmail);
+    } catch (Exception e) {
+        log.error("Failed to send assignment graded email to student: {}", toEmail, e);
+        throw new HttpException("Failed to send assignment graded email", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
     private String buildOtpEmailTemplate(String otp, String fullName, String purpose) {
         return """
                 <!DOCTYPE html>
@@ -349,7 +369,8 @@ public class EmailService {
                 <head>
                     <meta charset="UTF-8">
                     <title>Thông báo """
-                + action + """
+                + action
+                + """
                             </title>
                             <style>
                                 body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
@@ -386,6 +407,49 @@ public class EmailService {
                         </html>
                         """;
     }
+   
+    private String buildAssignmentGradedTemplate(String studentName, String assignmentTitle, String grade, String teacherName) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Bài tập đã được chấm</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                .header { text-align: center; margin-bottom: 30px; }
+                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1 style="color: #007bff;">Education System</h1>
+                    <h2>Kết quả bài tập</h2>
+                </div>
+                
+                <p>Xin chào <strong>""" + studentName + """
+                    </strong>,</p>
+                
+                <p>Thầy/cô <strong>""" + teacherName + """
+                    </strong> đã chấm điểm bài tập <strong>""" + assignmentTitle + """
+                    </strong> của bạn.</p>
+                
+                <p><strong>Điểm số của bạn là: </strong> """ + grade + """
+                </p>
+                
+                <p>Vui lòng đăng nhập vào hệ thống để xem chi tiết kết quả.</p>
+                
+                <div class="footer">
+                    <p>Trân trọng,<br>Education System Team</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """;
+}
+
     public void sendSlackWorkspaceInviteEmail(String toEmail, String fullName, String inviteLink) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
