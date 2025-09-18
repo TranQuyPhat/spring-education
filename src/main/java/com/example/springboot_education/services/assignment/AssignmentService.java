@@ -203,7 +203,6 @@ public class AssignmentService {
 
     public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
         List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
-
         return assignments.stream()
                 // lọc ra những bài chưa quá hạn
                 .filter(a -> a.getDueDate() != null && !a.getDueDate().toLocalDate().isBefore(LocalDate.now()))
