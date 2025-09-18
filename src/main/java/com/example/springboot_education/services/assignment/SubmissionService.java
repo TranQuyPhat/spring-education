@@ -56,7 +56,6 @@ public class SubmissionService {
     private final ClassRepository classRepository;
     private final Cloudinary cloudinary;
     private final SlackService slackService;
-    private final EmailService emailService;
     private final NotificationService notificationService;
 
     private SubmissionResponseDto convertToDto(Submission submission) {
@@ -245,18 +244,6 @@ public class SubmissionService {
         submission.setGradedAt(LocalDateTime.now());
 
         Submission graded = submissionJpaRepository.save(submission);
-        Users student = submission.getStudent();
-        Assignment assignment = submission.getAssignment();
-        Users teacher = assignment.getClassField().getTeacher();
-
-        if (student != null && teacher != null) {
-            emailService.sendAssignmentGradedEmail(
-                    student.getEmail(),
-                    student.getFullName(),
-                    assignment.getTitle(),
-                    score.toString(),
-                    teacher.getFullName());
-        }
         return convertToDto(graded);
     }
 
