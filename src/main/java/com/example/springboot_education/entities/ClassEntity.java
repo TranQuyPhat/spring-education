@@ -5,11 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +66,11 @@ public class ClassEntity {
     @Enumerated(EnumType.STRING) // Lưu bằng tên enum (AUTO, APPROVAL)
     @Column(name = "join_mode", nullable = false, length = 20)
     private JoinMode joinMode ; // default = AUTO
+    @Column(name = "slack_channel_id")
+    private String slackChannelId;
 
+    @Column(name = "slack_invite_link")
+    private String slackInviteLink;
     @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ClassSchedulePattern> schedulePatterns = new ArrayList<>();
 

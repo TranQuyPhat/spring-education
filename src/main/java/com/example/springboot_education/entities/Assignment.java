@@ -57,6 +57,12 @@ public class Assignment {
     @Column(name = "file_size")
     private Long fileSize; // bytes
 
+    @Column(name = "file_name")
+    private String fileName;
+
+    @Column(name = "is_published", nullable = false)
+    private boolean published = false;
+
     @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 

@@ -3,6 +3,7 @@ package com.example.springboot_education.controllers;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialRequestDto;
 import com.example.springboot_education.dtos.materialDTOs.ClassMaterialResponseDto;
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.services.material.ClassMaterialService;
 
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -80,19 +82,17 @@ public class ClassMaterialController {
     @GetMapping("/download/{id}")
     public ResponseEntity<?> downloadMaterial(@PathVariable("id") Integer id) {
         try {
-            DownloadFileDTO fileDto = materialService.downloadMaterial(id);
-            if (fileDto == null || fileDto.getResource() == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
-            }
+            String downloadUrl = materialService.getDownloadUrl(id);
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(fileDto.getFileType()))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDto.getFileName() + "\"")
-                    .body(fileDto.getResource());
-
+            return ResponseEntity.status(HttpStatus.FOUND) // 302 Redirect
+                    .location(URI.create(downloadUrl))
+                    .build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error downloading file: " + e.getMessage());
+                    .body("Error redirecting to file: " + e.getMessage());
         }
     }
+
 }

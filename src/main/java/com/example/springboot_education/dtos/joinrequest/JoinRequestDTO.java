@@ -24,5 +24,6 @@ public class JoinRequestDTO {
     private String studentName;
     private String className;
     private Status status;
+    private String message;
     private Instant createdAt;
 }

@@ -1,14 +1,18 @@
 package com.example.springboot_education.services.mail;
 
-import com.example.springboot_education.exceptions.HttpException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import com.example.springboot_education.exceptions.HttpException;
+
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -80,183 +84,425 @@ public class EmailService {
         }
     }
 
+    // ================== GENERAL EMAIL ==================
+    public void sendEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "Education System");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send email to: {}", toEmail, e);
+            throw new HttpException("Failed to send email", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void sendAssignmentGradedEmail(String toEmail, String studentName, String assignmentTitle, String grade, String teacherName) {
+    try {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail, "Education System");
+        helper.setTo(toEmail);
+        helper.setSubject("Bài tập đã được chấm - Education System");
+
+        String htmlContent = buildAssignmentGradedTemplate(studentName, assignmentTitle, grade, teacherName);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+        log.info("Assignment graded email sent successfully to student: {}", toEmail);
+    } catch (Exception e) {
+        log.error("Failed to send assignment graded email to student: {}", toEmail, e);
+        throw new HttpException("Failed to send assignment graded email", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
     private String buildOtpEmailTemplate(String otp, String fullName, String purpose) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Xác thực OTP</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-                    .otp-number { font-size: 32px; font-weight: bold; color: #28a745; letter-spacing: 5px; }
-                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
-                    .warning { background-color: #fff3cd; padding: 15px; border-radius: 5px; color: #856404; margin: 15px 0; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1 style="color: #28a745;">Education System</h1>
-                        <h2>Xác thực tài khoản của bạn</h2>
-                    </div>
-                    
-                    <p>Xin chào <strong>""" + fullName + """
-                        </strong>,</p>
-                    
-                    <p>Cảm ơn bạn đã đăng ký tài khoản tại Education System. Để hoàn tất quá trình """ + purpose + """
-                        , vui lòng nhập mã OTP bên dưới:</p>
-                    
-                    <div class="otp-code">
-                        <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
-                        <div class="otp-number">""" + otp + """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Xác thực OTP</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                        .otp-number { font-size: 32px; font-weight: bold; color: #28a745; letter-spacing: 5px; }
+                        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+                        .warning { background-color: #fff3cd; padding: 15px; border-radius: 5px; color: #856404; margin: 15px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1 style="color: #28a745;">Education System</h1>
+                            <h2>Xác thực tài khoản của bạn</h2>
                         </div>
-                    </div>
-                    
-                    <div class="warning">
-                        <strong>Lưu ý quan trọng:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
-                            <li>Không chia sẻ mã này với bất kỳ ai</li>
-                            <li>Nếu bạn không yêu cầu """ + purpose + """
-                                , vui lòng bỏ qua email này</li>
-                        </ul>
-                    </div>
-                    
-                    <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi qua email hỗ trợ.</p>
-                    
-                    <div class="footer">
-                        <p>Trân trọng,<br>Education System Team</p>
-                        <p style="margin-top: 15px;">
-                            <small>Email này được gửi tự động, vui lòng không trả lời.</small>
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """;
+
+                        <p>Xin chào <strong>"""
+                + fullName + """
+                            </strong>,</p>
+
+                        <p>Cảm ơn bạn đã đăng ký tài khoản tại Education System. Để hoàn tất quá trình """ + purpose
+                + """
+                            , vui lòng nhập mã OTP bên dưới:</p>
+
+                        <div class="otp-code">
+                            <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
+                            <div class="otp-number">""" + otp + """
+                            </div>
+                        </div>
+
+                        <div class="warning">
+                            <strong>Lưu ý quan trọng:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
+                                <li>Không chia sẻ mã này với bất kỳ ai</li>
+                                <li>Nếu bạn không yêu cầu """ + purpose + """
+                                            , vui lòng bỏ qua email này</li>
+                                    </ul>
+                                </div>
+
+                                <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi qua email hỗ trợ.</p>
+
+                                <div class="footer">
+                                    <p>Trân trọng,<br>Education System Team</p>
+                                    <p style="margin-top: 15px;">
+                                        <small>Email này được gửi tự động, vui lòng không trả lời.</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """;
     }
 
     private String buildChangePasswordOtpTemplate(String otp, String fullName) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Thay đổi mật khẩu</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-                    .otp-number { font-size: 32px; font-weight: bold; color: #dc3545; letter-spacing: 5px; }
-                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
-                    .warning { background-color: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; margin: 15px 0; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1 style="color: #dc3545;">🔐 Education System</h1>
-                        <h2>Thay đổi mật khẩu</h2>
-                    </div>
-                    
-                    <p>Xin chào <strong>""" + fullName + """
-                        </strong>,</p>
-                    
-                    <p>Chúng tôi nhận được yêu cầu thay đổi mật khẩu cho tài khoản của bạn. Để xác nhận thay đổi, vui lòng nhập mã OTP bên dưới:</p>
-                    
-                    <div class="otp-code">
-                        <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
-                        <div class="otp-number">""" + otp + """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Thay đổi mật khẩu</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                        .otp-number { font-size: 32px; font-weight: bold; color: #dc3545; letter-spacing: 5px; }
+                        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+                        .warning { background-color: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; margin: 15px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1 style="color: #dc3545;">🔐 Education System</h1>
+                            <h2>Thay đổi mật khẩu</h2>
                         </div>
-                    </div>
-                    
-                    <div class="warning">
-                        <strong>⚠️ Lưu ý bảo mật:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
-                            <li>Tuyệt đối không chia sẻ mã này với bất kỳ ai</li>
-                            <li>Nếu bạn không yêu cầu thay đổi mật khẩu, vui lòng bỏ qua email này và kiểm tra bảo mật tài khoản</li>
-                            <li>Sau khi thay đổi mật khẩu thành công, bạn sẽ cần đăng nhập lại</li>
-                        </ul>
-                    </div>
-                    
-                    <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi ngay lập tức qua email hỗ trợ.</p>
-                    
-                    <div class="footer">
-                        <p>Trân trọng,<br>Education System Team</p>
-                        <p style="margin-top: 15px;">
-                            <small>Email này được gửi tự động, vui lòng không trả lời.</small>
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """;
+
+                        <p>Xin chào <strong>"""
+                + fullName
+                + """
+                            </strong>,</p>
+
+                        <p>Chúng tôi nhận được yêu cầu thay đổi mật khẩu cho tài khoản của bạn. Để xác nhận thay đổi, vui lòng nhập mã OTP bên dưới:</p>
+
+                        <div class="otp-code">
+                            <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
+                            <div class="otp-number">"""
+                + otp
+                + """
+                                    </div>
+                                </div>
+
+                                <div class="warning">
+                                    <strong>⚠️ Lưu ý bảo mật:</strong>
+                                    <ul style="margin: 10px 0; padding-left: 20px;">
+                                        <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
+                                        <li>Tuyệt đối không chia sẻ mã này với bất kỳ ai</li>
+                                        <li>Nếu bạn không yêu cầu thay đổi mật khẩu, vui lòng bỏ qua email này và kiểm tra bảo mật tài khoản</li>
+                                        <li>Sau khi thay đổi mật khẩu thành công, bạn sẽ cần đăng nhập lại</li>
+                                    </ul>
+                                </div>
+
+                                <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi ngay lập tức qua email hỗ trợ.</p>
+
+                                <div class="footer">
+                                    <p>Trân trọng,<br>Education System Team</p>
+                                    <p style="margin-top: 15px;">
+                                        <small>Email này được gửi tự động, vui lòng không trả lời.</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """;
     }
 
     private String buildForgotPasswordOtpTemplate(String otp, String fullName) {
         return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Khôi phục mật khẩu</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                        .otp-number { font-size: 32px; font-weight: bold; color: #fd7e14; letter-spacing: 5px; }
+                        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+                        .warning { background-color: #fff3cd; padding: 15px; border-radius: 5px; color: #856404; margin: 15px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1 style="color: #fd7e14;">🔑 Education System</h1>
+                            <h2>Khôi phục mật khẩu</h2>
+                        </div>
+
+                        <p>Xin chào <strong>"""
+                + fullName
+                + """
+                            </strong>,</p>
+
+                        <p>Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản của bạn. Để tiếp tục quá trình đặt lại mật khẩu, vui lòng nhập mã OTP bên dưới:</p>
+
+                        <div class="otp-code">
+                            <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
+                            <div class="otp-number">"""
+                + otp
+                + """
+                                    </div>
+                                </div>
+
+                                <div class="warning">
+                                    <strong>🔒 Hướng dẫn khôi phục:</strong>
+                                    <ul style="margin: 10px 0; padding-left: 20px;">
+                                        <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
+                                        <li>Sau khi xác thực OTP, bạn sẽ được yêu cầu nhập mật khẩu mới</li>
+                                        <li>Tuyệt đối không chia sẻ mã này với bất kỳ ai</li>
+                                        <li>Nếu bạn không yêu cầu khôi phục mật khẩu, vui lòng bỏ qua email này và kiểm tra bảo mật tài khoản</li>
+                                    </ul>
+                                </div>
+
+                                <p><strong>Lưu ý:</strong> Sau khi đặt lại mật khẩu thành công, tất cả các phiên đăng nhập hiện tại sẽ bị hủy và bạn cần đăng nhập lại.</p>
+
+                                <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi ngay lập tức qua email hỗ trợ.</p>
+
+                                <div class="footer">
+                                    <p>Trân trọng,<br>Education System Team</p>
+                                    <p style="margin-top: 15px;">
+                                        <small>Email này được gửi tự động, vui lòng không trả lời.</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """;
+    }
+
+    public String buildAssignmentDueReportTemplate(String teacherName, String className,
+            List<String> studentNamesSubmitted) {
+        String summary;
+        if (studentNamesSubmitted == null || studentNamesSubmitted.isEmpty()) {
+            return null; // Không gửi nếu không có ai nộp
+        } else if (studentNamesSubmitted.size() <= 3) {
+            summary = String.join(", ", studentNamesSubmitted) + " đã nộp bài.";
+        } else {
+            List<String> firstThree = studentNamesSubmitted.subList(0, 3);
+            summary = String.join(", ", firstThree) + " và " + (studentNamesSubmitted.size() - 3)
+                    + " học sinh khác đã nộp bài.";
+        }
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Báo cáo bài tập đến hạn hôm nay</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        .header { text-align: center; margin-bottom: 20px; color: #007bff; }
+                        .highlight { color: #28a745; font-weight: bold; }
+                        .footer { margin-top: 30px; color: #555; font-size: 14px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h2>Báo cáo bài tập đến hạn hôm nay</h2>
+                        </div>
+                        <p>Xin chào <strong>"""
+                + teacherName + """
+                         </strong>,</p>
+                        <p>Danh sách học sinh lớp <strong>"""
+                + className + """
+                         </strong> đã nộp bài:</p>
+                        <p class="highlight">"""
+                + summary + """
+                                 </p>
+                                <p class="footer">Trân trọng,<br>Education System Team</p>
+                            </div>
+                        </body>
+                        </html>
+                        """;
+    }
+
+    public String buildClassChangeTemplate(String fullName, String className, String type, String date, String note) {
+        String action = type.equalsIgnoreCase("cancel") ? " nghỉ học " : " học bù ";
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Thông báo """
+                + action
+                + """
+                            </title>
+                            <style>
+                                body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+                                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px;
+                                             border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                                .header { text-align: center; margin-bottom: 20px; color: #007bff; }
+                                .highlight { color: #dc3545; font-weight: bold; }
+                                .note { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 15px 0; }
+                                .footer { margin-top: 30px; color: #555; font-size: 14px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                <h2>Thông báo"""
+                + action + """
+                             </h2>
+                        </div>
+                               <p>Xin chào<strong>
+                        """ + fullName + """
+                         </strong>,</p>
+                               <p>Lớp<strong>
+                        """ + className + """
+                               </strong>sẽ<span class="highlight">
+                        """ + action + """
+                          </span>
+                               vào ngày<strong>
+                        """ + date + """
+                        </strong>.</p>
+                        """ + (note != null && !note.isEmpty() ? "<p class='note'>Ghi chú: " + note + "</p>" : "") + """
+                                <p class="footer">Trân trọng,<br>Education System Team</p>
+                            </div>
+                        </body>
+                        </html>
+                        """;
+    }
+   
+    private String buildAssignmentGradedTemplate(String studentName, String assignmentTitle, String grade, String teacherName) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Bài tập đã được chấm</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                .header { text-align: center; margin-bottom: 30px; }
+                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1 style="color: #007bff;">Education System</h1>
+                    <h2>Kết quả bài tập</h2>
+                </div>
+                
+                <p>Xin chào <strong>""" + studentName + """
+                    </strong>,</p>
+                
+                <p>Thầy/cô <strong>""" + teacherName + """
+                    </strong> đã chấm điểm bài tập <strong>""" + assignmentTitle + """
+                    </strong> của bạn.</p>
+                
+                <p><strong>Điểm số của bạn là: </strong> """ + grade + """
+                </p>
+                
+                <p>Vui lòng đăng nhập vào hệ thống để xem chi tiết kết quả.</p>
+                
+                <div class="footer">
+                    <p>Trân trọng,<br>Education System Team</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """;
+}
+
+    public void sendSlackWorkspaceInviteEmail(String toEmail, String fullName, String inviteLink) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "Education System");
+            helper.setTo(toEmail);
+            helper.setSubject("Tham gia Slack Workspace - Education System");
+
+            String htmlContent = buildSlackInviteTemplate(fullName, inviteLink);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Slack workspace invite email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send Slack workspace invite email to: {}", toEmail, e);
+            throw new HttpException("Failed to send Slack invite email", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String buildSlackInviteTemplate(String fullName, String inviteLink) {
+        return String.format("""
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="UTF-8">
-                <title>Khôi phục mật khẩu</title>
+                <title>Tham gia Slack Workspace</title>
                 <style>
-                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .otp-code { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-                    .otp-number { font-size: 32px; font-weight: bold; color: #fd7e14; letter-spacing: 5px; }
-                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
-                    .warning { background-color: #fff3cd; padding: 15px; border-radius: 5px; color: #856404; margin: 15px 0; }
+                    body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }
+                    .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 10px;
+                                 box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    h1 { color: #4A154B; text-align: center; }
+                    a.join-btn { display: inline-block; padding: 12px 24px; background-color: #4A154B; color: white;
+                                 text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }
+                    p { color: #333; }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <div class="header">
-                        <h1 style="color: #fd7e14;">🔑 Education System</h1>
-                        <h2>Khôi phục mật khẩu</h2>
-                    </div>
-                    
-                    <p>Xin chào <strong>""" + fullName + """
-                        </strong>,</p>
-                    
-                    <p>Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản của bạn. Để tiếp tục quá trình đặt lại mật khẩu, vui lòng nhập mã OTP bên dưới:</p>
-                    
-                    <div class="otp-code">
-                        <p style="margin: 0; color: #666;">Mã xác thực OTP của bạn là:</p>
-                        <div class="otp-number">""" + otp + """
-                        </div>
-                    </div>
-                    
-                    <div class="warning">
-                        <strong>🔒 Hướng dẫn khôi phục:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Mã OTP này có hiệu lực trong <strong>5 phút</strong></li>
-                            <li>Sau khi xác thực OTP, bạn sẽ được yêu cầu nhập mật khẩu mới</li>
-                            <li>Tuyệt đối không chia sẻ mã này với bất kỳ ai</li>
-                            <li>Nếu bạn không yêu cầu khôi phục mật khẩu, vui lòng bỏ qua email này và kiểm tra bảo mật tài khoản</li>
-                        </ul>
-                    </div>
-                    
-                    <p><strong>Lưu ý:</strong> Sau khi đặt lại mật khẩu thành công, tất cả các phiên đăng nhập hiện tại sẽ bị hủy và bạn cần đăng nhập lại.</p>
-                    
-                    <p>Nếu bạn gặp bất kỳ vấn đề gì, vui lòng liên hệ với chúng tôi ngay lập tức qua email hỗ trợ.</p>
-                    
-                    <div class="footer">
-                        <p>Trân trọng,<br>Education System Team</p>
-                        <p style="margin-top: 15px;">
-                            <small>Email này được gửi tự động, vui lòng không trả lời.</small>
-                        </p>
-                    </div>
+                    <h1>Chào mừng %s!</h1>
+                    <p>Bạn đã đăng ký tài khoản thành công trên <strong>Education System</strong>.</p>
+                    <p>Để nhận thông báo từ lớp học, vui lòng tham gia Slack Workspace của hệ thống:</p>
+                    <p style="text-align:center;">
+                        <a class="join-btn" href="%s">Tham gia ngay</a>
+                    </p>
+                    <p>Nếu nút trên không hoạt động, bạn có thể copy link này vào trình duyệt:<br>
+                        <a href="%s">%s</a></p>
+                    <p style="margin-top:30px;font-size:14px;color:#666;">Email này được gửi tự động, vui lòng không trả lời.</p>
                 </div>
             </body>
             </html>
-            """;
+            """, fullName, inviteLink, inviteLink, inviteLink);
     }
+
+
 }

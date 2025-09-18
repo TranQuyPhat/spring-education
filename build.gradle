@@ -41,7 +41,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
-	// Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // https://mvnrepository.com/artifact/com.slack.api/slack-api-client
+    implementation("com.slack.api:slack-api-client:1.45.2")
+
+    // Spring Security
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	implementation("com.google.genai:google-genai:1.11.0")
 	implementation("org.apache.tika:tika-core:3.2.2")
@@ -73,6 +77,10 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.1")
     implementation 'org.apache.pdfbox:pdfbox:2.0.29'
     implementation 'org.apache.pdfbox:fontbox:2.0.29'
+
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
+
+	implementation 'com.cloudinary:cloudinary-http44:1.36.0'
 }
 
 tasks.named('test') {

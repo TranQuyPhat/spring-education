@@ -18,6 +18,8 @@ import java.util.List;
 public interface ClassRepository extends JpaRepository<ClassEntity, Integer> {
     List<ClassEntity> findByTeacher_Id(Integer teacherId);
     Page<ClassEntity> findByTeacher_Id(Integer teacherId, Pageable pageable);
+    @Query("select c.slackChannelId from ClassEntity c where c.id = :classId")
+    String findSlackChannelIdById(@Param("classId") Integer classId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT MAX(c.id) FROM ClassEntity c WHERE c.id >= :prefixStart")
     Integer findMaxIdByPrefixForUpdate(@Param("prefixStart") Integer prefixStart);

@@ -11,8 +11,11 @@ import com.example.springboot_education.repositories.PendingUserRepository;
 import com.example.springboot_education.repositories.RoleJpaRepository;
 import com.example.springboot_education.repositories.UserRoleRepository;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.services.mail.EmailService;
 import com.example.springboot_education.services.mail.OtpService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +37,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final PendingUserRepository pendingUserRepository;
     private final OtpService otpService;
+    @Autowired
+    private EmailService emailService;
+    @Value("${INVITE_LINK_SLACK}")
+    private  String inviteLink;
     @Transactional
     public RegisterInitResponseDto registerInit(RegisterRequestDto request) {
         // Kiểm tra email đã tồn tại
@@ -111,8 +118,8 @@ public class AuthService {
         newUser.setUsername(pendingUser.getUsername());
         newUser.setEmail(pendingUser.getEmail());
         newUser.setFullName(pendingUser.getFullName());
-        newUser.setPassword(pendingUser.getPassword()); // Đã được encode
-        newUser.setIsEmailVerified(true); // Đánh dấu email đã xác thực
+        newUser.setPassword(pendingUser.getPassword());
+        newUser.setIsEmailVerified(true);
 
         Users savedUser = userJpaRepository.save(newUser);
 
@@ -126,6 +133,11 @@ public class AuthService {
         pendingUserRepository.deleteByEmail(request.getEmail());
 
         String token = jwtService.generateAccessToken(savedUser);
+        emailService.sendSlackWorkspaceInviteEmail(
+                savedUser.getEmail(),
+                savedUser.getFullName(),
+                inviteLink
+        );
 
 
         return RegisterResponseDto.builder()
@@ -133,6 +145,7 @@ public class AuthService {
                 .username(savedUser.getUsername())
                 .email(savedUser.getEmail())
                 .accessToken(token)
+                .workspaceInviteLink(inviteLink)
                 .build();
     }
     @Transactional

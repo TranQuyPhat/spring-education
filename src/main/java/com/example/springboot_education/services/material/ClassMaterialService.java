@@ -1,8 +1,12 @@
 package com.example.springboot_education.services.material;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.example.springboot_education.untils.CloudinaryUtils;
 import org.springframework.stereotype.Service;
 
 import com.example.springboot_education.annotations.LoggableAction;
@@ -32,6 +36,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ClassMaterialService {
 
+    private final Cloudinary cloudinary;
     private final ClassMaterialJpaRepository classMaterialJpaRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final ClassRepository classRepository;
@@ -44,19 +49,16 @@ public class ClassMaterialService {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class with id: " + dto.getClassId()));
 
+        // Upload lên Cloudinary
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                ObjectUtils.asMap("folder", "class_materials"));
+
         ClassMaterial material = new ClassMaterial();
         material.setTitle(dto.getTitle());
         material.setDescription(dto.getDescription());
         material.setCreatedBy(user);
         material.setClassField(classEntity);
-        String uploadDir = "uploads/documents";
-        Files.createDirectories(Paths.get(uploadDir));
-
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.write(filePath, file.getBytes());
-
-        material.setFilePath("uploads/documents/" + filename);
+        material.setFilePath((String) uploadResult.get("secure_url")); // URL public Cloudinary
         material.setFileType(file.getContentType());
 
         ClassMaterial saved = classMaterialJpaRepository.save(material);
@@ -86,14 +88,17 @@ public class ClassMaterialService {
         material.setDescription(dto.getDescription());
 
         if (file != null && !file.isEmpty()) {
-            String uploadDir = "uploads/documents";
-            Files.createDirectories(Paths.get(uploadDir));
+            // Nếu đã có file cũ thì xóa trên Cloudinary
+            if (material.getFilePath() != null) {
+                String publicId = extractPublicId(material.getFilePath());
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            }
 
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir, filename);
-            Files.write(filePath, file.getBytes());
+            // Upload file mới
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap("folder", "class_materials"));
 
-            material.setFilePath("uploads/documents/" + filename);
+            material.setFilePath((String) uploadResult.get("secure_url"));
             material.setFileType(file.getContentType());
         }
 
@@ -106,35 +111,25 @@ public class ClassMaterialService {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material"));
 
+        // xóa file trên Cloudinary
+        try {
+            String publicId = CloudinaryUtils.extractPublicId(material.getFilePath());
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete file from Cloudinary: " + e.getMessage());
+        }
+
         classMaterialJpaRepository.delete(material);
     }
 
-    public void increaseDownloadCount(Integer materialId) {
-        ClassMaterial material = classMaterialJpaRepository.findById(materialId)
-                .orElseThrow(() -> new EntityNotFoundException("Material"));
-        material.setDownloadCount(material.getDownloadCount() + 1);
-        classMaterialJpaRepository.save(material);
-    }
-
-    public DownloadFileDTO downloadMaterial(Integer id) throws Exception {
+    public String getDownloadUrl(Integer id) {
         ClassMaterial material = classMaterialJpaRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Material"));
+                .orElseThrow(() -> new EntityNotFoundException("Material"));
 
         material.setDownloadCount(material.getDownloadCount() + 1);
         classMaterialJpaRepository.save(material);
 
-        Path path = Paths.get(System.getProperty("user.dir")).resolve(material.getFilePath());
-        Resource resource = new UrlResource(path.toUri());
-
-        if (!resource.exists()) {
-            throw new EntityNotFoundException("File");
-        }
-
-        return new DownloadFileDTO(
-                resource,
-                material.getFileType() != null ? material.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                path.getFileName().toString()
-        );
+        return material.getFilePath(); // URL Cloudinary
     }
 
     private ClassMaterialResponseDto toResponseDto(ClassMaterial material) {
@@ -151,4 +146,14 @@ public class ClassMaterialService {
         dto.setUpdatedAt(material.getUpdatedAt());
         return dto;
     }
+
+    private String extractPublicId(String url) {
+        // Ví dụ: https://res.cloudinary.com/djiinlgh2/image/upload/v1234567890/class_materials/abc123.pdf
+        // => publicId = class_materials/abc123
+        String withoutExtension = url.substring(url.lastIndexOf("/") + 1, url.lastIndexOf("."));
+        String folder = url.split("/upload/")[1]; // lấy phần sau /upload/
+        folder = folder.substring(0, folder.lastIndexOf("/")); // bỏ tên file
+        return folder + "/" + withoutExtension;
+    }
+
 }

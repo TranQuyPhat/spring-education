@@ -1,27 +1,37 @@
 package com.example.springboot_education.services.assignment;
 
+import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.entities.Assignment;
+import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.exceptions.EntityNotFoundException;
+import com.example.springboot_education.repositories.ClassRepository;
+import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
+import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.untils.FileUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
 import com.example.springboot_education.entities.ClassMaterial;
 import com.example.springboot_education.entities.ClassUser;
 import com.example.springboot_education.entities.Users;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
-import com.example.springboot_education.untils.FileUtils;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
+import com.example.springboot_education.untils.CloudinaryUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,7 +42,6 @@ import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignme
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
-import com.example.springboot_education.dtos.dashboard.student.AssignmentDTO;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.repositories.ClassRepository;
@@ -43,14 +52,16 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class AssignmentService {
+    private final Cloudinary cloudinary;
     private final NotificationServiceAssignment notificationService;
+    private final SlackService slackService;
 
     private final AssignmentJpaRepository assignmentJpaRepository;
     private final ClassRepository classRepository;
     private final EmailService emailService;
-    // Xóa ActivityLogService khỏi đây
-    // private final ActivityLogService activityLogService;
+
 
     private AssignmentResponseDto convertToDto(Assignment assignment) {
         AssignmentResponseDto dto = new AssignmentResponseDto();
@@ -63,6 +74,8 @@ public class AssignmentService {
         dto.setFilePath(assignment.getFilePath());
         dto.setFileType(assignment.getFileType());
         dto.setFileSize(FileUtils.formatFileSize(assignment.getFileSize()));
+        dto.setFileName(assignment.getFileName());
+        dto.setPublished(assignment.isPublished());
         dto.setCreatedAt(assignment.getCreatedAt());
         dto.setUpdatedAt(assignment.getUpdatedAt());
         return dto;
@@ -87,12 +100,15 @@ public class AssignmentService {
         ClassEntity classEntity = classRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new EntityNotFoundException("Class with id: " + dto.getClassId()));
 
-        String uploadDir = "uploads/assignments";
-        Files.createDirectories(Paths.get(uploadDir));
+        // 🔹 Upload file lên Cloudinary
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", "assignments",
+                        "resource_type", "auto"
+                ));
 
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.write(filePath, file.getBytes());
+        String fileUrl = (String) uploadResult.get("secure_url");
+        String originalFilename = file.getOriginalFilename();
 
         Assignment assignment = new Assignment();
         assignment.setClassField(classEntity);
@@ -100,11 +116,13 @@ public class AssignmentService {
         assignment.setDescription(dto.getDescription());
         assignment.setDueDate(dto.getDueDate());
         assignment.setMaxScore(dto.getMaxScore());
-        assignment.setFilePath(filePath.toString());
+        assignment.setFilePath(fileUrl); // ✅ Lưu URL Cloudinary
         assignment.setFileType(file.getContentType());
         assignment.setFileSize(file.getSize());
+        assignment.setFileName(originalFilename);
 
         Assignment saved = assignmentJpaRepository.save(assignment);
+
 
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
                 .classId(dto.getClassId())
@@ -114,8 +132,24 @@ public class AssignmentService {
                 .build();
 
         notificationService.notifyClass(dto.getClassId(), notifyPayload);
-        // Xóa code ghi log thủ công
-        // activityLogService.log(...);
+        Map<String,Object> payload = Map.of(
+                "teacher", saved.getClassField().getTeacher().getFullName(),
+                "title",   saved.getTitle()
+        );
+        slackService.sendSlackNotification(
+                saved.getClassField().getId(),
+                SlackService.ClassEventType.ASSIGNMENT_CREATED,
+                payload
+        );
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(dto.getClassId())
+            .title(saved.getTitle())
+            .description(saved.getDescription())
+            .dueDate(saved.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Có bài tập mới được giao, vui lòng kiểm tra!")
+            .build();
+
+        notificationService.notifyClass(dto.getClassId(), notifyPayload);
         return convertToDto(saved);
     }
 
@@ -135,18 +169,30 @@ public class AssignmentService {
         assignment.setDueDate(dto.getDueDate());
         assignment.setMaxScore(dto.getMaxScore());
 
-        // Nếu có file mới thì thay thế
+        // Nếu có file mới thì xử lý upload
         if (file != null && !file.isEmpty()) {
-            String uploadDir = "uploads/assignments";
-            Files.createDirectories(Paths.get(uploadDir));
+            // Xóa file cũ trên Cloudinary (nếu có)
+            if (assignment.getFilePath() != null && !assignment.getFilePath().isBlank()) {
+                try {
+                    String publicId = CloudinaryUtils.extractPublicId(assignment.getFilePath());
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                } catch (Exception e) {
+                    log.warn("Không thể extract/xóa file cũ trên Cloudinary: {}", assignment.getFilePath(), e);
+                }
+            }
 
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir, filename);
-            Files.write(filePath, file.getBytes());
+            try {
+                Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                        file.getBytes(),
+                        ObjectUtils.asMap("resource_type", "auto")
+                );
 
-            assignment.setFilePath(filePath.toString());
-            assignment.setFileType(file.getContentType());
-            assignment.setFileSize(file.getSize());
+                assignment.setFilePath(uploadResult.get("secure_url").toString());
+                assignment.setFileType(file.getContentType());
+                assignment.setFileSize(file.getSize());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload file to Cloudinary: " + e.getMessage(), e);
+            }
         }
 
         Assignment updated = assignmentJpaRepository.save(assignment);
@@ -157,10 +203,15 @@ public class AssignmentService {
     public void deleteAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
-
-        // Xóa code ghi log thủ công
-        // activityLogService.log(...);
-
+        // 🔹 Xoá file trên Cloudinary (nếu có)
+        if (assignment.getFilePath() != null) {
+            try {
+                String publicId = CloudinaryUtils.extractPublicId(assignment.getFilePath());
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to delete file from Cloudinary: " + e.getMessage());
+            }
+        }
         assignmentJpaRepository.delete(assignment);
     }
 
@@ -181,17 +232,12 @@ public class AssignmentService {
     }
 
     // Tải tệp đính kèm bài tập về máy
-    public DownloadFileDTO downloadAssignment(Integer id) throws Exception {
-        // 1. Lấy thông tin bài tập
+    public String downloadAssignment(Integer id) {
         Assignment assignment = assignmentJpaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
 
-        // 2. Lấy file từ đường dẫn (dùng path tuyệt đối)
-        Path path = Paths.get(assignment.getFilePath());
-        Resource resource = new UrlResource(path.toUri());
-
-        if (!resource.exists()) {
-            throw new EntityNotFoundException("File");
+        if (assignment.getFilePath() == null) {
+            throw new EntityNotFoundException("File not found for assignment id: " + id);
         }
 
         // 3. Trả DTO chứa file và metadata
@@ -199,6 +245,33 @@ public class AssignmentService {
                 resource,
                 assignment.getFileType() != null ? assignment.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 path.getFileName().toString());
+    }
+        return assignment.getFilePath() + "?fl_attachment";
+    }
+
+    public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
+        List<Assignment> assignments = assignmentJpaRepository.findAssignmentsByStudentId(studentId);
+
+        return assignments.stream().map(a -> {
+            try {
+                int daysLeft = -1;
+                if (a.getDueDate() != null) {
+                    // do assignment.getDueDate() là LocalDateTime nên chỉ cần toLocalDate()
+                    LocalDate due = a.getDueDate().toLocalDate();
+                    daysLeft = (int) ChronoUnit.DAYS.between(LocalDate.now(), due);
+                }
+                return UpcomingAssignmentDto.builder()
+                        .id(a.getId())
+                        .title(a.getTitle())
+                        .className(a.getClassField() != null ? a.getClassField().getClassName() : "Unknown")
+                        .dueDate(a.getDueDate())
+                        .daysLeft(daysLeft)
+                        .build();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }).collect(Collectors.toList());
     }
 
     public List<UpcomingAssignmentDto> getUpcomingAssignments(Integer studentId) {
@@ -243,6 +316,7 @@ public class AssignmentService {
                         ? a.getClassField().getClassUsers().size()
                         : 0;
 
+
                 return UpcomingSubmissionDto.builder()
                         .id(a.getId())
                         .title(a.getTitle())
@@ -258,5 +332,28 @@ public class AssignmentService {
             }
         }).collect(Collectors.toList());
     }
+
+    // công bố điểm
+    @LoggableAction(value = "UPDATE", entity = "assignments", description = "Published assignment results")
+    public AssignmentResponseDto publishAssignment(Integer id) {
+        Assignment assignment = assignmentJpaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment with id: " + id));
+
+        assignment.setPublished(true);  // set isPublished = true
+        Assignment updated = assignmentJpaRepository.save(assignment);
+        NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
+            .classId(assignment.getClassField().getId())
+            .title(assignment.getTitle())
+            .description(assignment.getDescription())
+            .dueDate(assignment.getDueDate().atZone(ZoneId.systemDefault()).toInstant())
+            .message("Bài tập đã chấm xong, vui lòng kiểm tra!")
+            .build();
+        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+
+        notificationService.notifyClass(assignment.getClassField().getId(), notifyPayload);
+
+        return convertToDto(updated);
+    }
+
 
 }
