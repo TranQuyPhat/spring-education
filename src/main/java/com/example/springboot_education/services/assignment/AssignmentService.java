@@ -1,14 +1,20 @@
 package com.example.springboot_education.services.assignment;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.springboot_education.annotations.LoggableAction;
+import com.example.springboot_education.dtos.assignmentDTOs.*;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
 import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.services.mail.EmailService;
+import com.example.springboot_education.untils.CloudinaryUtils;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,39 +22,10 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.example.springboot_education.dtos.materialDTOs.DownloadFileDTO;
-import com.example.springboot_education.entities.ClassMaterial;
-import com.example.springboot_education.entities.ClassUser;
-import com.example.springboot_education.entities.Users;
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.example.springboot_education.exceptions.EntityNotFoundException;
-import com.example.springboot_education.untils.CloudinaryUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.example.springboot_education.annotations.LoggableAction; // Import annotation
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
-import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
-import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
-import com.example.springboot_education.entities.Assignment;
-import com.example.springboot_education.entities.ClassEntity;
-import com.example.springboot_education.repositories.ClassRepository;
-import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
-import com.example.springboot_education.services.mail.EmailService;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service

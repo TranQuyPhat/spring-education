@@ -1,5 +1,6 @@
 package com.example.springboot_education.services;
 
+import com.example.springboot_education.dtos.GradeDistributionDTO;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
 import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
 import com.example.springboot_education.dtos.dashboardsClient.DashboardActivityDTO;
@@ -11,6 +12,7 @@ import com.example.springboot_education.services.assignment.AssignmentService;
 import com.example.springboot_education.services.grade.impl.GradeStatsServiceImpl;
 import com.example.springboot_education.untils.TimeAgoUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -19,8 +21,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -29,7 +31,6 @@ public class DashboardService {
     private final AssignmentService assignmentService;
     private final GradeStatsServiceImpl gradeStatsService;
 public TeacherDashboardResponse getTeacherDashboard(Integer teacherId) {
-
     List<DashboardActivityDTO> recentActivities = new ArrayList<>();
     List<UpcomingSubmissionDto> upcomingDeadlines = assignmentService.getUpcomingSubmissions(teacherId);
     // --- 1. Lấy recent submissions ---
@@ -60,26 +61,28 @@ for (Object[] row : comments) {
     Timestamp ts = (Timestamp) row[4];
     if (ts != null) {
         dto.setTime(TimeAgoUtil.timeAgo(ts.toInstant()));
-        dto.setSortTime(ts.toInstant()); // lưu Instant thực tế để sort
+        dto.setSortTime(ts.toInstant());
     }
     recentActivities.add(dto);
 }
-    // --- 3. Sort theo thời gian giảm dần và lấy 5 gần nhất ---
     recentActivities.sort((a, b) -> b.getSortTime().compareTo(a.getSortTime()));
 List<DashboardActivityDTO> top5Activities = recentActivities.stream()
         .limit(5)
         .toList();
-
-    // --- 4. Build dashboard response ---
+    Object[] distribution = (Object[]) dashboardRepository.findGradeDistribution(teacherId.longValue());
+    GradeDistributionDTO gradeDist = new GradeDistributionDTO(
+            ((Number) distribution[0]).longValue(),
+            ((Number) distribution[1]).longValue(),
+            ((Number) distribution[2]).longValue(),
+            ((Number) distribution[3]).longValue(),
+            ((Number) distribution[4]).longValue()
+    );
     return TeacherDashboardResponse.builder()
             .totalClasses((int) dashboardRepository.countClassesByTeacher(teacherId))
             .totalStudents((int) dashboardRepository.countStudentsByTeacher(teacherId))
             .totalAssignments((int) dashboardRepository.countAssignmentsByTeacher(teacherId))
             .pendingGrading((int) dashboardRepository.countPendingGrading(teacherId))
-            .averageGrade(
-                    Optional.ofNullable(dashboardRepository.findAverageScoreByTeacher(teacherId))
-                            .orElse(0.0)
-            )
+            .gradeDistribution(gradeDist)
             .recentActivities(top5Activities)
                     .upcomingDeadlinesTeacher(upcomingDeadlines) 
             .build();
@@ -103,6 +106,8 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
                 avgScore = null;
             }
         }
+
+
         return StudentDashboardResponse.builder()
                 .enrolledClasses((int) dashboardRepository.countClassesByStudent(studentId))
                 .totalAssignments(dashboardRepository.countAssignmentsByStudentId(studentId).intValue())
@@ -112,6 +117,5 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
                 .classProgress(dashboardRepository.findClassProgressByStudentId(studentId))
                 .build();
     }
-
 }
 

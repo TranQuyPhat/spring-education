@@ -15,12 +15,14 @@ public interface StudentScoreRepository extends JpaRepository<Submission, Intege
     // Query để lấy 5 điểm gần nhất từ cả Assignment và Quiz
     @Query(value = """
 
-            (SELECT c.class_name, s.subject_name, sub.submitted_at, sub.score, 'ASSIGNMENT' as type, a.title
-         FROM submissions sub
-         JOIN assignments a ON sub.assignment_id = a.id
-         JOIN classes c ON a.class_id = c.id
-         JOIN subjects s ON c.subject_id = s.id
-         WHERE sub.student_id = :studentId)
+            (SELECT c.class_name,  s.subject_name, sub.submitted_at,sub.score,'ASSIGNMENT' AS type, a.title
+            FROM submissions sub
+            JOIN assignments a ON sub.assignment_id = a.id
+            JOIN classes c     ON a.class_id = c.id
+            JOIN subjects s    ON c.subject_id = s.id
+            WHERE sub.student_id = :studentId
+            AND sub.status = 'GRADED'
+            )
         UNION ALL
         (SELECT c.class_name, s.subject_name, qs.submitted_at, qs.score, 'QUIZ' as type, q.title
          FROM quiz_submissions qs
