@@ -22,24 +22,13 @@ public class QuizAccessService {
     private final QuizRepository quizRepository;
     private final QuizSubmissionRepository submissionRepository;
 
-    /**
-     * Kiểm tra quyền truy cập quiz cho học sinh.
-     * Ném BadRequestException nếu vi phạm.
-     */
     public Quiz assertStudentCanAccess(Integer quizId, Integer studentId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new EntityNotFoundException("Quiz"));
 
         Instant now = Instant.now();
 
-        if (quiz.getStartDate() != null &&
-                now.isBefore(quiz.getStartDate().atZone(ZoneId.systemDefault()).toInstant())) {
-            throw new HttpException( "Quiz chưa mở.", HttpStatus.BAD_REQUEST);
-        }
-        if (quiz.getEndDate() != null &&
-                now.isAfter(quiz.getEndDate().atZone(ZoneId.systemDefault()).toInstant())) {
-            throw new HttpException("Quiz đã đóng.", HttpStatus.BAD_REQUEST);
-        }
+
         if (submissionRepository.existsByQuizIdAndStudentId(quizId, studentId)) {
             throw new HttpException("Bạn đã nộp bài và không thể làm lại.", HttpStatus.BAD_REQUEST);
         }

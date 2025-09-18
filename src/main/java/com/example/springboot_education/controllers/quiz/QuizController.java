@@ -2,6 +2,7 @@ package com.example.springboot_education.controllers.quiz;
 
 
 import com.example.springboot_education.annotations.CurrentUser;
+import com.example.springboot_education.dtos.ApiResponse;
 import com.example.springboot_education.dtos.quiz.APIResponse;
 import com.example.springboot_education.dtos.quiz.QuizContentUpdateDTO;
 import com.example.springboot_education.dtos.quiz.QuizRequestDTO;
@@ -29,8 +30,12 @@ public class QuizController {
     private final QuizService quizService;
     private final JwtTokenUtil jwtTokenUtil;
     @PostMapping
-    public ResponseEntity<QuizBaseDTO> createQuiz(@Valid @RequestBody QuizRequestDTO request) {
-        return ResponseEntity.ok(quizService.createQuiz(request));
+    public ResponseEntity<ApiResponse<QuizBaseDTO>> createQuiz(
+            @Valid @RequestBody QuizRequestDTO request) {
+        QuizBaseDTO quiz = quizService.createQuiz(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo quiz thành công", quiz));
     }
     @GetMapping("/{quizId}")
     public ResponseEntity<?> getQuizByRole(
