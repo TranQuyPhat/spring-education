@@ -74,34 +74,16 @@ public class GradeStatsServiceImpl implements GradeStatsService {
 
     @Override
     public List<BaseScoreStatsDTO> getStudentRankingByTeacher(Integer teacherId) {
-        List<BaseScoreStatsDTO> quizList = quizRepo.findQuizAverageByTeacher(teacherId);
-        List<BaseScoreStatsDTO> assignList = submissionRepo.findAssignmentAverageByTeacher(teacherId);
+        List<Object[]> rows = dashboardRepository.findStudentRankingByTeacher(teacherId);
 
-        // Gộp theo key classId + studentEmail
-        Map<String, BaseScoreStatsDTO> resultMap = new HashMap<>();
-
-        for (BaseScoreStatsDTO q : quizList) {
-            String key = q.getClassId() + "_" + q.getStudentEmail();
-            resultMap.put(key, new BaseScoreStatsDTO(
-                    q.getClassId(), q.getClassName(), q.getStudentName(), q.getStudentEmail(),
-                    q.getAverageScore() != null ? q.getAverageScore() : 0.0
-            ));
-        }
-
-        for (BaseScoreStatsDTO a : assignList) {
-            String key = a.getClassId() + "_" + a.getStudentEmail();
-            BaseScoreStatsDTO entry = resultMap.getOrDefault(key, new BaseScoreStatsDTO(
-                    a.getClassId(), a.getClassName(), a.getStudentName(), a.getStudentEmail(), 0.0
-            ));
-
-            double oldScore = entry.getAverageScore();
-            double assignScore = a.getAverageScore() != null ? a.getAverageScore() : 0.0;
-
-            entry.setAverageScore(Math.round((oldScore + assignScore) / 2.0 * 100.0) / 100.0);
-            resultMap.put(key, entry);
-        }
-
-        return resultMap.values().stream()
+        return rows.stream()
+                .map(r -> new BaseScoreStatsDTO(
+                        ((Number) r[0]).intValue(),         // classId
+                        (String) r[1],                        // className
+                        (String) r[2],                        // studentName
+                        (String) r[3],                        // studentEmail
+                        r[4] != null ? ((Number) r[4]).doubleValue() : 0.0 // averageScore
+                ))
                 .sorted(Comparator.comparing(BaseScoreStatsDTO::getAverageScore).reversed())
                 .collect(Collectors.toList());
     }

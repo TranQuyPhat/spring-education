@@ -84,7 +84,7 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
             .pendingGrading((int) dashboardRepository.countPendingGrading(teacherId))
             .gradeDistribution(gradeDist)
             .recentActivities(top5Activities)
-                    .upcomingDeadlinesTeacher(upcomingDeadlines) 
+            .upcomingDeadlinesTeacher(upcomingDeadlines)
             .build();
 }
 
