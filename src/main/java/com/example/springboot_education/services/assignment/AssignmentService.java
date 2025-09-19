@@ -6,9 +6,12 @@ import com.example.springboot_education.annotations.LoggableAction;
 import com.example.springboot_education.dtos.assignmentDTOs.*;
 import com.example.springboot_education.entities.Assignment;
 import com.example.springboot_education.entities.ClassEntity;
+import com.example.springboot_education.entities.Submission;
+import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.repositories.ClassRepository;
 import com.example.springboot_education.repositories.assignment.AssignmentJpaRepository;
+import com.example.springboot_education.repositories.assignment.SubmissionJpaRepository;
 import com.example.springboot_education.services.SlackService;
 import com.example.springboot_education.services.mail.EmailService;
 import com.example.springboot_education.untils.CloudinaryUtils;
@@ -26,12 +29,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.example.springboot_education.dtos.assignmentDTOs.AssignmentResponseDto;
-import com.example.springboot_education.dtos.assignmentDTOs.CreateAssignmentRequestDto;
-import com.example.springboot_education.dtos.assignmentDTOs.NotificationAssignmentDTO;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingAssignmentDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpcomingSubmissionDto;
-import com.example.springboot_education.dtos.assignmentDTOs.UpdateAssignmentRequestDto;
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -41,6 +38,7 @@ public class AssignmentService {
     private final SlackService slackService;
 
     private final AssignmentJpaRepository assignmentJpaRepository;
+    private final SubmissionJpaRepository submissionJpaRepository;
     private final ClassRepository classRepository;
     private final EmailService emailService;
 
@@ -284,6 +282,23 @@ public class AssignmentService {
 
         assignment.setPublished(true);  // set isPublished = true
         Assignment updated = assignmentJpaRepository.save(assignment);
+
+        // Lấy danh sách bài nộp
+        List<Submission> submissions = submissionJpaRepository.findByAssignment_Id(id);
+        Users teacher = assignment.getClassField().getTeacher();
+        // Group theo student, giữ submission có id lớn nhất (mới nhất)
+        Map<Integer, Submission> latestSubmissionByStudent = submissions.stream()
+                .filter(s -> s.getStudent() != null && s.getScore() != null).collect(Collectors
+                        .toMap(s -> s.getStudent().getId(), s -> s, (s1, s2) -> s1.getId() > s2.getId() ? s1 : s2));
+        for (Submission submission : latestSubmissionByStudent.values()) {
+            Users student = submission.getStudent();
+            emailService.sendAssignmentGradedEmail(
+                    student.getEmail(),
+                    student.getFullName(),
+                    assignment.getTitle(),
+                    submission.getScore().toString(),
+                    teacher.getFullName());
+        }
         NotificationAssignmentDTO notifyPayload = NotificationAssignmentDTO.builder()
             .classId(assignment.getClassField().getId())
             .title(assignment.getTitle())

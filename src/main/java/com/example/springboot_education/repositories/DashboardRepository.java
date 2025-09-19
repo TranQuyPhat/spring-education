@@ -102,11 +102,11 @@ public interface DashboardRepository extends JpaRepository<ClassEntity, Long> {
 
     @Query(value = """
         SELECT
-            SUM(CASE WHEN t.avg_score >= 9.0 THEN 1 ELSE 0 END) AS xuatSac,
-            SUM(CASE WHEN t.avg_score BETWEEN 8.0 AND 8.9 THEN 1 ELSE 0 END) AS gioi,
-            SUM(CASE WHEN t.avg_score BETWEEN 6.5 AND 7.9 THEN 1 ELSE 0 END) AS kha,
-            SUM(CASE WHEN t.avg_score < 6.5 THEN 1 ELSE 0 END) AS canCaiThien,
-            COUNT(*) AS totalStudents
+           COALESCE(SUM(CASE WHEN t.avg_score >= 9.0 THEN 1 ELSE 0 END),0) AS xuatSac,
+                                             COALESCE(SUM(CASE WHEN t.avg_score BETWEEN 8.0 AND 8.9 THEN 1 ELSE 0 END),0) AS gioi,
+                                             COALESCE(SUM(CASE WHEN t.avg_score BETWEEN 6.5 AND 7.9 THEN 1 ELSE 0 END),0) AS kha,
+                                             COALESCE(SUM(CASE WHEN t.avg_score < 6.5 THEN 1 ELSE 0 END),0) AS canCaiThien,
+                                             COUNT(*) AS totalStudents
         FROM (
             SELECT u.id AS student_id,
                    ROUND(AVG(all_scores.score),2) AS avg_score
