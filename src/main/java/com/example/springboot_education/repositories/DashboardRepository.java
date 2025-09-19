@@ -130,4 +130,51 @@ public interface DashboardRepository extends JpaRepository<ClassEntity, Long> {
         ) AS t
         """, nativeQuery = true)
     Object findGradeDistribution(@Param("teacherId") Long teacherId);
+
+    @Query(value = """
+        WITH quiz_avg AS (
+            SELECT c2.id AS class_id,
+                   qs.student_id AS student_id,
+                   ROUND(AVG(qs.score),2) AS quiz_avg
+            FROM quiz_submissions qs
+            JOIN quizzes q ON qs.quiz_id = q.id
+            JOIN classes c2 ON q.class_id = c2.id
+            WHERE c2.teacher_id = :teacherId
+            GROUP BY c2.id, qs.student_id
+        ),
+        assign_avg AS (
+            SELECT c3.id AS class_id,
+                   s.student_id AS student_id,
+                   ROUND(AVG(s.score),2) AS assign_avg
+            FROM submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN classes c3 ON a.class_id = c3.id
+            WHERE c3.teacher_id = :teacherId
+              AND s.status = 'graded'
+            GROUP BY c3.id, s.student_id
+        )
+        SELECT c.id            AS class_id,
+               c.class_name    AS class_name,
+               u.full_name     AS student_name,
+               u.email         AS student_email,
+               ROUND(
+                   CASE
+                     WHEN qz.quiz_avg IS NOT NULL AND asg.assign_avg IS NOT NULL
+                          THEN (qz.quiz_avg + asg.assign_avg) / 2
+                     WHEN qz.quiz_avg IS NOT NULL
+                          THEN qz.quiz_avg
+                     WHEN asg.assign_avg IS NOT NULL
+                          THEN asg.assign_avg
+                     ELSE 0
+                   END
+               ,2) AS average_score
+        FROM classes c
+        JOIN class_user cm ON cm.class_id = c.id
+        JOIN users u          ON u.id = cm.student_id
+        LEFT JOIN quiz_avg   qz  ON qz.class_id = c.id AND qz.student_id = u.id
+        LEFT JOIN assign_avg asg ON asg.class_id = c.id AND asg.student_id = u.id
+        WHERE c.teacher_id = :teacherId
+        ORDER BY average_score DESC
+        """, nativeQuery = true)
+    List<Object[]> findStudentRankingByTeacher(@Param("teacherId") Integer teacherId);
 }
