@@ -92,10 +92,9 @@ public interface ClassUserRepository extends JpaRepository<ClassUser, ClassUserI
       """)
   List<String> findStudentNamesByClassId(@Param("classId") Integer classId);
 
-  Page<ClassUser> findByStudent_IdAndClassField_ClassNameContainingIgnoreCase(
+List<ClassUser> findByStudent_IdAndClassField_ClassNameContainingIgnoreCase(
         Integer studentId,
-        String keyword,
-        Pageable pageable
+        String keyword
 );
 
 }

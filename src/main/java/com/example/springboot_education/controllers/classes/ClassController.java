@@ -79,14 +79,11 @@ public class ClassController {
         return ResponseEntity.ok(classService.getLatestClasses());
     }
 
-    @GetMapping("/teacher/{teacherId}/searchPaginate")
-    public ResponseEntity<PaginatedClassResponseDto> searchClassesPaginate(
-            @PathVariable("teacherId") Integer teacherId,
-            @RequestParam(name = "keyword", defaultValue = "") String keyword,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "6") int size
-    ) {
-        return ResponseEntity.ok(classService.searchClassesPaginate(teacherId, keyword, page, size));
-    }
-
+@GetMapping("/teacher/{teacherId}/search")
+public ResponseEntity<List<ClassResponseDTO>> searchClasses(
+        @PathVariable("teacherId") Integer teacherId,
+        @RequestParam(name = "keyword", defaultValue = "") String keyword
+) {
+    return ResponseEntity.ok(classService.searchClasses(teacherId, keyword));
+}
 }

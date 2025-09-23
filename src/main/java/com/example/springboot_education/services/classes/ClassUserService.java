@@ -214,26 +214,14 @@ public class ClassUserService {
     }
 
 
-    public PaginatedClassResponseDto searchClassesOfStudent(Integer studentId, String keyword, int page, int size) {
-    Pageable pageable = PageRequest.of(page, size);
-    Page<ClassUser> membersPage =
+public List<ClassResponseDTO> searchClassesOfStudent(Integer studentId, String keyword) {
+    List<ClassUser> members =
             classUserRepository.findByStudent_IdAndClassField_ClassNameContainingIgnoreCase(
-                    studentId, keyword, pageable);
+                    studentId, keyword);
 
-    List<ClassResponseDTO> classDTOs = membersPage.getContent().stream()
+    return members.stream()
             .map(member -> toDTO(member.getClassField()))
             .collect(Collectors.toList());
-
-    PaginatedClassResponseDto response = new PaginatedClassResponseDto();
-    response.setData(classDTOs);
-    response.setPageNumber(membersPage.getNumber());
-    response.setPageSize(membersPage.getSize());
-    response.setTotalRecords(membersPage.getTotalElements());
-    response.setTotalPages(membersPage.getTotalPages());
-    response.setHasNext(membersPage.hasNext());
-    response.setHasPrevious(membersPage.hasPrevious());
-
-    return response;
 }
 
 }
