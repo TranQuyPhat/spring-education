@@ -1,5 +1,7 @@
 package com.example.springboot_education.controllers;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.example.springboot_education.services.DashboardService;
 import com.example.springboot_education.repositories.UsersJpaRepository;
+import com.example.springboot_education.dtos.dashboardsClient.DashboardActivityDTO;
 import com.example.springboot_education.entities.Users;
 
 @RestController
@@ -64,4 +67,11 @@ public class DashboardClientController {
             return Optional.empty();
         }
     }
+
+    @GetMapping("/class/{classId}")
+    public ResponseEntity<List<DashboardActivityDTO>> getTeacherDashboard(@PathVariable("classId") Integer classId) {
+        List<DashboardActivityDTO> activities = dashboardService.getClassActivity(classId);
+        return ResponseEntity.ok(activities);
+    }
+    
 }

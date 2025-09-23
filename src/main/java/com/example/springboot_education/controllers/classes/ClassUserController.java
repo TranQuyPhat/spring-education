@@ -71,4 +71,13 @@ public class ClassUserController {
         ));
     }
 
+    @GetMapping("/student/{studentId}/searchPaginate")
+    public ResponseEntity<PaginatedClassResponseDto> searchClassesOfStudent(
+            @PathVariable("studentId") Integer studentId,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "6") int size
+    ) {
+        return ResponseEntity.ok(classUserService.searchClassesOfStudent(studentId, keyword, page, size));
+    }
 }

@@ -177,4 +177,23 @@ public interface DashboardRepository extends JpaRepository<ClassEntity, Long> {
         ORDER BY average_score DESC
         """, nativeQuery = true)
     List<Object[]> findStudentRankingByTeacher(@Param("teacherId") Integer teacherId);
+
+
+
+        @Query("""
+                SELECT s.assignment.id, s.assignment.title, s.assignment.classField.className, COUNT(s.id), MAX(s.submittedAt)
+                FROM Submission s
+                WHERE s.assignment.classField.id = :classId
+                GROUP BY s.assignment.id, s.assignment.title, s.assignment.classField.className
+                ORDER BY MAX(s.submittedAt) DESC
+            """)
+    List<Object[]> activitySubmissionsPerAssignmentByClass(@Param("classId") Integer classId);
+
+        @Query("""
+                SELECT c.id, c.user.fullName, c.assignment.title, c.assignment.classField.className, c.createdAt
+                FROM AssignmentComment c
+                WHERE c.assignment.classField.id = :classId
+                ORDER BY c.createdAt DESC
+            """)
+    List<Object[]> findRecentCommentsByClass(@Param("classId") Integer classId);
 }

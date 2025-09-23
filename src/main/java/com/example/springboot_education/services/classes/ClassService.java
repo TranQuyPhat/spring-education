@@ -309,4 +309,26 @@ public class ClassService {
                 .collect(Collectors.toList());
     }
 
+    public PaginatedClassResponseDto searchClassesPaginate(Integer teacherId, String keyword, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<ClassEntity> pageResult =
+            classRepository.findByTeacher_IdAndClassNameContainingIgnoreCaseOrderByCreatedAtDesc(teacherId, keyword, pageable);
+
+    List<ClassResponseDTO> classDtos = pageResult.getContent()
+            .stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
+
+    PaginatedClassResponseDto response = new PaginatedClassResponseDto();
+    response.setData(classDtos);
+    response.setPageNumber(pageResult.getNumber());
+    response.setPageSize(pageResult.getSize());
+    response.setTotalRecords(pageResult.getTotalElements());
+    response.setTotalPages(pageResult.getTotalPages());
+    response.setHasNext(pageResult.hasNext());
+    response.setHasPrevious(pageResult.hasPrevious());
+
+    return response;
+}
+
 }
