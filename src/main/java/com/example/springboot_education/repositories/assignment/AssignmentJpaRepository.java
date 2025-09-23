@@ -2,6 +2,8 @@ package com.example.springboot_education.repositories.assignment;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,7 @@ import com.example.springboot_education.entities.Assignment;
 @Repository
 public interface AssignmentJpaRepository extends JpaRepository<Assignment, Integer> {
   List<Assignment> findByClassField_Id(Integer classId);
+  Page<Assignment> findByClassField_Id(Integer classId, Pageable pageable);
 
   @Query("""
           SELECT a FROM Assignment a
