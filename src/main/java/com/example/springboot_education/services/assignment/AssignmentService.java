@@ -18,6 +18,9 @@ import com.example.springboot_education.untils.CloudinaryUtils;
 import com.example.springboot_education.untils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -200,6 +203,35 @@ public class AssignmentService {
                 .stream()
                 .map(this::convertToDto)
                 .toList();
+    }
+
+    // Get assignments by class with pagination
+    public PaginatedAssignmentResponseDto getAssignmentsByClassIdPaginated(Integer classId, int page, int size) {
+        // Kiểm tra class có tồn tại
+        ClassEntity classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new EntityNotFoundException("Class with id: " + classId));
+
+        // Tạo Pageable object
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Lấy dữ liệu phân trang từ repository
+        Page<Assignment> assignmentPage = assignmentJpaRepository.findByClassField_Id(classId, pageable);
+
+        // Convert sang DTO
+        List<AssignmentResponseDto> assignmentDtos = assignmentPage.getContent().stream()
+                .map(this::convertToDto)
+                .toList();
+
+        // Tạo response DTO
+        return PaginatedAssignmentResponseDto.builder()
+                .data(assignmentDtos)
+                .pageNumber(assignmentPage.getNumber())
+                .pageSize(assignmentPage.getSize())
+                .totalRecords(assignmentPage.getTotalElements())
+                .totalPages(assignmentPage.getTotalPages())
+                .hasNext(assignmentPage.hasNext())
+                .hasPrevious(assignmentPage.hasPrevious())
+                .build();
     }
 
     // Tải tệp đính kèm bài tập về máy
