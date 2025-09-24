@@ -19,7 +19,7 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")               // ws://host/ws
-                .setAllowedOriginPatterns("http://localhost:3000", "http://localhost:5173")
+                .setAllowedOriginPatterns("http://localhost:3000", "http://localhost:5173","https://nextjs-edu-ognw-git-hotfix-vercel-fix-tranquyphats-projects.vercel.app")
                 .withSockJS();
     }
 }
