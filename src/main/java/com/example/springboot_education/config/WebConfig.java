@@ -16,7 +16,7 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${FRONTEND_DEV}")
     private String feDev;
 
-    @Value("${FRONTEND_DEV}")
+    @Value("${FRONTEND_ADMIN}")
     private String feAdmin;
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
