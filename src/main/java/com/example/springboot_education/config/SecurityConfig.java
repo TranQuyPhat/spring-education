@@ -1,7 +1,10 @@
 package com.example.springboot_education.config;
 
-import java.util.Arrays;
-
+import com.example.springboot_education.exceptions.CustomAccessDeniedHandler;
+import com.example.springboot_education.exceptions.CustomAuthenticationEntryPoint;
+import com.example.springboot_education.filters.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,11 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.example.springboot_education.exceptions.CustomAccessDeniedHandler;
-import com.example.springboot_education.exceptions.CustomAuthenticationEntryPoint;
-import com.example.springboot_education.filters.JwtAuthenticationFilter;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -32,7 +31,14 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    @Value("${FRONTEND_ORIGIN}")
+    private String feMain;
 
+    @Value("${FRONTEND_DEV}")
+    private String feDev;
+
+    @Value("${FRONTEND_ADMIN}")
+    private String feAdmin;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -44,7 +50,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173",
-                "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000"));
+                "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000",feMain, "https://nextjs-edu-ognw-*.vercel.app",
+                "https://*.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(
                 Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
