@@ -27,7 +27,8 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")               // ws://host/ws
-                .setAllowedOriginPatterns(feMain, feDev, feAdmin)
+//                .setAllowedOriginPatterns(feMain, feDev, feAdmin)
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }
