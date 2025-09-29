@@ -67,4 +67,16 @@ public class Quiz {
     private List<QuizQuestion> questions;
 
 
+    @Transient
+    public QuizStatus getStatus() {
+        Instant now = Instant.now();
+        if (startDate != null && now.isBefore(startDate)) {
+            return QuizStatus.UPCOMING;
+        }
+        if (endDate != null && now.isAfter(endDate)) {
+            return QuizStatus.CLOSED;
+        }
+        return QuizStatus.OPEN;
+    }
+
 }

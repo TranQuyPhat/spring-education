@@ -1,5 +1,6 @@
 package com.example.springboot_education.controllers.quiz;
 
+import com.example.springboot_education.dtos.ApiResponse;
 import com.example.springboot_education.dtos.quiz.AiQuizSettings;
 import com.example.springboot_education.services.quiz.FileParseService;
 import com.example.springboot_education.services.quiz.QuizGenService;
@@ -8,10 +9,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai/quiz")
@@ -65,11 +71,16 @@ public class QuizGenController {
 
             if (all.size() > numQuestions) all = all.subList(0, numQuestions);
 
-            Map<String, Object> result = Map.of(
-                    "quizTitle", quizTitle,
-                    "questions", all
-            );
-            return ResponseEntity.ok(result);
+            try {
+                Map<String,Object> result = Map.of(
+                        "quizTitle", quizTitle,
+                        "questions", all
+                );
+                return ResponseEntity.ok(ApiResponse.success(result));
+            } catch (Exception e) {
+                return ResponseEntity.status(500)
+                        .body(ApiResponse.error(e.getMessage()));
+            }
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));

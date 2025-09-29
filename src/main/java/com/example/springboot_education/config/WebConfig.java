@@ -1,5 +1,6 @@
 package com.example.springboot_education.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -9,7 +10,14 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 @Configuration
 public class WebConfig implements WebSocketMessageBrokerConfigurer {
+    @Value("${FRONTEND_ORIGIN}")
+    private String feMain;
 
+    @Value("${FRONTEND_DEV}")
+    private String feDev;
+
+    @Value("${FRONTEND_ADMIN}")
+    private String feAdmin;
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue");
@@ -19,7 +27,8 @@ public class WebConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")               // ws://host/ws
-                .setAllowedOriginPatterns("http://localhost:3000", "http://localhost:5173")
+//                .setAllowedOriginPatterns(feMain, feDev, feAdmin)
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }

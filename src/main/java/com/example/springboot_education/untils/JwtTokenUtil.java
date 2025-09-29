@@ -3,6 +3,7 @@ package com.example.springboot_education.untils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,10 +14,9 @@ import java.util.Objects;
 
 @Component
 public class JwtTokenUtil {
-
+    @Value("${JWT_SECRET_KEY}")
+    private String secretKey;
     private SecretKey getSigningKey() {
-        // Sử dụng CÙNG secret như trong JwtService
-        String secretKey = "MIsMiHz45ATNS6elM6dQLfN6oQIBDSV+KbAc5PE3rlA=";
         byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
