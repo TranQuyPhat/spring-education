@@ -2,12 +2,15 @@ package com.example.springboot_education.repositories.quiz;
 
 
 import com.example.springboot_education.entities.Quiz;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +18,18 @@ import java.util.Optional;
 public interface QuizRepository extends JpaRepository<Quiz, Integer> {
     @EntityGraph(attributePaths = {"questions"})
     Optional<Quiz> findById(Long id);
+    Page<Quiz> findByClassField_IdAndStartDateAfter(Integer classId, Instant now, Pageable pageable);
+    Page<Quiz> findByClassField_IdAndEndDateBefore(Integer classId, Instant now, Pageable pageable);
+    Page<Quiz> findByClassField_IdAndStartDateBeforeAndEndDateAfter(Integer classId, Instant now1, Instant now2, Pageable pageable);
+    long countByClassField_IdAndStartDateAfter(Integer classId, Instant now);
 
+    // Đếm quiz của 1 lớp có endDate < now (đã kết thúc)
+    long countByClassField_IdAndEndDateBefore(Integer classId, Instant now);
+
+    // Đếm quiz của 1 lớp đang mở:
+    // startDate <= now và endDate >= now
+    long countByClassField_IdAndStartDateBeforeAndEndDateAfter(
+            Integer classId, Instant startNow, Instant endNow);
     List<Quiz> findByCreatedBy_Id(Integer teacherId);
     @Query(value = """
         SELECT 
