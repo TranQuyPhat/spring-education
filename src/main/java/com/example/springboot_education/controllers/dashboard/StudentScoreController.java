@@ -34,7 +34,6 @@ public class StudentScoreController {
     @GetMapping("/recent-scores")
     public ResponseEntity<ApiResponse<List<RecentScoreDTO>>> getRecentScores(HttpServletRequest request) {
         try {
-            // 1️⃣ Lấy token từ header
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new HttpException("Authorization header missing or invalid format", HttpStatus.UNAUTHORIZED);
@@ -58,21 +57,20 @@ public class StudentScoreController {
 
             // 5️⃣ Trả về dữ liệu gói trong ApiResponse
             return ResponseEntity.ok(
-                    ApiResponse.success("Lấy điểm gần đây thành công", recentScores)
-            );
+                    ApiResponse.success("Lấy điểm gần đây thành công", recentScores));
 
         } catch (EntityNotFoundException e) {
             throw new HttpException(e.getMessage(), HttpStatus.NOT_FOUND);
 
         } catch (HttpException e) {
-            // giữ nguyên HttpException để @ControllerAdvice hoặc GlobalExceptionHandler xử lý
+            // giữ nguyên HttpException để @ControllerAdvice hoặc GlobalExceptionHandler xử
+            // lý
             throw e;
 
         } catch (Exception e) {
             throw new HttpException("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     // API lấy tất cả kết quả của các lớp
     // @GetMapping("/class-results")
@@ -130,8 +128,8 @@ public class StudentScoreController {
             }
 
             List<SubjectGradeDTO> grades = studentScoreService.getAllClassResults(studentId);
-            APIResponse< List<SubjectGradeDTO>> response =
-                    new APIResponse<>(true, "Lấy bảng xếp hạng thành công", grades);
+            APIResponse<List<SubjectGradeDTO>> response = new APIResponse<>(true, "Lấy bảng xếp hạng thành công",
+                    grades);
 
             return ResponseEntity.ok(response);
 

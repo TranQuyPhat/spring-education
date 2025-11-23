@@ -18,4 +18,6 @@ public class QuestionTeacherDTO extends QuestionBaseDTO {
     private String correctAnswerRegex;
     private boolean caseSensitive;
     private boolean trimWhitespace;
+    // optional: when creating quiz, reference an existing question bank entry
+    private Long sourceQuestionId;
 }

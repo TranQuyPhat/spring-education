@@ -28,21 +28,23 @@ public class QuizMapper2 {
     private final ClassUserRepository classUserRepository;
     private final QuizSubmissionRepository quizSubmissionRepository;
     public static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     public void mapBaseFields(Quiz quiz, QuizBaseDTO dto) {
         dto.setId(quiz.getId());
         dto.setTitle(quiz.getTitle());
         dto.setDescription(quiz.getDescription());
         dto.setTimeLimit(quiz.getTimeLimit());
-        dto.setStartDate(quiz.getStartDate() != null ?
-                quiz.getStartDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
+        dto.setStartDate(
+                quiz.getStartDate() != null ? quiz.getStartDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
 
-        dto.setEndDate(quiz.getEndDate() != null ?
-                quiz.getEndDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
+        dto.setEndDate(quiz.getEndDate() != null ? quiz.getEndDate().atZone(VIETNAM_ZONE).toOffsetDateTime() : null);
 
         dto.setSubject(quiz.getSubject());
     }
+
     public QuizResponseTeacherDTO toTeacherDto(Quiz quiz, List<QuestionTeacherDTO> questions) {
-        if (quiz == null) return null;
+        if (quiz == null)
+            return null;
         QuizResponseTeacherDTO dto = new QuizResponseTeacherDTO();
         mapBaseFields(quiz, dto);
         dto.setClassId(quiz.getClassField().getId());
@@ -53,6 +55,7 @@ public class QuizMapper2 {
         dto.setQuestions(questions);
         return dto;
     }
+
     public QuizResponseStudentDTO toStudentDto(Quiz quiz, List<QuestionStudentDTO> questions) {
         QuizResponseStudentDTO dto = new QuizResponseStudentDTO();
         mapBaseFields(quiz, dto);
@@ -66,7 +69,6 @@ public class QuizMapper2 {
         dto.setQuestionText(question.getQuestionText());
         dto.setQuestionType(question.getQuestionType());
         dto.setCorrectOptions(question.getCorrectOptions()); // hoặc rename thành correctOptions
-        dto.setScore(question.getScore());
         dto.setOptions(options);
 
         // Bổ sung phần FILL_BLANK và regex
@@ -78,14 +80,12 @@ public class QuizMapper2 {
         return dto;
     }
 
-
     public QuestionStudentDTO toStudentQuestionDto(QuizQuestion question, List<OptionDTO> options) {
         QuestionStudentDTO dto = new QuestionStudentDTO();
         dto.setId(question.getId());
         dto.setQuestionText(question.getQuestionText());
         dto.setQuestionType(question.getQuestionType());
         dto.setOptions(options);
-        dto.setScore(question.getScore());
         return dto;
     }
 
@@ -96,7 +96,6 @@ public class QuizMapper2 {
         dto.setOptionText(opt.getOptionText());
         return dto;
     }
-
 
     public Quiz toEntity(QuizRequestDTO dto) {
         Quiz quiz = new Quiz();
@@ -113,7 +112,6 @@ public class QuizMapper2 {
                 .orElseThrow(() -> new EntityNotFoundException("Class with ID: " + dto.getClassId()));
         quiz.setClassField(classEntity);
 
-        // Lấy user tạo
         Users creator = userRepository.findById(dto.getCreatedBy())
                 .orElseThrow(() -> new EntityNotFoundException("User with ID: " + dto.getCreatedBy()));
         quiz.setCreatedBy(creator);
@@ -122,10 +120,13 @@ public class QuizMapper2 {
         Instant now = Instant.now();
         quiz.setCreatedAt(now);
         quiz.setUpdatedAt(now);
+        if (dto.getSubject() != null && !dto.getSubject().isBlank()) {
+            quiz.setSubject(dto.getSubject());
+        } else if (classEntity.getSubject() != null) {
+            quiz.setSubject(classEntity.getSubject().getSubjectName());
+        }
 
         return quiz;
     }
-
-
 
 }

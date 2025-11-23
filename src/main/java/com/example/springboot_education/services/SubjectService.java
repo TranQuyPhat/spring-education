@@ -48,7 +48,6 @@ public class SubjectService {
         }
         Subject subject = new Subject();
         subject.setSubjectName(dto.getSubjectName());
-        subject.setDescription(dto.getDescription());
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -70,7 +69,6 @@ public class SubjectService {
             throw new EntityDuplicateException("Subject with name '" + dto.getSubjectName() + "'");
         }
         subject.setSubjectName(dto.getSubjectName());
-        subject.setDescription(dto.getDescription());
 
         Subject updated = subjectRepository.save(subject);
 
@@ -89,7 +87,6 @@ public class SubjectService {
         SubjectResponseDTO dto = new SubjectResponseDTO();
         dto.setId(subject.getId());
         dto.setSubjectName(subject.getSubjectName());
-        dto.setDescription(subject.getDescription());
         dto.setCreatedByName(subject.getCreatedBy() != null ? subject.getCreatedBy().getFullName() : null);
         dto.setCreatedAt(subject.getCreatedAt());
         dto.setUpdatedAt(subject.getUpdatedAt());

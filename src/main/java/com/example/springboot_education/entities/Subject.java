@@ -25,9 +25,6 @@ public class Subject {
     @Column(name = "subject_name", nullable = false)
     private String subjectName;
 
-    @Lob
-    @Column(name = "description")
-    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)

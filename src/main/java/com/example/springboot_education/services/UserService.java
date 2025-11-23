@@ -246,7 +246,6 @@ public class UserService {
         userJpaRepository.save(user);
         return convertToDtoPublic(user);
     }
-
     public String getAvatarBase64(Integer userId) {
         Users user = userJpaRepository.findById(userId).orElseThrow();
         if (user.getAvatar() == null)
