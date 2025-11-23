@@ -122,13 +122,11 @@ public class SubmissionService {
         Users student = usersJpaRepository.findById(requestDto.getStudentId())
                 .orElseThrow(() -> new EntityNotFoundException("Student"));
 
-        // Kiểm tra đã nộp chưa
         submissionJpaRepository.findByAssignmentIdAndStudentId(
                 requestDto.getAssignmentId(), requestDto.getStudentId()).ifPresent(existing -> {
                     throw new HttpException("You have already submitted this assignment", HttpStatus.CONFLICT);
                 });
 
-        // Upload file lên Cloudinary
         Map<String, Object> uploadResult;
         try {
             uploadResult = cloudinary.uploader().upload(
@@ -136,8 +134,7 @@ public class SubmissionService {
                     ObjectUtils.asMap(
                             "resource_type", "auto",
                             "folder", "submissions/" + assignment.getId() // gom theo assignment
-                    )
-            );
+                    ));
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload submission file to Cloudinary: " + e.getMessage(), e);
         }
@@ -150,28 +147,27 @@ public class SubmissionService {
         submission.setFilePath(fileUrl);
         submission.setFileType(file.getContentType());
         submission.setFileSize(file.getSize());
-        submission.setFileName(originalFilename); // ✅ Lưu vào DB
+        submission.setFileName(originalFilename);
         submission.setDescription(requestDto.getDescription());
         submission.setStatus(Submission.SubmissionStatus.SUBMITTED);
         submission.setSubmittedAt(now);
-
+        
         Submission saved = submissionJpaRepository.save(submission);
 
         Map<String, Object> payload = Map.of(
                 "student", student.getFullName(),
-                "title",   submission.getAssignment().getTitle()
-        );
+                "title", submission.getAssignment().getTitle());
         slackService.sendSlackNotification(
                 assignment.getClassField().getId(),
                 SlackService.ClassEventType.ASSIGNMENT_SUBMITTED,
-                payload
-        );
+                payload);
         NotificationTeacherDTO notifyPayload = NotificationTeacherDTO.builder()
-                        .classId(assignment.getClassField().getId())
-                        .studentName(student.getFullName())
-                        .message("Có học sinh nộp bài tập: " + assignment.getTitle())
-                        .build();
-        System.out.println("Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
+                .classId(assignment.getClassField().getId())
+                .studentName(student.getFullName())
+                .message("Có học sinh nộp bài tập: " + assignment.getTitle())
+                .build();
+        System.out.println(
+                "Notifying class ID: " + assignment.getClassField().getId() + " with payload: " + notifyPayload);
 
         notificationService.notifyTeacher(assignment.getClassField().getTeacher().getId(), notifyPayload);
         return convertToDto(saved);
@@ -206,9 +202,7 @@ public class SubmissionService {
                         newFile.getBytes(),
                         ObjectUtils.asMap(
                                 "resource_type", "auto",
-                                "folder", "submissions/" + submission.getAssignment().getId()
-                        )
-                );
+                                "folder", "submissions/" + submission.getAssignment().getId()));
 
                 submission.setFilePath(uploadResult.get("secure_url").toString());
                 submission.setFileType(newFile.getContentType());
@@ -326,8 +320,7 @@ public class SubmissionService {
         return new DownloadFileDTO(
                 resource,
                 submission.getFileType() != null ? submission.getFileType() : MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                submission.getFileName() != null ? submission.getFileName() : "file"
-        );
+                submission.getFileName() != null ? submission.getFileName() : "file");
     }
 
     @LoggableAction(value = "DELETE", entity = "Submission", description = "Deleted a submission")

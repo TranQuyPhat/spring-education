@@ -27,18 +27,18 @@ public class NotificationService {
             //     "/queue/join-requests", 
             //     payload
             // );
-            // System.out.println("✅ Message sent via convertAndSendToUser");
+            // System.out.println("Message sent via convertAndSendToUser");
             
             // Cách 2: Thử gửi trực tiếp đến destination đầy đủ
             String fullDestination = "/user/" + teacherId + "/queue/join-requests";
             messagingTemplate.convertAndSend(fullDestination, payload);
-            System.out.println("✅ Message sent to full destination: " + fullDestination);
+            System.out.println("Message sent to full destination: " + fullDestination);
             
             // Cách 3: Thử với session ID (nếu có)
             // messagingTemplate.convertAndSendToUser(sessionId, "/queue/join-requests", payload);
             
         } catch (Exception e) {
-            System.err.println("❌ Error sending notification: " + e.getMessage());
+            System.err.println("Error sending notification: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -52,9 +52,9 @@ public class NotificationService {
                 "/queue/join-requests-response", 
                 payload
             );
-            System.out.println("✅ Student notification sent successfully");
+            System.out.println("Student notification sent successfully");
         } catch (Exception e) {
-            System.err.println("❌ Error sending student notification: " + e.getMessage());
+            System.err.println("Error sending student notification: " + e.getMessage());
             e.printStackTrace();
         }
     }

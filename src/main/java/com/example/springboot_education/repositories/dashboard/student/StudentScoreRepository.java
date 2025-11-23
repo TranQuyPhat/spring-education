@@ -51,7 +51,7 @@ public interface StudentScoreRepository extends JpaRepository<Submission, Intege
            AND ur.enabled = 1
            AND sub.status = 'GRADED')
         UNION ALL
-        (SELECT c.id as class_id, c.class_name, s.subject_name, q.title, 'quiz' as type,
+        (SELECT c.id as class_id, c.class_name,s.subject_name, q.title, 'quiz' as type,
                     qs.submitted_at, qs.score
              FROM quiz_submissions qs
              JOIN quizzes q ON qs.quiz_id = q.id
@@ -63,7 +63,7 @@ public interface StudentScoreRepository extends JpaRepository<Submission, Intege
                AND qs.student_id = :studentId
                AND ur.role_id = 1
                AND ur.enabled = 1)
-        ORDER BY class_id, subject_name, submitted_at DESC
+        ORDER BY class_id, submitted_at DESC
         """, nativeQuery = true)
     List<Object[]> findAllResultsByStudentId(@Param("studentId") Integer studentId);
 

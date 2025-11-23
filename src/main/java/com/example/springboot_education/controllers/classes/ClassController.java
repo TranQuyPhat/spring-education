@@ -1,18 +1,14 @@
 package com.example.springboot_education.controllers.classes;
 
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-// import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import com.example.springboot_education.dtos.ApiResponse;
 import com.example.springboot_education.dtos.classDTOs.ClassResponseDTO;
 import com.example.springboot_education.dtos.classDTOs.CreateClassDTO;
 import com.example.springboot_education.dtos.classDTOs.PaginatedClassResponseDto;
 import com.example.springboot_education.services.classes.ClassService;
-
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -49,11 +45,15 @@ public class ClassController {
     }
 
     @GetMapping("/teachers/{teacherId}")
-    public List<ClassResponseDTO> getAllClassesOfTeacher(
+    public ResponseEntity<ApiResponse<List<ClassResponseDTO>>> getAllClassesOfTeacher(
             @PathVariable("teacherId") Integer teacherId) {
-        return classService.getAllClassesOfTeacher(teacherId);
-    }
 
+        List<ClassResponseDTO> classes = classService.getAllClassesOfTeacher(teacherId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(classes)
+        );
+    }
     @GetMapping("/teacher/{teacherId}")
     public PaginatedClassResponseDto getClassesOfTeacher(
             @PathVariable("teacherId") Integer teacherId,
@@ -79,4 +79,11 @@ public class ClassController {
         return ResponseEntity.ok(classService.getLatestClasses());
     }
 
+@GetMapping("/teacher/{teacherId}/search")
+public ResponseEntity<List<ClassResponseDTO>> searchClasses(
+        @PathVariable("teacherId") Integer teacherId,
+        @RequestParam(name = "keyword", defaultValue = "") String keyword
+) {
+    return ResponseEntity.ok(classService.searchClasses(teacherId, keyword));
+}
 }

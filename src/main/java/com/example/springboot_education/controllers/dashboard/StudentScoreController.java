@@ -1,7 +1,9 @@
 package com.example.springboot_education.controllers.dashboard;
 
+import com.example.springboot_education.dtos.ApiResponse;
 import com.example.springboot_education.dtos.dashboard.student.RecentScoreDTO;
 import com.example.springboot_education.dtos.dashboard.student.SubjectGradeDTO;
+import com.example.springboot_education.dtos.quiz.APIResponse;
 import com.example.springboot_education.exceptions.EntityNotFoundException;
 import com.example.springboot_education.exceptions.HttpException;
 import com.example.springboot_education.services.dashboard.student.StudentScoreService;
@@ -30,9 +32,8 @@ public class StudentScoreController {
 
     // API lấy 5 điểm gần nhất
     @GetMapping("/recent-scores")
-    public ResponseEntity<?> getRecentScores(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<List<RecentScoreDTO>>> getRecentScores(HttpServletRequest request) {
         try {
-            // Lấy token từ header
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new HttpException("Authorization header missing or invalid format", HttpStatus.UNAUTHORIZED);
@@ -40,23 +41,32 @@ public class StudentScoreController {
 
             String token = authHeader.substring(7);
 
-            // Validate token trước
+            // 2️⃣ Kiểm tra token
             if (!jwtTokenUtil.validateToken(token)) {
                 throw new HttpException("Invalid or expired token", HttpStatus.UNAUTHORIZED);
             }
 
+            // 3️⃣ Lấy studentId từ token
             Integer studentId = jwtTokenUtil.getUserIdFromToken(token);
             if (studentId == null) {
                 throw new HttpException("Cannot extract user ID from token", HttpStatus.BAD_REQUEST);
             }
 
+            // 4️⃣ Lấy dữ liệu điểm gần đây
             List<RecentScoreDTO> recentScores = studentScoreService.getRecentScores(studentId);
-            return ResponseEntity.ok(recentScores);
+
+            // 5️⃣ Trả về dữ liệu gói trong ApiResponse
+            return ResponseEntity.ok(
+                    ApiResponse.success("Lấy điểm gần đây thành công", recentScores));
 
         } catch (EntityNotFoundException e) {
             throw new HttpException(e.getMessage(), HttpStatus.NOT_FOUND);
+
         } catch (HttpException e) {
-            throw e; 
+            // giữ nguyên HttpException để @ControllerAdvice hoặc GlobalExceptionHandler xử
+            // lý
+            throw e;
+
         } catch (Exception e) {
             throw new HttpException("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -118,7 +128,10 @@ public class StudentScoreController {
             }
 
             List<SubjectGradeDTO> grades = studentScoreService.getAllClassResults(studentId);
-            return ResponseEntity.ok(grades);
+            APIResponse<List<SubjectGradeDTO>> response = new APIResponse<>(true, "Lấy bảng xếp hạng thành công",
+                    grades);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             throw new HttpException("Error processing request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

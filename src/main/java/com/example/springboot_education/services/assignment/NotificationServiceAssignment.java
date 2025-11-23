@@ -16,9 +16,9 @@ public class NotificationServiceAssignment {
     try {
         String destination = "/topic/class/" + classId + "/assignments";
         messagingTemplate.convertAndSend(destination, payload);
-        System.out.println("✅ Notification sent to class topic: " + destination);
+        System.out.println("Notification sent to class topic: " + destination);
     } catch (Exception e) {
-        System.err.println("❌ Error sending class notification: " + e.getMessage());
+        System.err.println("Error sending class notification: " + e.getMessage());
         e.printStackTrace();
     }
 }

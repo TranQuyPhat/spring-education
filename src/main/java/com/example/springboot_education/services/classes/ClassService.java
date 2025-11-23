@@ -309,4 +309,12 @@ public class ClassService {
                 .collect(Collectors.toList());
     }
 
+public List<ClassResponseDTO> searchClasses(Integer teacherId, String keyword) {
+    List<ClassEntity> classList =
+            classRepository.findByTeacher_IdAndClassNameContainingIgnoreCaseOrderByCreatedAtDesc(teacherId, keyword);
+
+    return classList.stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
+}
 }

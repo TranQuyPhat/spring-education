@@ -84,7 +84,7 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
             .pendingGrading((int) dashboardRepository.countPendingGrading(teacherId))
             .gradeDistribution(gradeDist)
             .recentActivities(top5Activities)
-                    .upcomingDeadlinesTeacher(upcomingDeadlines) 
+            .upcomingDeadlinesTeacher(upcomingDeadlines)
             .build();
 }
 
@@ -117,5 +117,47 @@ List<DashboardActivityDTO> top5Activities = recentActivities.stream()
                 .classProgress(dashboardRepository.findClassProgressByStudentId(studentId))
                 .build();
     }
+public List<DashboardActivityDTO> getClassActivity(Integer classId) {
+    List<DashboardActivityDTO> recentActivities = new ArrayList<>();
+
+    // --- 1. Lấy recent submissions ---
+    List<Object[]> submissions = dashboardRepository.activitySubmissionsPerAssignmentByClass(classId);
+    for (Object[] row : submissions) {
+        DashboardActivityDTO dto = new DashboardActivityDTO();
+        dto.setMessage(row[3] + " học sinh đã nộp bài tập " + row[1]);
+        dto.setType("submission");
+        dto.setClassName((String) row[2]);
+
+        LocalDateTime ldt = (LocalDateTime) row[4];
+        if (ldt != null) {
+            Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
+            dto.setTime(TimeAgoUtil.timeAgo(instant));
+            dto.setSortTime(instant);
+        }
+        recentActivities.add(dto);
+    }
+
+    // --- 2. Lấy recent comments ---
+    List<Object[]> comments = dashboardRepository.findRecentCommentsByClass(classId);
+    for (Object[] row : comments) {
+        DashboardActivityDTO dto = new DashboardActivityDTO();
+        dto.setMessage(row[1] + " đã đặt câu hỏi về bài tập " + row[2]);
+        dto.setType("question");
+        dto.setClassName((String) row[3]);
+
+        Timestamp ts = (Timestamp) row[4];
+        if (ts != null) {
+            dto.setTime(TimeAgoUtil.timeAgo(ts.toInstant()));
+            dto.setSortTime(ts.toInstant());
+        }
+        recentActivities.add(dto);
+    }
+
+    // Sắp xếp và lấy top 5
+    return recentActivities.stream()
+            .sorted((a, b) -> b.getSortTime().compareTo(a.getSortTime()))
+            .limit(5)
+            .toList();
+}
 }
 

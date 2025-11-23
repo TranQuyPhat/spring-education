@@ -1,8 +1,11 @@
 package com.example.springboot_education.controllers.grade;
 
+import com.example.springboot_education.annotations.CurrentUser;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.BaseScoreStatsDTO;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.QuizAverageScoreDTO;
 import com.example.springboot_education.dtos.gradeDTOs.GradeBase.WeightedScorePerClassDTO;
+import com.example.springboot_education.dtos.quiz.APIResponse;
+import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.services.grade.GradeStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -60,9 +63,15 @@ public class GradeStatsController {
         return ResponseEntity.ok(gradeStatsService.getOverallScorePerClassByStudent(studentId));
     }
 
-    @GetMapping("/teacher/{teacherId}/ranking")
-    public ResponseEntity<List<BaseScoreStatsDTO>> getRanking(@PathVariable("teacherId") Integer teacherId) {
-        return ResponseEntity.ok(gradeStatsService.getStudentRankingByTeacher(teacherId));
+    @GetMapping("/teacher/ranking")
+    public ResponseEntity<APIResponse<List<BaseScoreStatsDTO>>> getRanking(@CurrentUser Users currentUser) {
+        Integer teacherId = currentUser.getId();
+        List<BaseScoreStatsDTO> ranking = gradeStatsService.getStudentRankingByTeacher(teacherId);
+
+        APIResponse<List<BaseScoreStatsDTO>> response =
+                new APIResponse<>(true, "Lấy bảng xếp hạng thành công", ranking);
+
+        return ResponseEntity.ok(response);
     }
 
 }

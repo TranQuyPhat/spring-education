@@ -71,4 +71,11 @@ public class ClassUserController {
         ));
     }
 
+@GetMapping("/student/{studentId}/search")
+public ResponseEntity<List<ClassResponseDTO>> searchClassesOfStudent(
+        @PathVariable("studentId") Integer studentId,
+        @RequestParam(name = "keyword", defaultValue = "") String keyword
+) {
+    return ResponseEntity.ok(classUserService.searchClassesOfStudent(studentId, keyword));
+}
 }

@@ -26,4 +26,9 @@ public interface ClassRepository extends JpaRepository<ClassEntity, Integer> {
     List<ClassEntity> findByClassNameContainingIgnoreCaseOrderByCreatedAtDesc(String keyword);
 
     List<ClassEntity> findTop10ByOrderByCreatedAtDesc();
+List<ClassEntity> findByTeacher_IdAndClassNameContainingIgnoreCaseOrderByCreatedAtDesc(
+        Integer teacherId,
+        String keyword
+);
+
 }

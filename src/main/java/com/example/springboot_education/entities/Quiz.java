@@ -34,10 +34,10 @@ public class Quiz {
     private Integer timeLimit;
 
     @Column(name = "start_date")
-    private Instant  startDate;
+    private Instant startDate;
 
     @Column(name = "end_date")
-    private Instant  endDate;
+    private Instant endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
@@ -56,15 +56,23 @@ public class Quiz {
 
     @Column(name = "subject")
     private String subject;
-    @PrePersist @PreUpdate
-    private void syncSubjectFromClass() {
-        if (classField != null && classField.getSubject() != null) {
-            this.subject = classField.getSubject().getSubjectName();
-        }
-        
-    }
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<QuizQuestion> questions;
 
+    @Column(name = "published_to_bank", nullable = false)
+    private boolean publishedToBank = false;
+
+    @Transient
+    public QuizStatus getStatus() {
+        Instant now = Instant.now();
+        if (startDate != null && now.isBefore(startDate)) {
+            return QuizStatus.UPCOMING;
+        }
+        if (endDate != null && now.isAfter(endDate)) {
+            return QuizStatus.CLOSED;
+        }
+        return QuizStatus.OPEN;
+    }
 
 }

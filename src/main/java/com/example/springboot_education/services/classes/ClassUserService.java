@@ -214,4 +214,14 @@ public class ClassUserService {
     }
 
 
+public List<ClassResponseDTO> searchClassesOfStudent(Integer studentId, String keyword) {
+    List<ClassUser> members =
+            classUserRepository.findByStudent_IdAndClassField_ClassNameContainingIgnoreCase(
+                    studentId, keyword);
+
+    return members.stream()
+            .map(member -> toDTO(member.getClassField()))
+            .collect(Collectors.toList());
+}
+
 }
