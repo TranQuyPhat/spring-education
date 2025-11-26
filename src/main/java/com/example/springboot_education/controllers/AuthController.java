@@ -1,5 +1,6 @@
 package com.example.springboot_education.controllers;
 
+import com.example.springboot_education.annotations.CurrentUser;
 import com.example.springboot_education.dtos.*;
 import com.example.springboot_education.dtos.AuthDTOs.*;
 import com.example.springboot_education.entities.Role;
@@ -178,6 +179,30 @@ public class AuthController {
                 .message("Login successful")
                 .data(response)
                 .build());
+    }
+
+    // Endpoint /me - Lấy thông tin user đang đăng nhập
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<?>> getCurrentUser(@CurrentUser Users currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
+        }
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", currentUser.getId());
+        userData.put("username", currentUser.getUsername());
+        userData.put("email", currentUser.getEmail());
+        userData.put("fullName", currentUser.getFullName());
+        userData.put("isEmailVerified", currentUser.getIsEmailVerified());
+        
+        // Lấy danh sách roles
+        List<String> roles = currentUser.getUserRoles().stream()
+                .map(ur -> ur.getRole() != null ? ur.getRole().getName() : "UNKNOWN")
+                .collect(Collectors.toList());
+        userData.put("roles", roles);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Current user info", userData));
     }
 
     // Endpoint kiểm tra trạng thái registration
