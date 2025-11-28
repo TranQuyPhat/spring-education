@@ -36,12 +36,13 @@ public class AuthController {
     private final JwtService jwtService;
 
     private final AuthService authService;
-//
-//    @PostMapping("/login")
-//    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
-//        LoginResponseDto result = this.authService.login(request);
-//        return ResponseEntity.ok(result);
-//    }
+    //
+    // @PostMapping("/login")
+    // public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto
+    // request) throws Exception {
+    // LoginResponseDto result = this.authService.login(request);
+    // return ResponseEntity.ok(result);
+    // }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
@@ -122,10 +123,10 @@ public class AuthController {
                     .body(Map.of("message", "Select role failed", "error", e.getMessage()));
         }
     }
+
     @PostMapping("/register/init")
     public ResponseEntity<ApiResponse<RegisterInitResponseDto>> initRegistration(
             @Valid @RequestBody RegisterRequestDto request) {
-
 
         RegisterInitResponseDto response = authService.registerInit(request);
 
@@ -141,7 +142,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<RegisterResponseDto>> confirmRegistration(
             @Valid @RequestBody ConfirmRegistrationDto request) {
 
-
         RegisterResponseDto response = authService.confirmRegistration(request);
 
         return ResponseEntity.ok(ApiResponse.<RegisterResponseDto>builder()
@@ -155,7 +155,6 @@ public class AuthController {
     @PostMapping("/otp/resend")
     public ResponseEntity<ApiResponse<ResendOtpResponseDto>> resendOtp(
             @Valid @RequestBody ResendOtpRequestDto request) {
-
 
         ResendOtpResponseDto response = authService.resendOtp(request);
 
@@ -171,7 +170,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponseDto>> login(
             @Valid @RequestBody LoginRequestDto request) {
 
-
         LoginResponseDto response = authService.login(request);
 
         return ResponseEntity.ok(ApiResponse.<LoginResponseDto>builder()
@@ -182,28 +180,30 @@ public class AuthController {
     }
 
     // Endpoint /me - Lấy thông tin user đang đăng nhập
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<?>> getCurrentUser(@CurrentUser Users currentUser) {
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "User not authenticated", null));
-        }
+    // @GetMapping("/me")
+    // public ResponseEntity<ApiResponse<?>> getCurrentUser(@CurrentUser Users
+    // currentUser) {
+    // if (currentUser == null) {
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    // .body(new ApiResponse<>(false, "User not authenticated", null));
+    // }
 
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", currentUser.getId());
-        userData.put("username", currentUser.getUsername());
-        userData.put("email", currentUser.getEmail());
-        userData.put("fullName", currentUser.getFullName());
-        userData.put("isEmailVerified", currentUser.getIsEmailVerified());
-        
-        // Lấy danh sách roles
-        List<String> roles = currentUser.getUserRoles().stream()
-                .map(ur -> ur.getRole() != null ? ur.getRole().getName() : "UNKNOWN")
-                .collect(Collectors.toList());
-        userData.put("roles", roles);
+    // Map<String, Object> userData = new HashMap<>();
+    // userData.put("id", currentUser.getId());
+    // userData.put("username", currentUser.getUsername());
+    // userData.put("email", currentUser.getEmail());
+    // userData.put("fullName", currentUser.getFullName());
+    // userData.put("isEmailVerified", currentUser.getIsEmailVerified());
 
-        return ResponseEntity.ok(new ApiResponse<>(true, "Current user info", userData));
-    }
+    // // Lấy danh sách roles
+    // List<String> roles = currentUser.getUserRoles().stream()
+    // .map(ur -> ur.getRole() != null ? ur.getRole().getName() : "UNKNOWN")
+    // .collect(Collectors.toList());
+    // userData.put("roles", roles);
+
+    // return ResponseEntity.ok(new ApiResponse<>(true, "Current user info",
+    // userData));
+    // }
 
     // Endpoint kiểm tra trạng thái registration
     @GetMapping("/register/status/{email}")
@@ -223,6 +223,7 @@ public class AuthController {
                 .data(status)
                 .build());
     }
+
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(HttpServletRequest request) {
         try {
@@ -259,10 +260,10 @@ public class AuthController {
             }
 
             // Check if user is still active/enabled
-//            if (!user.isEnabled()) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(Map.of("error", "User account is disabled"));
-//            }
+            // if (!user.isEnabled()) {
+            // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            // .body(Map.of("error", "User account is disabled"));
+            // }
 
             // Extract roles from token for better performance
             List<Map<String, Object>> tokenRoles = jwtService.extractRoles(token);

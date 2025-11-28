@@ -21,7 +21,6 @@ import com.example.springboot_education.repositories.schedules.ClassSchedulePatt
 import com.example.springboot_education.repositories.schedules.ClassScheduleSessionRepository;
 import com.example.springboot_education.repositories.schedules.LocationRepository;
 
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -70,7 +69,6 @@ public class ClassSchedulePatternService {
 
             result.add(mapToDTO(pattern));
         }
-
         return result;
     }
 

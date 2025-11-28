@@ -1,6 +1,7 @@
 package com.example.springboot_education.services.classes;
 
 import com.example.springboot_education.services.SlackService;
+import com.example.springboot_education.services.schedules.ScheduleConflictService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import com.example.springboot_education.dtos.joinrequest.ApprovalResponseDTO;
 import com.example.springboot_education.dtos.joinrequest.JoinRequestDTO;
 import com.example.springboot_education.dtos.joinrequest.JoinRequestResponseDTO;
 import com.example.springboot_education.dtos.notification.NotificationTeacherDTO;
+import com.example.springboot_education.dtos.schedule.ScheduleConflictDTO;
 import com.example.springboot_education.entities.ClassEntity;
 import com.example.springboot_education.entities.Users;
 import com.example.springboot_education.exceptions.HttpException;
@@ -34,11 +36,25 @@ public class ClassJoinRequestService {
         private final ClassUserService classUserService;
         private final UserService userService;
         private final SlackService slackService;
+        private final ScheduleConflictService scheduleConflictService;
 
         @Transactional
         public JoinRequestDTO joinClass(Integer classId, Integer studentId) {
                 ClassEntity classEntity = classService.getClassEntityById(classId);
                 Users student = userService.getUserEntityById(studentId);
+
+                // ⏰ Kiểm tra xem có trùng lịch học không
+                ScheduleConflictDTO conflict = scheduleConflictService.checkScheduleConflict(student, classId);
+                if (conflict.isHasConflict()) {
+                        String conflictMsg = String.format(
+                                "Không thể tham gia lớp %s vì có %d buổi học trùng lịch. Chi tiết: %s",
+                                conflict.getTargetClassName(),
+                                conflict.getConflictCount(),
+                                conflict.getMessage()
+                        );
+                        log.warn("⚠️  Schedule conflict detected: {}", conflictMsg);
+                        throw new HttpException(conflictMsg, HttpStatus.CONFLICT);
+                }
 
                 // Nếu lớp đã có student rồi thì chặn
                 // if (classUserService.isStudentInClass(classId, studentId)) {
