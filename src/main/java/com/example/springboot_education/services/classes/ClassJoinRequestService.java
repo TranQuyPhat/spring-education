@@ -47,11 +47,10 @@ public class ClassJoinRequestService {
                 ScheduleConflictDTO conflict = scheduleConflictService.checkScheduleConflict(student, classId);
                 if (conflict.isHasConflict()) {
                         String conflictMsg = String.format(
-                                "Không thể tham gia lớp %s vì có %d buổi học trùng lịch. Chi tiết: %s",
-                                conflict.getTargetClassName(),
-                                conflict.getConflictCount(),
-                                conflict.getMessage()
-                        );
+                                        "Không thể tham gia lớp %s vì có %d buổi học trùng lịch. Chi tiết: %s",
+                                        conflict.getTargetClassName(),
+                                        conflict.getConflictCount(),
+                                        conflict.getMessage());
                         log.warn("⚠️  Schedule conflict detected: {}", conflictMsg);
                         throw new HttpException(conflictMsg, HttpStatus.CONFLICT);
                 }
@@ -102,11 +101,12 @@ public class ClassJoinRequestService {
 
                         JoinRequestDTO dto = convertToDTO(saved);
                         NotificationTeacherDTO notifyPayload = NotificationTeacherDTO.builder()
-                        .classId(classEntity.getId())
-                        .studentName(student.getFullName())
-                        .message("Có học sinh xin vào lớp, vui lòng kiểm tra!")
-                        .build();
-                        System.out.println("Notifying class ID: " + classEntity.getId() + " with payload: " + notifyPayload);
+                                        .classId(classEntity.getId())
+                                        .studentName(student.getFullName())
+                                        .message("Có học sinh xin vào lớp, vui lòng kiểm tra!")
+                                        .build();
+                        System.out.println("Notifying class ID: " + classEntity.getId() + " with payload: "
+                                        + notifyPayload);
 
                         notificationService.notifyTeacher(teacherId, notifyPayload);
 
@@ -132,58 +132,58 @@ public class ClassJoinRequestService {
                 return convertListToDTOs(requests);
         }
 
-    @Transactional
-    public JoinRequestResponseDTO approve(Integer requestId, Integer teacherId) {
+        @Transactional
+        public JoinRequestResponseDTO approve(Integer requestId, Integer teacherId) {
 
-        ClassJoinRequest req = repo.findById(requestId)
-                .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));
+                ClassJoinRequest req = repo.findById(requestId)
+                                .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));
 
-        req.setStatus(ClassJoinRequest.Status.APPROVED);
+                req.setStatus(ClassJoinRequest.Status.APPROVED);
 
-        // 1. Thêm học sinh vào bảng quan hệ lớp – user
-        classUserService.addStudentToClass(req.getClassEntity().getId(), req.getStudent().getId());
+                // 1. Thêm học sinh vào bảng quan hệ lớp – user
+                classUserService.addStudentToClass(req.getClassEntity().getId(), req.getStudent().getId());
 
-        // 2. Gửi thông báo nội bộ
-        notificationService.notifyStudent(req.getStudent().getId(),
-                ApprovalResponseDTO.builder()
-                        .requestId(req.getId())
-                        .approved(true)
-                        .message("Yêu cầu của bạn đã được duyệt.")
-                        .build());
+                // 2. Gửi thông báo nội bộ
+                notificationService.notifyStudent(req.getStudent().getId(),
+                                ApprovalResponseDTO.builder()
+                                                .requestId(req.getId())
+                                                .approved(true)
+                                                .message("Yêu cầu của bạn đã được duyệt.")
+                                                .build());
 
-        // 3. Mời học sinh vào Slack channel của lớp
-        String channelId = req.getClassEntity().getSlackChannelId();
-        if (channelId != null) {
-            // Lấy user_id của Slack từ email học sinh
-            String email = req.getStudent().getEmail();
-            String slackUserId = slackService.lookupUserIdByEmail(email); // bạn viết hàm này dùng users.lookupByEmail
+                // 3. Mời học sinh vào Slack channel của lớp
+                String channelId = req.getClassEntity().getSlackChannelId();
+                if (channelId != null) {
+                        // Lấy user_id của Slack từ email học sinh
+                        String email = req.getStudent().getEmail();
+                        String slackUserId = slackService.lookupUserIdByEmail(email); // bạn viết hàm này dùng
+                                                                                      // users.lookupByEmail
 
-            if (slackUserId != null) {
-                boolean invited = slackService.inviteUserToChannel(channelId, slackUserId);
-                if (invited) {
-                    log.info("Invited {} to Slack channel {}", email, channelId);
+                        if (slackUserId != null) {
+                                boolean invited = slackService.inviteUserToChannel(channelId, slackUserId);
+                                if (invited) {
+                                        log.info("Invited {} to Slack channel {}", email, channelId);
+                                } else {
+                                        log.warn("Failed to invite {} to Slack channel {}", email, channelId);
+                                }
+                        } else {
+                                log.warn("No Slack user found for email {}", email);
+                        }
                 } else {
-                    log.warn("Failed to invite {} to Slack channel {}", email, channelId);
+                        log.warn("Class {} has no Slack channel ID", req.getClassEntity().getId());
                 }
-            } else {
-                log.warn("No Slack user found for email {}", email);
-            }
-        } else {
-            log.warn("Class {} has no Slack channel ID", req.getClassEntity().getId());
+
+                return JoinRequestResponseDTO.builder()
+                                .requestId(req.getId())
+                                .classId(req.getClassEntity().getId())
+                                .studentId(req.getStudent().getId())
+                                .studentName(req.getStudent().getFullName())
+                                .status(req.getStatus())
+                                .message("Yêu cầu đã được duyệt thành công")
+                                .build();
         }
 
-        return JoinRequestResponseDTO.builder()
-                .requestId(req.getId())
-                .classId(req.getClassEntity().getId())
-                .studentId(req.getStudent().getId())
-                .studentName(req.getStudent().getFullName())
-                .status(req.getStatus())
-                .message("Yêu cầu đã được duyệt thành công")
-                .build();
-    }
-
-
-    @Transactional
+        @Transactional
         public JoinRequestResponseDTO reject(Integer requestId, Integer teacherId, String reason) {
                 ClassJoinRequest req = repo.findById(requestId)
                                 .orElseThrow(() -> new HttpException("Không tìm thấy yêu cầu", HttpStatus.NOT_FOUND));
@@ -208,23 +208,23 @@ public class ClassJoinRequestService {
         }
 
         private JoinRequestDTO convertToDTO(ClassJoinRequest r) {
-        String message = switch (r.getStatus()) {
-                case PENDING -> "Yêu cầu tham gia lớp học đang chờ duyệt.";
-                case APPROVED -> "Bạn đã được chấp nhận vào lớp.";
-                case REJECTED -> "Yêu cầu của bạn đã bị từ chối.";
-                default -> null;
-        };
+                String message = switch (r.getStatus()) {
+                        case PENDING -> "Yêu cầu tham gia lớp học đang chờ duyệt.";
+                        case APPROVED -> "Bạn đã được chấp nhận vào lớp.";
+                        case REJECTED -> "Yêu cầu của bạn đã bị từ chối.";
+                        default -> null;
+                };
 
-        return JoinRequestDTO.builder()
-                .requestId(r.getId())
-                .classId(r.getClassEntity().getId())
-                .className(r.getClassEntity().getClassName())
-                .studentId(r.getStudent().getId())
-                .studentName(r.getStudent().getFullName())
-                .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
-                .message(message) // ✅ chỉ tồn tại trong payload, không lưu DB
-                .build();
+                return JoinRequestDTO.builder()
+                                .requestId(r.getId())
+                                .classId(r.getClassEntity().getId())
+                                .className(r.getClassEntity().getClassName())
+                                .studentId(r.getStudent().getId())
+                                .studentName(r.getStudent().getFullName())
+                                .status(r.getStatus())
+                                .createdAt(r.getCreatedAt())
+                                .message(message) // ✅ chỉ tồn tại trong payload, không lưu DB
+                                .build();
         }
 
         private List<JoinRequestDTO> convertListToDTOs(List<ClassJoinRequest> requests) {
