@@ -21,10 +21,10 @@ public class TeacherQuizController {
 
     @GetMapping("/group-by-class")
     public ResponseEntity<APIResponse<GroupedQuizDTO>> getGroupedQuizzes(
-            @RequestParam QuizStatus status,
-            @RequestParam int classPage,
-            @RequestParam int classSize,
-            @RequestParam(defaultValue = "3") int quizPageSize,
+            @RequestParam("status") QuizStatus status,
+            @RequestParam("classPage") int classPage,
+            @RequestParam("classSize") int classSize,
+            @RequestParam(value = "quizPageSize", defaultValue = "3") int quizPageSize,
             HttpServletRequest request) {
 
         Integer teacherId = jwt.getUserIdFromToken(
@@ -38,9 +38,9 @@ public class TeacherQuizController {
     @GetMapping("/class/{classId}")
     public ResponseEntity<APIResponse<Page<QuizDTO>>> getQuizzesByClass(
             @PathVariable Integer classId,
-            @RequestParam QuizStatus status,
-            @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam("status") QuizStatus status,
+            @RequestParam("page") int page,
+            @RequestParam("size") int size) {
 
         Page<QuizDTO> quizDtoPage =
                 service.getQuizDtosByClassAndStatus(classId, status, page, size);
